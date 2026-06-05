@@ -1,0 +1,88 @@
+# Day 5 - Learning Roadmap Comparison (Prompt A vs Prompt B)
+
+## Challenge Objective
+Compare a generic AI-generated learning roadmap with a personalized roadmap created using learner-specific context.
+
+---
+
+# Prompt A (Without Context)
+
+## Prompt Used
+
+You are a learning design specialist. Create a 30-day learning roadmap for a beginner learner. The roadmap must include weekly milestones, daily tasks, resources, projects, and a final outcome. Use a practical and beginner-friendly tone. Assume no prior context about the learner's background, goals, or available time.
+
+## Output
+
+(Paste the complete Prompt A output here)
+
+---
+
+# Prompt B (With Context)
+
+## Prompt Used
+
+You are a learning design specialist. Create a 30-day learning roadmap for a learner with the following context:
+
+- Current Situation: Student
+- Current Skills: Prompt Engineering, GitHub, Claude AI, AI Tools
+- Goal: Become an AI Engineer and build a portfolio of AI projects
+- Available Time: 2–3 Hours per Day
+- Experience Level: Beginner
+- Preferred Learning Style: Projects + Videos
+
+The roadmap must include weekly milestones, daily tasks, resources, projects, and a final outcome. Use a practical and beginner-friendly tone. Tailor every element to the provided context.
+
+## Output
+
+(Paste the complete Prompt B output here)
+
+---
+
+# Screenshots
+
+## Prompt A Screenshot
+
+![Prompt A](images/prompt-a.png)
+
+## Prompt B Screenshot
+
+![Prompt B](images/prompt-b.png)
+
+---
+
+# Comparison
+
+| Category | Prompt A | Prompt B |
+|-----------|-----------|-----------|
+| Personalization | Generic | Tailored to learner |
+| Goal Alignment | Broad | Specific career goal |
+| Resources | General | Relevant and targeted |
+| Projects | Generic | Portfolio-focused |
+| Motivation | Moderate | High |
+| Actionability | Limited | Clear daily execution |
+
+---
+
+# Biggest Observation
+
+The generic roadmap provided a structured learning path, but it could apply to almost anyone.
+
+The personalized roadmap felt significantly more actionable because it considered my existing skills, available time, learning style, and career goal. This transformed the roadmap from a generic study plan into a practical career-building roadmap.
+
+---
+
+# Key Learnings
+
+- Context dramatically improves AI-generated outputs.
+- Personalized prompts create more useful learning plans.
+- Specific goals lead to better project recommendations.
+- Time constraints help AI generate realistic schedules.
+- AI performs better when provided with detailed learner information.
+
+---
+
+# Conclusion
+
+Prompt B produced the most valuable roadmap because it aligned with the learner's real-world situation and objectives. This exercise demonstrated how adding context can significantly improve the quality, relevance, and usefulness of AI-generated learning plans.
+
+#60DayClaudeChallenge
