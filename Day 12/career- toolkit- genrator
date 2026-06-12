@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Career Toolkit Generator</title>
+<style>
+:root{
+  --bg:#0b0f1a;--surface:#131929;--surface2:#1a2236;--surface3:#212d45;
+  --accent:#6366f1;--accent2:#06b6d4;--accentg:#8b5cf6;
+  --text:#f0f4ff;--muted:#7a8ba8;--border:#1e2d47;
+  --success:#22c55e;--danger:#ef4444;--warning:#f59e0b
+}
+.light-mode{
+  --bg:#f4f6fb;--surface:#ffffff;--surface2:#f0f2f8;--surface3:#e8ecf4;
+  --text:#0f172a;--muted:#64748b;--border:#dde3f0
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;transition:background .2s,color .2s}
+
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:200}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.nav-title{font-size:15px;font-weight:600}
+.nav-sub{font-size:11px;color:var(--muted)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-badge{font-size:11px;background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);border-radius:20px;padding:3px 10px}
+.theme-toggle{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.theme-toggle:hover{border-color:var(--accent);color:var(--text)}
+
+.hero{text-align:center;padding:48px 20px 32px;max-width:680px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;font-size:11px;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+.light-mode .hero-badge{color:var(--accent);background:rgba(99,102,241,.08)}
+.hero h1{font-size:32px;font-weight:700;line-height:1.2;margin-bottom:12px}
+.hero h1 span{color:var(--accent)}
+.hero p{font-size:15px;color:var(--muted);max-width:520px;margin:0 auto 20px}
+.sc-pills{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.sc-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--muted)}
+
+.main{display:grid;grid-template-columns:310px 1fr;max-width:1180px;margin:0 auto}
+@media(max-width:880px){.main{grid-template-columns:1fr}}
+
+.left-panel{background:var(--surface);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;max-height:calc(100vh - 58px);position:sticky;top:58px}
+@media(max-width:880px){.left-panel{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--border)}}
+
+.panel-section{display:flex;flex-direction:column;gap:8px}
+.panel-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+input[type=text],input[type=password],select,textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:13px;font-family:inherit;padding:8px 11px;
+  transition:border-color .15s;outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--surface2)}
+textarea{min-height:150px;resize:vertical;line-height:1.6}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:3px}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.api-row{display:flex;gap:6px}
+.api-row input{flex:1}
+.show-btn{padding:0 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:12px;white-space:nowrap;transition:all .15s}
+.show-btn:hover{border-color:var(--accent);color:var(--text)}
+.api-info{font-size:11px;color:var(--muted);background:var(--surface2);border-radius:7px;padding:8px 10px;line-height:1.6;border:1px solid var(--border)}
+.api-info a{color:#a5b4fc}
+
+.upload-zone{border:1.5px dashed var(--border);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.upload-zone p{font-size:12px;color:var(--muted)}
+.upload-zone span{font-size:11px;color:var(--accent)}
+#fileInput{display:none}
+.char-count{font-size:10px;color:var(--muted);text-align:right;margin-top:2px}
+.char-count.warn{color:var(--warning)}
+
+.toggles{display:flex;flex-wrap:wrap;gap:5px}
+.tog{padding:4px 9px;border:1px solid var(--border);border-radius:14px;cursor:pointer;font-size:11px;color:var(--muted);background:var(--surface2);user-select:none;transition:all .15s}
+.tog.on{border-color:var(--accent);color:#a5b4fc;background:rgba(99,102,241,.12)}
+.tog-actions{display:flex;gap:6px;margin-top:4px}
+.tog-link{font-size:11px;color:var(--accent);cursor:pointer;background:none;border:none;padding:0}
+.tog-link:hover{text-decoration:underline}
+
+.tone-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tone-btn{padding:7px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--surface2);font-size:11px;color:var(--muted);text-align:center;transition:all .15s;user-select:none}
+.tone-btn:hover{border-color:rgba(99,102,241,.5)}
+.tone-btn.active{border-color:var(--accent);color:#a5b4fc;background:rgba(99,102,241,.12)}
+.tone-btn .tone-icon{font-size:16px;display:block;margin-bottom:3px}
+
+.gen-btn{width:100%;padding:12px;font-size:14px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:opacity .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px}
+.gen-btn:hover{opacity:.88}
+.gen-btn:active{transform:scale(.99)}
+.gen-btn:disabled{opacity:.4;cursor:not-allowed}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;display:none}
+.progress-bar.visible{display:block}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width .5s ease;border-radius:2px}
+
+.history-list{display:flex;flex-direction:column;gap:6px;max-height:120px;overflow-y:auto}
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;transition:border-color .15s}
+.hist-item:hover{border-color:var(--accent)}
+.hist-role{color:var(--text);font-weight:500}
+.hist-date{color:var(--muted)}
+.hist-del{color:var(--muted);background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px}
+.hist-del:hover{color:var(--danger)}
+
+.right-panel{padding:24px;display:flex;flex-direction:column;gap:0;min-height:calc(100vh - 58px)}
+@media(max-width:600px){.right-panel{padding:14px}}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;gap:12px;color:var(--muted);padding:60px 20px}
+.empty-icon{font-size:44px;opacity:.25}
+.empty-state h3{font-size:17px;color:var(--text);opacity:.55}
+.empty-state p{font-size:13px;max-width:300px;line-height:1.6}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;text-align:left;max-width:380px}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;gap:10px}
+.feature-icon{font-size:20px;flex-shrink:0}
+.feature-text h4{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px}
+.feature-text p{font-size:11px;color:var(--muted);line-height:1.5}
+
+.loading-state{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:20px;padding:60px 20px}
+.loading-state.visible{display:flex}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-steps{display:flex;flex-direction:column;gap:6px;min-width:260px}
+.lstep{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);padding:5px 0;transition:color .3s}
+.lstep.active{color:var(--text)}
+.lstep.done{color:var(--success)}
+.lstep-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+.lstep.active .lstep-dot{background:var(--accent);animation:pulse .9s infinite}
+.lstep.done .lstep-dot{background:var(--success)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.output-area{display:none;flex-direction:column;gap:0}
+.output-area.visible{display:flex}
+
+.output-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.toolbar-right{display:flex;gap:6px}
+.toolbar-badge{font-size:11px;background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:3px 10px}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px}
+.search-box input{background:none;border:none;color:var(--text);font-size:12px;width:140px;outline:none;font-family:inherit}
+.search-box input::placeholder{color:var(--muted)}
+
+.tabs-header{display:flex;gap:1px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:0}
+.tab{padding:8px 14px;font-size:12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:#a5b4fc;border-bottom-color:var(--accent)}
+.tab-content{display:none;padding:18px 0}
+.tab-content.active{display:block}
+
+.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:border-color .2s}
+.sec-card:hover{border-color:rgba(99,102,241,.3)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);cursor:pointer;user-select:none}
+.sec-head-left{display:flex;align-items:center;gap:10px}
+.sec-num{width:22px;height:22px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.sec-title{font-size:13px;font-weight:600}
+.sec-subtitle{font-size:10px;color:var(--muted)}
+.sec-actions{display:flex;gap:5px;align-items:center}
+.icon-btn{padding:4px 9px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.icon-btn:hover{border-color:var(--accent);color:var(--text)}
+.icon-btn.copied{border-color:var(--success);color:var(--success)}
+.collapse-icon{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:4px}
+.sec-card.collapsed .collapse-icon{transform:rotate(-90deg)}
+.sec-body{padding:16px;font-size:13px;line-height:1.85;color:var(--text);white-space:pre-wrap;word-wrap:break-word}
+.sec-card.collapsed .sec-body{display:none}
+.sec-card.collapsed .sec-body-edit{display:none}
+
+.sec-body-edit{display:none;padding:4px 16px 16px}
+.sec-body-edit textarea{min-height:200px;font-size:13px;line-height:1.85}
+.edit-actions{display:flex;gap:6px;margin-top:8px}
+.edit-save{padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer;font-weight:500}
+.edit-cancel{padding:6px 14px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer}
+
+.highlight{background:rgba(251,191,36,.3);border-radius:2px}
+.wc-badge{font-size:10px;color:var(--muted);background:var(--surface3);border-radius:4px;padding:2px 6px}
+
+.ats-wrap{margin-bottom:14px}
+.ats-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.ats-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.ats-fill{height:100%;border-radius:3px;transition:width 1s ease}
+
+.download-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:10px}
+.dl-text h4{font-size:13px;font-weight:600}
+.dl-text p{font-size:11px;color:var(--muted)}
+.dl-actions{display:flex;gap:7px;flex-wrap:wrap}
+.dl-btn{padding:8px 14px;font-size:12px;border-radius:8px;cursor:pointer;font-weight:500;border:none;transition:opacity .15s;display:flex;align-items:center;gap:5px}
+.dl-btn:hover{opacity:.85}
+.dl-primary{background:var(--accent);color:#fff}
+.dl-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(34,197,94,.4);color:var(--success)}
+.toast.error{border-color:rgba(239,68,68,.4);color:var(--danger)}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:540px;width:100%;max-height:80vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7}
+.modal-close{float:right;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;margin-top:-4px}
+.modal-close:hover{color:var(--text)}
+.sample-list{display:flex;flex-direction:column;gap:8px}
+.sample-btn{padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-size:12px;text-align:left;transition:border-color .15s;line-height:1.5}
+.sample-btn:hover{border-color:var(--accent)}
+.sample-btn strong{display:block;font-size:13px;margin-bottom:2px}
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.share-btn{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px;transition:border-color .15s}
+.share-btn:hover{border-color:var(--accent)}
+
+footer{text-align:center;padding:20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+footer a{color:#a5b4fc}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">✦</div>
+    <div>
+      <div class="nav-title">AI Career Toolkit</div>
+      <div class="nav-sub">Powered by Claude AI</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">12 Sections · ATS-Ready</div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">✦ AI-Powered · Recruiter-Focused · ATS-Optimized</div>
+  <h1>Your Complete<br><span>Job Search Toolkit</span></h1>
+  <p>Paste your resume and get 12 ready-to-deploy career documents — cover letter, outreach emails, LinkedIn content, interview prep & more.</p>
+  <div class="sc-pills">
+    <span class="sc-pill">Cover Letter</span>
+    <span class="sc-pill">Recruiter Emails</span>
+    <span class="sc-pill">LinkedIn</span>
+    <span class="sc-pill">Interview Prep</span>
+    <span class="sc-pill">Skill Gap</span>
+    <span class="sc-pill">Personal Brand</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+
+    <div class="panel-section">
+      <div class="panel-title">API Key</div>
+      <div class="api-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+        <button class="show-btn" onclick="toggleApiVisibility()">Show</button>
+      </div>
+      <div class="api-info">
+        Free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>
+        Never stored — goes directly to Anthropic only.
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Resume / Background</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <p>📄 Drop PDF or .txt file here</p>
+        <span>or click to upload · or paste below</span>
+      </div>
+      <input type="file" id="fileInput" accept=".txt,.pdf" onchange="handleFile(event)">
+      <textarea id="resumeText" placeholder="Paste your resume here — experience, skills, education, projects, certifications, achievements…&#10;&#10;More detail = better toolkit." oninput="updateCharCount()"></textarea>
+      <div class="char-count" id="charCount">0 characters</div>
+      <button class="tog-link" onclick="openSamplesModal()">📋 Load a sample resume to try</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Target Details</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div>
+          <label>Target role</label>
+          <input type="text" id="targetRole" placeholder="e.g. Senior Product Manager">
+        </div>
+        <div class="input-row">
+          <div>
+            <label>Target company</label>
+            <input type="text" id="targetCompany" placeholder="Optional">
+          </div>
+          <div>
+            <label>Industry</label>
+            <input type="text" id="targetIndustry" placeholder="e.g. SaaS">
+          </div>
+        </div>
+        <div>
+          <label>Experience level</label>
+          <select id="expLevel">
+            <option value="auto">Auto-detect from resume</option>
+            <option value="student">Student / Intern</option>
+            <option value="fresher">Fresher (0–1 yr)</option>
+            <option value="junior">Junior (1–3 yrs)</option>
+            <option value="mid">Mid-level (3–6 yrs)</option>
+            <option value="senior">Senior (6–10 yrs)</option>
+            <option value="manager">Manager / Lead</option>
+            <option value="director">Director / VP</option>
+            <option value="executive">C-Suite / Executive</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Writing Tone</div>
+      <div class="tone-grid">
+        <div class="tone-btn active" data-tone="professional" onclick="selectTone(this)"><span class="tone-icon">💼</span>Professional</div>
+        <div class="tone-btn" data-tone="confident" onclick="selectTone(this)"><span class="tone-icon">🚀</span>Bold & Confident</div>
+        <div class="tone-btn" data-tone="warm" onclick="selectTone(this)"><span class="tone-icon">🤝</span>Warm & Human</div>
+        <div class="tone-btn" data-tone="concise" onclick="selectTone(this)"><span class="tone-icon">⚡</span>Sharp & Concise</div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Sections to Generate</div>
+      <div class="toggles" id="sectionToggles">
+        <div class="tog on" data-sec="cover_letter">Cover Letter</div>
+        <div class="tog on" data-sec="recruiter_email">Recruiter Email</div>
+        <div class="tog on" data-sec="hiring_email">HM Email</div>
+        <div class="tog on" data-sec="linkedin_request">LinkedIn DM</div>
+        <div class="tog on" data-sec="referral">Referral Ask</div>
+        <div class="tog on" data-sec="followup">Follow-Up</div>
+        <div class="tog on" data-sec="intro">30-Sec Intro</div>
+        <div class="tog on" data-sec="job_titles">Job Titles</div>
+        <div class="tog on" data-sec="strengths">Strengths</div>
+        <div class="tog on" data-sec="skill_gap">Skill Gap</div>
+        <div class="tog on" data-sec="brand">Personal Brand</div>
+        <div class="tog on" data-sec="interview">Interview Prep</div>
+      </div>
+      <div class="tog-actions">
+        <button class="tog-link" onclick="toggleAll(true)">Select all</button>
+        <span style="color:var(--muted);font-size:11px">·</span>
+        <button class="tog-link" onclick="toggleAll(false)">Deselect all</button>
+      </div>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generate()">✦ Generate My Career Toolkit</button>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="panel-section" id="historyPanel" style="display:none">
+      <div class="panel-title">Recent Sessions</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <h3>Your toolkit will appear here</h3>
+      <p>Fill in your details on the left and click Generate</p>
+      <div class="feature-grid">
+        <div class="feature-card"><div class="feature-icon">📝</div><div class="feature-text"><h4>12 documents</h4><p>Cover letter, emails, LinkedIn, interview prep & more</p></div></div>
+        <div class="feature-card"><div class="feature-icon">✏️</div><div class="feature-text"><h4>Inline editing</h4><p>Edit any section directly in the browser</p></div></div>
+        <div class="feature-card"><div class="feature-icon">🔍</div><div class="feature-text"><h4>Search content</h4><p>Find anything across all sections</p></div></div>
+        <div class="feature-card"><div class="feature-icon">📥</div><div class="feature-text"><h4>Export options</h4><p>Download as .txt, .html, or copy all</p></div></div>
+      </div>
+    </div>
+
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <div class="loading-steps">
+        <div class="lstep" id="ls1"><div class="lstep-dot"></div>Reading your resume…</div>
+        <div class="lstep" id="ls2"><div class="lstep-dot"></div>Analysing experience & skills…</div>
+        <div class="lstep" id="ls3"><div class="lstep-dot"></div>Writing cover letter & emails…</div>
+        <div class="lstep" id="ls4"><div class="lstep-dot"></div>Building LinkedIn & brand content…</div>
+        <div class="lstep" id="ls5"><div class="lstep-dot"></div>Preparing interview talking points…</div>
+        <div class="lstep" id="ls6"><div class="lstep-dot"></div>Finalising your toolkit…</div>
+      </div>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="output-toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-badge">✓ Toolkit ready</div>
+          <div class="search-box">
+            <span style="color:var(--muted);font-size:13px">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search sections…" oninput="searchSections(this.value)">
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <button class="icon-btn" onclick="expandAll()">Expand all</button>
+          <button class="icon-btn" onclick="collapseAll()">Collapse all</button>
+          <button class="icon-btn" onclick="openShareModal()">↗ Share</button>
+        </div>
+      </div>
+
+      <div class="ats-wrap" id="atsScore" style="display:none">
+        <div class="ats-label"><span>ATS Compatibility Score</span><span id="atsVal">—</span></div>
+        <div class="ats-track"><div class="ats-fill" id="atsFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="tabs-header" id="tabsHeader"></div>
+      <div id="tabsBody"></div>
+
+      <div class="download-bar">
+        <div class="dl-text">
+          <h4>Export your complete toolkit</h4>
+          <p>All sections ready to deploy</p>
+        </div>
+        <div class="dl-actions">
+          <button class="dl-btn dl-secondary" onclick="copyAll()">⧉ Copy all</button>
+          <button class="dl-btn dl-secondary" onclick="downloadHTML()">⬇ .html</button>
+          <button class="dl-btn dl-primary" onclick="downloadTxt()">⬇ .txt</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Built with <a href="https://www.anthropic.com" target="_blank">Claude AI by Anthropic</a> &nbsp;·&nbsp; Your data is never stored.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- SAMPLES MODAL -->
+<div class="modal-overlay" id="samplesModal" onclick="if(event.target===this)closeSamplesModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSamplesModal()">✕</button>
+    <h3>Load a sample resume</h3>
+    <p>Try the toolkit with one of these sample profiles.</p>
+    <div class="sample-list">
+      <button class="sample-btn" onclick="loadSample('software')"><strong>👨‍💻 Software Engineer · 4 years</strong>Full-stack developer with React, Node.js, AWS. Worked at two startups. Built fintech products used by 50,000+ users.</button>
+      <button class="sample-btn" onclick="loadSample('marketing')"><strong>📣 Digital Marketing Manager · 6 years</strong>Growth & performance marketing specialist. Managed $2M+ ad spend. SEO, PPC, email expert.</button>
+      <button class="sample-btn" onclick="loadSample('fresher')"><strong>🎓 Recent Graduate · Computer Science</strong>2024 CS graduate. Internship at IT firm. Projects in Python ML and React. Seeking first full-time role.</button>
+      <button class="sample-btn" onclick="loadSample('pm')"><strong>📱 Product Manager · 8 years</strong>Led product teams at SaaS companies. Shipped 3 major products. 0→1 experience. Certified Scrum Product Owner.</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeShareModal()">✕</button>
+    <h3>Export & share</h3>
+    <p>Save or share your career toolkit.</p>
+    <div class="share-grid">
+      <button class="share-btn" onclick="downloadTxt();closeShareModal()">📄 Download .txt<br><span style="font-size:10px;color:var(--muted)">Plain text, all sections</span></button>
+      <button class="share-btn" onclick="downloadHTML();closeShareModal()">🌐 Download .html<br><span style="font-size:10px;color:var(--muted)">Formatted web page</span></button>
+      <button class="share-btn" onclick="copyAll();closeShareModal()">⧉ Copy to clipboard<br><span style="font-size:10px;color:var(--muted)">Paste anywhere</span></button>
+      <button class="share-btn" onclick="printToolkit();closeShareModal()">🖨️ Print / Save PDF<br><span style="font-size:10px;color:var(--muted)">Browser print dialog</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let toolkitData = {};
+let selectedTone = 'professional';
+let isLightMode = false;
+
+const SECTIONS = [
+  {id:'cover_letter',    num:1,  tab:'Cover Letter', group:'Outreach',   title:'ATS-Friendly Cover Letter',            sub:'350–450 words · Ready to send'},
+  {id:'recruiter_email', num:2,  tab:'Recruiter',    group:'Outreach',   title:'Recruiter Outreach Email',             sub:'Subject + body · Cold outreach'},
+  {id:'hiring_email',    num:3,  tab:'HM Email',     group:'Outreach',   title:'Hiring Manager Email',                 sub:'Direct outreach to decision maker'},
+  {id:'linkedin_request',num:4,  tab:'LinkedIn DM',  group:'Outreach',   title:'LinkedIn Connection Request',          sub:'Max 300 characters'},
+  {id:'referral',        num:5,  tab:'Referral',     group:'Outreach',   title:'Referral Request Message',             sub:'Ask a contact for an internal referral'},
+  {id:'followup',        num:6,  tab:'Follow-Up',    group:'Outreach',   title:'Follow-Up Email',                      sub:'Send 5 days after no response'},
+  {id:'intro',           num:7,  tab:'30s Intro',    group:'Networking', title:'30-Second Professional Introduction',  sub:'For interviews, networking & events'},
+  {id:'job_titles',      num:8,  tab:'Job Titles',   group:'Networking', title:'Top 10 Job Titles for Your Profile',   sub:'Best-fit roles based on your background'},
+  {id:'strengths',       num:9,  tab:'Strengths',    group:'Analysis',   title:'Key Strengths Recruiters Will Notice', sub:'Your standout qualities with evidence'},
+  {id:'skill_gap',       num:10, tab:'Skill Gap',    group:'Analysis',   title:'Skill Gap Analysis & Learning Roadmap',sub:'Current · Missing · Recommended roadmap'},
+  {id:'brand',           num:11, tab:'Brand',        group:'Branding',   title:'Personal Brand Summary',               sub:'UVP · Positioning · Headline'},
+  {id:'interview',       num:12, tab:'Interview',    group:'Branding',   title:'Interview Talking Points',             sub:'Achievements · Stories · Likely questions'}
+];
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(function(){
+  if(localStorage.getItem('ctg_theme') === 'light') toggleTheme();
+  const key = localStorage.getItem('ctg_apikey');
+  if(key) document.getElementById('apiKey').value = key;
+  document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => t.classList.toggle('on')));
+  loadHistory();
+})();
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function toggleTheme(){
+  isLightMode = !isLightMode;
+  document.body.classList.toggle('light-mode', isLightMode);
+  document.getElementById('themeToggle').textContent = isLightMode ? '🌙' : '☀️';
+  localStorage.setItem('ctg_theme', isLightMode ? 'light' : 'dark');
+}
+
+// ── API KEY ───────────────────────────────────────────────────────────────────
+function toggleApiVisibility(){
+  const inp = document.getElementById('apiKey');
+  const btn = document.querySelector('.show-btn');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
+}
+
+// ── TONE ──────────────────────────────────────────────────────────────────────
+function selectTone(el){
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedTone = el.dataset.tone;
+}
+
+// ── TOGGLES ───────────────────────────────────────────────────────────────────
+function toggleAll(on){
+  document.querySelectorAll('.tog').forEach(t => t.classList.toggle('on', on));
+}
+function getActiveSections(){
+  return [...document.querySelectorAll('.tog.on')].map(t => t.dataset.sec);
+}
+
+// ── CHAR COUNT ────────────────────────────────────────────────────────────────
+function updateCharCount(){
+  const n = document.getElementById('resumeText').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = n.toLocaleString() + ' characters';
+  el.className = 'char-count' + (n > 8000 ? ' warn' : '');
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+function dragOver(e){ e.preventDefault(); document.getElementById('uploadZone').classList.add('drag'); }
+function dragLeave(){ document.getElementById('uploadZone').classList.remove('drag'); }
+function dropFile(e){ e.preventDefault(); dragLeave(); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }
+function handleFile(e){ if(e.target.files[0]) processFile(e.target.files[0]); }
+function processFile(file){
+  if(file.type === 'text/plain'){
+    const r = new FileReader();
+    r.onload = ev => { document.getElementById('resumeText').value = ev.target.result; updateCharCount(); showToast('✓ File loaded', 'success'); };
+    r.readAsText(file);
+  } else if(file.type === 'application/pdf'){
+    showToast('PDF detected — extracting text…');
+    const r = new FileReader();
+    r.onload = async ev => {
+      try {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = async () => {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          const pdf = await window.pdfjsLib.getDocument({data: new Uint8Array(ev.target.result)}).promise;
+          let text = '';
+          for(let i=1;i<=pdf.numPages;i++){
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(s=>s.str).join(' ') + '\n';
+          }
+          document.getElementById('resumeText').value = text.trim();
+          updateCharCount();
+          showToast('✓ PDF text extracted', 'success');
+        };
+        document.head.appendChild(script);
+      } catch(err){ showToast('PDF extraction failed — paste text instead', 'error'); }
+    };
+    r.readAsArrayBuffer(file);
+  } else {
+    showToast('Please upload a .txt or .pdf file', 'error');
+  }
+}
+
+// ── SAMPLES ───────────────────────────────────────────────────────────────────
+const SAMPLES = {
+  software:`John Smith | john.smith@email.com | GitHub: github.com/johnsmith
+SUMMARY: Full-stack software engineer with 4 years of experience building scalable web applications at fintech startups. Expertise in React, Node.js, TypeScript, and AWS. Delivered features used by 50,000+ active users.
+EXPERIENCE:
+Senior Software Engineer — FinPay Inc (2022–Present)
+- Led frontend rewrite from Angular to React, reducing load time by 65% and increasing user retention by 22%
+- Built real-time transaction dashboard processing $2M+ daily volume
+- Mentored 3 junior engineers; conducted 50+ code reviews per quarter
+- Reduced AWS infrastructure costs by 30% through architecture optimization
+Software Engineer — BuildBase (2020–2022)
+- Developed REST APIs serving 500K+ requests/day using Node.js and PostgreSQL
+- Implemented CI/CD pipelines cutting deployment time from 2 hours to 12 minutes
+- Integrated Stripe payments processing $500K monthly
+SKILLS: React, TypeScript, Node.js, Python, PostgreSQL, MongoDB, AWS, Docker, Kubernetes, GraphQL, Redis
+EDUCATION: B.Tech Computer Science — IIT Delhi, 2020 | GPA: 8.4/10
+CERTIFICATIONS: AWS Solutions Architect Associate (2023), Google Cloud Professional Developer (2022)`,
+
+  marketing:`Priya Sharma | priya@email.com | New Delhi, India
+SUMMARY: Digital marketing manager with 6 years driving growth for e-commerce and D2C brands. Managed $2.3M+ in annual ad spend. Grew organic traffic 3x and email revenue 180% in 18 months.
+EXPERIENCE:
+Digital Marketing Manager — StyleCart (2021–Present)
+- Managed $1.5M annual paid media budget; achieved 4.2x ROAS
+- Led SEO strategy: 210% increase in organic sessions (800K to 2.5M/month)
+- Built email program from 0 to 280K subscribers; 38% open rate vs 21% industry average
+- Managed team of 5 (PPC, content, design)
+Marketing Specialist — Zorro Brands (2018–2021)
+- Executed performance campaigns generating $3.2M attributed revenue
+- Launched influencer program: 120+ creators, 6.8M reach
+SKILLS: Google Ads, Meta Ads, SEO, SEM, Klaviyo, GA4, Mixpanel, A/B Testing, HubSpot, Salesforce
+EDUCATION: MBA Marketing — Delhi University 2018
+CERTIFICATIONS: Google Ads Certified, Meta Blueprint, HubSpot Marketing Certified`,
+
+  fresher:`Arjun Patel | arjun.patel@gmail.com | Bangalore | github.com/arjunpatel
+SUMMARY: 2024 Computer Science graduate from VIT University. Strong foundation in software development and machine learning. 3-month internship building automation tools. Passionate about building products that solve real problems.
+EDUCATION: B.Tech Computer Science — VIT University, 2024 | CGPA: 8.7/10
+INTERNSHIP:
+Software Development Intern — TechSolutions Pvt Ltd (Jun–Aug 2023)
+- Built HR automation tool in Python saving 8 hours/week of manual work
+- Developed REST APIs using Flask, integrated with MySQL database
+- Shipped 2 features to production in agile sprints
+PROJECTS:
+HealthTrack (Final Year): ML-based health monitoring using Python, scikit-learn, Flask. 89% accuracy. Deployed on AWS EC2.
+ShopEasy (Personal): Full-stack e-commerce with React, Node.js, MongoDB, Razorpay payments.
+SKILLS: Python, Java, JavaScript, React, Node.js, Flask, MySQL, MongoDB, Git, scikit-learn, AWS (basic)
+CERTIFICATIONS: Python for Data Science — Coursera (2023), AWS Cloud Practitioner (2024)
+ACHIEVEMENTS: Smart India Hackathon 2023 — Finalist (Top 20 of 3,000+ teams)`,
+
+  pm:`Sarah Chen | sarah.chen@email.com | San Francisco, CA
+SUMMARY: Senior Product Manager with 8 years taking SaaS products from 0 to 1 and scaling to $50M+ ARR. Specialized in B2B enterprise software and data analytics platforms. Led cross-functional teams of 12–20.
+EXPERIENCE:
+Senior Product Manager — DataSphere (2020–Present)
+- Owned core analytics product; grew from $3M to $22M ARR in 3 years
+- Led 0→1 launch of self-serve analytics tier; acquired 2,400 SMB customers in 6 months
+- Reduced customer churn 35% by shipping 3 key retention features
+Product Manager — CloudOps Inc (2016–2020)
+- Launched DevOps automation product adopted by 180+ enterprise clients
+- Increased NPS from 28 to 67 through systematic user research
+- Managed integrations with Salesforce, Slack, and Jira
+SKILLS: Product Strategy, Roadmapping, User Research, SQL, Figma, JIRA, Amplitude, Mixpanel, A/B Testing, OKRs, Agile/Scrum
+EDUCATION: MBA — Stanford GSB 2016 | BS Computer Science — UC Berkeley 2014
+CERTIFICATIONS: Certified Scrum Product Owner (CSPO)`
+};
+
+function openSamplesModal(){ document.getElementById('samplesModal').classList.add('open'); }
+function closeSamplesModal(){ document.getElementById('samplesModal').classList.remove('open'); }
+function loadSample(key){
+  document.getElementById('resumeText').value = SAMPLES[key];
+  updateCharCount();
+  closeSamplesModal();
+  showToast('✓ Sample resume loaded', 'success');
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function saveHistory(role){
+  let hist = JSON.parse(localStorage.getItem('ctg_history') || '[]');
+  hist.unshift({ role: role || 'Unknown Role', date: new Date().toLocaleDateString(), data: toolkitData });
+  localStorage.setItem('ctg_history', JSON.stringify(hist.slice(0,5)));
+  loadHistory();
+}
+function loadHistory(){
+  const hist = JSON.parse(localStorage.getItem('ctg_history') || '[]');
+  const panel = document.getElementById('historyPanel');
+  const list = document.getElementById('historyList');
+  if(!hist.length){ panel.style.display='none'; return; }
+  panel.style.display='flex';
+  list.innerHTML = hist.map((h,i) => `
+    <div class="hist-item" onclick="restoreHistory(${i})">
+      <div><div class="hist-role">${escapeHTML(h.role)}</div><div class="hist-date">${h.date}</div></div>
+      <button class="hist-del" onclick="deleteHistory(event,${i})">✕</button>
+    </div>`).join('');
+}
+function restoreHistory(i){
+  const hist = JSON.parse(localStorage.getItem('ctg_history') || '[]');
+  if(!hist[i]) return;
+  toolkitData = hist[i].data;
+  const active = Object.keys(toolkitData).filter(k => k !== '_raw');
+  renderOutput(toolkitData, active);
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('outputArea').classList.add('visible');
+  showToast('✓ Session restored', 'success');
+}
+function deleteHistory(e,i){
+  e.stopPropagation();
+  const hist = JSON.parse(localStorage.getItem('ctg_history') || '[]');
+  hist.splice(i,1);
+  localStorage.setItem('ctg_history', JSON.stringify(hist));
+  loadHistory();
+}
+
+// ── LOADING STEPS ─────────────────────────────────────────────────────────────
+function setLoadingStep(n){
+  for(let i=1;i<=6;i++){
+    const el = document.getElementById('ls'+i);
+    el.className = i < n ? 'lstep done' : i === n ? 'lstep active' : 'lstep';
+  }
+}
+function setProgress(pct){ document.getElementById('progressFill').style.width = pct + '%'; }
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+async function generate(){
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const resume = document.getElementById('resumeText').value.trim();
+  if(!apiKey.startsWith('sk-')){ showToast('Enter a valid Anthropic API key (sk-ant-…)', 'error'); return; }
+  if(resume.length < 80){ showToast('Please paste your resume first', 'error'); return; }
+  const activeSections = getActiveSections();
+  if(!activeSections.length){ showToast('Select at least one section to generate', 'error'); return; }
+
+  localStorage.setItem('ctg_apikey', apiKey);
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('outputArea').classList.remove('visible');
+  document.getElementById('loadingState').classList.add('visible');
+  document.getElementById('progressBar').classList.add('visible');
+  setProgress(5); setLoadingStep(1);
+
+  const role     = document.getElementById('targetRole').value.trim();
+  const company  = document.getElementById('targetCompany').value.trim();
+  const industry = document.getElementById('targetIndustry').value.trim();
+  const level    = document.getElementById('expLevel').value;
+
+  const toneMap = {
+    professional: 'Professional, polished, and results-oriented. Confident but not arrogant.',
+    confident:    'Bold, assertive, and achievement-forward. Lead with impact. Strong action verbs.',
+    warm:         'Warm, personable, and human. Conversational yet professional. Builds rapport.',
+    concise:      'Sharp, direct, and concise. Every word earns its place. No fluff.'
+  };
+
+  const sectionDefs = {
+    cover_letter:    `SECTION cover_letter — ATS-Friendly Cover Letter (350–450 words): Strong opening hook, 2–3 paragraphs with specific quantified achievements, closing CTA. Keyword-dense for the target role.`,
+    recruiter_email: `SECTION recruiter_email — Recruiter Outreach Email: Format as "SUBJECT: [line]" then blank line then body (150–200 words). Cold outreach. Top 2–3 achievements. Ask for 15-min call.`,
+    hiring_email:    `SECTION hiring_email — Hiring Manager Email: Format as "SUBJECT: [line]" then blank line then body (150–200 words). Lead with business value and specific ROI.`,
+    linkedin_request:`SECTION linkedin_request — LinkedIn Connection Request: STRICT MAX 300 CHARACTERS TOTAL. Warm, states who you are and why connecting.`,
+    referral:        `SECTION referral — Referral Request Message (150–200 words): To a contact asking for internal referral. Polite, specific about the role, easy to forward to HR.`,
+    followup:        `SECTION followup — Follow-Up Email: Format as "SUBJECT: [line]" then blank line then body (100–150 words). Sent 5 days after no response. Adds new value point. Not pushy.`,
+    intro:           `SECTION intro — 30-Second Professional Introduction: Spoken script ~80–100 words. Who you are → what you do → key achievement → what you're looking for.`,
+    job_titles:      `SECTION job_titles — Top 10 Job Titles: Number 1–10. Each: "[N]. [Title] — [1-sentence reason this fits the candidate]"`,
+    strengths:       `SECTION strengths — Key Strengths (8–10): Each: "[Strength]: [1–2 sentences with specific resume evidence]"`,
+    skill_gap:       `SECTION skill_gap — Skill Gap Analysis:\nCURRENT STRENGTHS:\n[bullets]\nMISSING / WEAK SKILLS:\n[bullets with explanation]\nRECOMMENDED LEARNING ROADMAP:\n[3 prioritized steps with specific course or certification names]`,
+    brand:           `SECTION brand — Personal Brand Summary:\nUNIQUE VALUE PROPOSITION:\n[2–3 sentences]\nPROFESSIONAL POSITIONING STATEMENT:\n["I help [X] achieve [Y] by [Z]"]\nRECRUITER HEADLINE:\n[Under 120 chars for LinkedIn]`,
+    interview:       `SECTION interview — Interview Talking Points:\nTOP 3 ACHIEVEMENTS (STAR FORMAT):\n[3 with Situation/Task/Action/Result]\nKEY STORIES TO DISCUSS:\n[3 narrative arcs]\nLIKELY INTERVIEW QUESTIONS + GUIDANCE:\n[5 questions with brief answer strategy]`
+  };
+
+  const sectionInstructions = activeSections.map(sid => sectionDefs[sid] || sid).join('\n\n');
+
+  const prompt = `You are a world-class career coach, technical recruiter, and executive resume writer with 20+ years of experience.
+
+Based ONLY on the candidate's resume below, produce a complete job search toolkit. Use only facts from the resume — never fabricate details or metrics.
+
+CANDIDATE CONTEXT:
+- Target Role: ${role || 'infer best fit from resume'}
+- Target Company: ${company || 'write generically for the industry'}
+- Target Industry: ${industry || 'infer from resume'}
+- Experience Level: ${level === 'auto' ? 'infer from resume' : level}
+- Writing Tone: ${toneMap[selectedTone]}
+
+CRITICAL REQUIREMENTS:
+- Quantify every achievement where data exists in the resume
+- ATS-friendly: keyword-rich for the target role
+- Each piece must be ready to use without edits
+- Avoid generic AI phrasing — write like a seasoned human recruiter
+
+SECTIONS TO GENERATE:
+${sectionInstructions}
+
+OUTPUT FORMAT — CRITICAL:
+- Start each section EXACTLY: === SECTION_ID ===
+- End each section EXACTLY: === END ===
+- Use exact SECTION_IDs: ${activeSections.join(', ')}
+- No text outside section blocks
+
+RESUME:
+${resume}`;
+
+  let step = 1, prog = 5;
+  const ticker = setInterval(() => {
+    step = Math.min(step + 1, 5);
+    prog = Math.min(prog + 14, 78);
+    setLoadingStep(step);
+    setProgress(prog);
+  }, 3000);
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    clearInterval(ticker);
+    setLoadingStep(6); setProgress(95);
+
+    if(!resp.ok){
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const rawText = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+
+    toolkitData = parseToolkit(rawText, activeSections);
+    renderOutput(toolkitData, activeSections);
+    showATSScore();
+    saveHistory(role || inferRole(resume));
+    setProgress(100);
+
+    setTimeout(() => {
+      document.getElementById('loadingState').classList.remove('visible');
+      document.getElementById('progressBar').classList.remove('visible');
+      document.getElementById('outputArea').classList.add('visible');
+      setProgress(0);
+      showToast('✓ Career Toolkit ready!', 'success');
+    }, 400);
+
+  } catch(e) {
+    clearInterval(ticker);
+    document.getElementById('loadingState').classList.remove('visible');
+    document.getElementById('progressBar').classList.remove('visible');
+    const es = document.getElementById('emptyState');
+    es.style.display = '';
+    es.innerHTML = `<div class="empty-icon">⚠</div><h3 style="color:var(--danger)">Generation failed</h3><p>${escapeHTML(e.message)}</p><p style="margin-top:8px;font-size:12px;color:var(--muted)">Check your API key and resume length, then try again.</p>`;
+    showToast(e.message, 'error');
+    setProgress(0);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✦ Generate My Career Toolkit';
+}
+
+function inferRole(resume){
+  const m = resume.match(/(?:senior|lead|junior|principal)?\s*(?:software engineer|product manager|designer|developer|analyst|manager|director|engineer)/i);
+  return m ? m[0].trim() : 'Career Profile';
+}
+
+// ── PARSE ─────────────────────────────────────────────────────────────────────
+function parseToolkit(text, activeSections){
+  const result = {};
+  activeSections.forEach(sid => {
+    const re = new RegExp(`===\\s*${sid}\\s*===([\\s\\S]*?)===\\s*END\\s*===`, 'i');
+    const m = text.match(re);
+    result[sid] = m ? m[1].trim() : '⚠ Content not generated for this section. Try regenerating.';
+  });
+  result._raw = text;
+  return result;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderOutput(data, activeSections){
+  const header = document.getElementById('tabsHeader');
+  const body   = document.getElementById('tabsBody');
+  header.innerHTML = ''; body.innerHTML = '';
+
+  const groups = ['Outreach','Networking','Analysis','Branding'];
+  let firstGroup = null;
+
+  groups.forEach(g => {
+    const gSecs = SECTIONS.filter(s => s.group === g && activeSections.includes(s.id));
+    if(!gSecs.length) return;
+    if(!firstGroup) firstGroup = g;
+
+    const tab = document.createElement('div');
+    tab.className = 'tab';
+    tab.textContent = `${g} (${gSecs.length})`;
+    tab.dataset.group = g;
+    tab.onclick = () => switchTab(g);
+    header.appendChild(tab);
+
+    const pane = document.createElement('div');
+    pane.className = 'tab-content';
+    pane.id = 'pane_' + g;
+    gSecs.forEach(sec => pane.appendChild(renderSection(sec, data[sec.id] || '')));
+    body.appendChild(pane);
+  });
+
+  if(firstGroup) switchTab(firstGroup);
+}
+
+function switchTab(label){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.group === label));
+  document.querySelectorAll('.tab-content').forEach(p => p.classList.toggle('active', p.id === 'pane_' + label));
+}
+
+function renderSection(sec, content){
+  const wc = content.split(/\s+/).filter(Boolean).length;
+  const card = document.createElement('div');
+  card.className = 'sec-card';
+  card.id = 'card_' + sec.id;
+  card.innerHTML = `
+    <div class="sec-head" onclick="toggleCollapse('${sec.id}')">
+      <div class="sec-head-left">
+        <div class="sec-num">${sec.num}</div>
+        <div>
+          <div class="sec-title">${sec.title}</div>
+          <div class="sec-subtitle">${sec.sub}</div>
+        </div>
+      </div>
+      <div class="sec-actions" onclick="event.stopPropagation()">
+        <span class="wc-badge">${wc} words</span>
+        <button class="icon-btn" id="copyBtn_${sec.id}" onclick="copySection('${sec.id}')">⧉ Copy</button>
+        <button class="icon-btn" onclick="startEdit('${sec.id}')">✏ Edit</button>
+        <span class="collapse-icon">▾</span>
+      </div>
+    </div>
+    <div class="sec-body" id="body_${sec.id}">${escapeHTML(content)}</div>
+    <div class="sec-body-edit" id="edit_${sec.id}">
+      <textarea id="editArea_${sec.id}">${escapeHTML(content)}</textarea>
+      <div class="edit-actions">
+        <button class="edit-save" onclick="saveEdit('${sec.id}')">Save changes</button>
+        <button class="edit-cancel" onclick="cancelEdit('${sec.id}')">Cancel</button>
+      </div>
+    </div>`;
+  return card;
+}
+
+function toggleCollapse(sid){ document.getElementById('card_'+sid).classList.toggle('collapsed'); }
+function expandAll(){ document.querySelectorAll('.sec-card').forEach(c => c.classList.remove('collapsed')); }
+function collapseAll(){ document.querySelectorAll('.sec-card').forEach(c => c.classList.add('collapsed')); }
+
+function startEdit(sid){
+  document.getElementById('body_'+sid).style.display = 'none';
+  document.getElementById('edit_'+sid).style.display = 'block';
+  document.getElementById('editArea_'+sid).value = toolkitData[sid] || '';
+}
+function saveEdit(sid){
+  toolkitData[sid] = document.getElementById('editArea_'+sid).value;
+  document.getElementById('body_'+sid).textContent = toolkitData[sid];
+  cancelEdit(sid);
+  showToast('✓ Section updated', 'success');
+}
+function cancelEdit(sid){
+  document.getElementById('body_'+sid).style.display = '';
+  document.getElementById('edit_'+sid).style.display = 'none';
+}
+
+function copySection(sid){
+  navigator.clipboard.writeText(toolkitData[sid] || '').then(() => {
+    const btn = document.getElementById('copyBtn_'+sid);
+    if(btn){ btn.textContent='✓ Copied'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='⧉ Copy'; btn.classList.remove('copied'); }, 1800); }
+    showToast('Copied to clipboard', 'success');
+  }).catch(() => showToast('Copy failed — select manually', 'error'));
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+function searchSections(query){
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll('.sec-card').forEach(card => {
+    const sid = card.id.replace('card_','');
+    const body = card.querySelector('.sec-body');
+    if(!body) return;
+    if(!q){
+      card.style.display='';
+      body.innerHTML = escapeHTML(toolkitData[sid]||'');
+      return;
+    }
+    const text = (toolkitData[sid]||'').toLowerCase();
+    if(text.includes(q)){
+      card.style.display='';
+      card.classList.remove('collapsed');
+      const raw = escapeHTML(toolkitData[sid]||'');
+      body.innerHTML = raw.replace(new RegExp(escapeRegex(escapeHTML(q)),'gi'), m=>`<mark class="highlight">${m}</mark>`);
+    } else {
+      card.style.display='none';
+    }
+  });
+}
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ── ATS SCORE ─────────────────────────────────────────────────────────────────
+function showATSScore(){
+  const resume = document.getElementById('resumeText').value.toLowerCase();
+  const role   = document.getElementById('targetRole').value.toLowerCase();
+  const keywords = ['experience','skills','achieved','led','managed','developed','increased','reduced','launched','delivered','built','improved','collaborated','results','impact'];
+  const roleWords = role.split(/\s+/).filter(w=>w.length>3);
+  const all = [...keywords, ...roleWords];
+  const matches = all.filter(w => resume.includes(w)).length;
+  const score = Math.min(100, Math.round((matches / all.length) * 100 + 10));
+  const wrap = document.getElementById('atsScore');
+  const fill = document.getElementById('atsFill');
+  const val  = document.getElementById('atsVal');
+  wrap.style.display = 'block';
+  fill.style.width    = score + '%';
+  fill.style.background = score > 70 ? 'var(--success)' : score > 45 ? 'var(--warning)' : 'var(--danger)';
+  val.textContent = `${score}% (${score>70?'Strong':score>45?'Good':'Needs work'})`;
+  val.style.color = fill.style.background;
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function getCleanText(){
+  const role = document.getElementById('targetRole').value.trim() || 'Career Profile';
+  const lines = [`AI CAREER TOOLKIT — ${role.toUpperCase()}`, `Generated: ${new Date().toLocaleDateString()}`, '='.repeat(60), ''];
+  SECTIONS.forEach(s => {
+    if(!toolkitData[s.id]) return;
+    lines.push(`SECTION ${s.num}: ${s.title.toUpperCase()}`, '-'.repeat(50), toolkitData[s.id], '', '');
+  });
+  return lines.join('\n');
+}
+function copyAll(){
+  navigator.clipboard.writeText(getCleanText())
+    .then(()=>showToast('✓ All sections copied','success'))
+    .catch(()=>showToast('Copy failed','error'));
+}
+function downloadTxt(){
+  const role = document.getElementById('targetRole').value.trim() || 'career';
+  triggerDownload(new Blob([getCleanText()],{type:'text/plain'}), `career-toolkit-${slug(role)}.txt`);
+  showToast('✓ Download started','success');
+}
+function downloadHTML(){
+  const role = document.getElementById('targetRole').value.trim() || 'Career Profile';
+  let html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Career Toolkit — ${escapeHTML(role)}</title>
+<style>body{font-family:Georgia,serif;max-width:820px;margin:40px auto;padding:0 24px;color:#1a202c;line-height:1.8}h1{color:#6366f1;border-bottom:2px solid #6366f1;padding-bottom:12px}h2{color:#4338ca;margin-top:40px;border-left:4px solid #6366f1;padding-left:14px}pre{white-space:pre-wrap;font-family:inherit;background:#f8f9ff;padding:20px;border-radius:8px;border:1px solid #e5e7eb;font-size:14px}footer{margin-top:40px;color:#9ca3af;font-size:12px;border-top:1px solid #e5e7eb;padding-top:16px}</style></head><body>
+<h1>Career Toolkit — ${escapeHTML(role)}</h1><p style="color:#6b7280">Generated ${new Date().toLocaleDateString()}</p>`;
+  SECTIONS.forEach(s => {
+    if(!toolkitData[s.id]) return;
+    html += `<h2>Section ${s.num}: ${escapeHTML(s.title)}</h2><pre>${escapeHTML(toolkitData[s.id])}</pre>`;
+  });
+  html += `<footer>Created with AI Career Toolkit Generator</footer></body></html>`;
+  triggerDownload(new Blob([html],{type:'text/html'}), `career-toolkit-${slug(role)}.html`);
+  showToast('✓ HTML download started','success');
+}
+function printToolkit(){
+  const role = document.getElementById('targetRole').value.trim() || 'Career Profile';
+  const w = window.open('','_blank');
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Career Toolkit</title>
+  <style>body{font-family:Arial,sans-serif;max-width:800px;margin:20px auto;font-size:13px;line-height:1.7}h2{color:#4338ca;border-left:4px solid #6366f1;padding-left:10px;margin-top:30px}pre{white-space:pre-wrap;background:#f9f9f9;padding:14px;border-radius:6px;border:1px solid #e5e7eb}@media print{h2{color:#000;border-color:#000}}</style>
+  </head><body><h1>Career Toolkit — ${escapeHTML(role)}</h1>`;
+  SECTIONS.forEach(s => {
+    if(!toolkitData[s.id]) return;
+    html += `<h2>Section ${s.num}: ${escapeHTML(s.title)}</h2><pre>${escapeHTML(toolkitData[s.id])}</pre>`;
+  });
+  html += `</body></html>`;
+  w.document.write(html); w.document.close();
+  setTimeout(()=>w.print(), 500);
+}
+function triggerDownload(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+}
+function slug(s){ return s.replace(/\s+/g,'-').replace(/[^a-z0-9-]/gi,'').toLowerCase(); }
+
+// ── SHARE MODAL ───────────────────────────────────────────────────────────────
+function openShareModal(){ document.getElementById('shareModal').classList.add('open'); }
+function closeShareModal(){ document.getElementById('shareModal').classList.remove('open'); }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function escapeHTML(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
