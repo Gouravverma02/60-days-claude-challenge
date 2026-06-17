@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fleet Fuel Telemetry — AI Insights Dashboard</title>
+<style>
+:root{
+  --bg:#eef1f5;--surface:#ffffff;--ink:#161b22;--ink-soft:#4b5563;--line:#e3e7ee;
+  --graphite-1:#161b26;--graphite-2:#2a3344;--amber:#f59e0b;
+  --diesel:#6b7280;--petrol:#2563eb;--cng:#16a34a;--electric:#7c3aed;--ev:#7c3aed;--e85:#f59e0b;
+  --radius:14px;--shadow:0 1px 2px rgba(15,23,42,.04),0 6px 16px rgba(15,23,42,.06);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"Roboto Mono","SF Mono",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(14px,3vw,32px);}
+.mono{font-family:var(--mono);}
+
+.instrument{background:linear-gradient(135deg,var(--graphite-1),var(--graphite-2));border-radius:var(--radius);color:#f3f4f6;padding:clamp(16px,3vw,28px);position:relative;overflow:hidden;}
+.instrument::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--amber),transparent 80%);}
+.h-top{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end;}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9aa5b8;margin-bottom:4px;}
+.instrument h1{margin:0;font-size:clamp(20px,2.6vw,30px);font-weight:650;letter-spacing:-.01em;}
+.h-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 12px;font-size:12.5px;color:#e5e9f0;}
+.chip.mono{color:var(--amber);font-weight:600;}
+
+.note{margin-top:14px;background:#fff7e8;border:1px solid #fde8c2;color:#7a5210;border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.5;}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px;}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;box-shadow:var(--shadow);border-top:3px solid var(--accent);}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600;}
+.kpi-value{font-size:clamp(18px,2.4vw,24px);font-weight:700;margin-top:6px;}
+.kpi-note{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+
+.ai-panel{margin-top:18px;background:linear-gradient(180deg,#fffaf0,#fff);border:1px solid #fde8c2;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+.ai-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ai-head h2{margin:0;font-size:15px;font-weight:700;}
+.spark{font-size:16px;}
+.ai-tag{font-size:11px;color:var(--ink-soft);background:#f3f4f6;border-radius:999px;padding:3px 9px;}
+.ai-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.ai-list li{display:flex;gap:9px;font-size:13.5px;line-height:1.5;align-items:flex-start;}
+.ai-icon{flex:0 0 auto;}
+
+.charts{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px;}
+@media (min-width:880px){.charts{grid-template-columns:1fr 1fr;}}
+.chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.chart-card h2{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--ink);}
+.chart-box svg{width:100%;height:auto;display:block;}
+.chart-card.center{text-align:center;}
+
+.gridline{stroke:#eef0f4;stroke-width:1;}
+.axis-line{stroke:#cbd2dc;stroke-width:1;}
+.axis-label{font-size:10.5px;fill:var(--ink-soft);font-family:var(--mono);}
+.bar{transition:y .8s cubic-bezier(.4,0,.2,1),height .8s cubic-bezier(.4,0,.2,1);cursor:pointer;}
+.bar-value{font-size:12px;fill:var(--ink);font-weight:700;transition:opacity .4s ease;transition-delay:.5s;}
+.donut-seg{cursor:pointer;transition:opacity .15s ease;}
+.donut-seg:hover{opacity:.82;}
+.donut-center-label{font-size:13px;fill:var(--ink);font-weight:700;}
+.donut-center-sub{font-size:10.5px;fill:var(--ink-soft);}
+.trend-line{opacity:.9;}
+.trend-pt{cursor:pointer;}
+.gauge-tick{font-size:11px;fill:var(--ink-soft);font-family:var(--mono);}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;font-size:12px;color:var(--ink-soft);}
+.legend-row{display:flex;align-items:center;gap:6px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+.gauge-sub{margin-top:6px;font-size:12.5px;color:var(--ink-soft);}
+
+.fuelcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px;}
+.fuelcard{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--fc);}
+.fuelcard.primary{box-shadow:0 0 0 2px var(--fc),0 10px 28px -6px var(--fc);}
+.badge{position:absolute;top:-10px;right:14px;background:var(--fc);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 10px;border-radius:999px;}
+.fc-head{display:flex;align-items:center;gap:8px;}
+.fc-head h3{margin:0;font-size:16px;}
+.fc-stats{display:flex;gap:18px;margin-top:10px;}
+.fc-stats>div{display:flex;flex-direction:column;}
+.fc-stat-label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+.fc-stat-val{font-size:16px;font-weight:700;}
+.fc-meta{font-size:11.5px;color:var(--ink-soft);margin-top:8px;}
+.fc-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;}
+.fc-best{margin-top:10px;font-size:13px;font-weight:600;}
+
+footer{margin-top:20px;text-align:center;font-size:11.5px;color:var(--ink-soft);padding-bottom:8px;}
+
+.tooltip{position:fixed;pointer-events:none;background:var(--graphite-1);color:#fff;font-size:12px;padding:6px 10px;border-radius:8px;opacity:0;transition:opacity .12s ease;z-index:50;max-width:240px;box-shadow:0 8px 20px rgba(0,0,0,.25);}
+
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="instrument" id="header"></header>
+  <div class="note" id="dataNote"></div>
+  <section class="kpis" id="kpiGrid"></section>
+  <section class="ai-panel" id="aiPanel"></section>
+  <section class="charts">
+    <div class="chart-card"><h2>Cost / km by Fuel</h2><div class="chart-box" id="barBox"></div></div>
+    <div class="chart-card"><h2>CO₂ / km by Fuel</h2><div class="chart-box" id="donutBox"></div><div class="legend" id="donutLegend"></div></div>
+    <div class="chart-card"><h2>Cost / km Trend</h2><div class="chart-box" id="lineBox"></div><div class="legend" id="lineLegend"></div></div>
+    <div class="chart-card center"><h2 id="gaugeTitle">Efficiency Score</h2><div class="chart-box" id="gaugeBox"></div><div class="gauge-sub" id="gaugeSub"></div></div>
+  </section>
+  <section class="fuelcards" id="fuelCards"></section>
+  <footer id="footer"></footer>
+</div>
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- raw CSV data ---------------- */
+const rawData = [
+ {date:"2026-06-01",vehicle:"Truck-01",fuel:"Diesel",distance:320,cost:42.5,co2:85.4,trips:8},
+ {date:"2026-06-02",vehicle:"Truck-02",fuel:"Diesel",distance:280,cost:37.2,co2:74.8,trips:7},
+ {date:"2026-06-03",vehicle:"Van-01",fuel:"Petrol",distance:190,cost:28.4,co2:52.1,trips:12},
+ {date:"2026-06-04",vehicle:"EV-01",fuel:"Electric",distance:250,cost:12.6,co2:0,trips:10},
+ {date:"2026-06-05",vehicle:"Truck-03",fuel:"Diesel",distance:410,cost:55.7,co2:109.6,trips:11},
+ {date:"2026-06-06",vehicle:"Van-02",fuel:"CNG",distance:220,cost:18.9,co2:35.2,trips:9},
+ {date:"2026-06-07",vehicle:"EV-02",fuel:"Electric",distance:300,cost:14.1,co2:0,trips:13},
+ {date:"2026-06-08",vehicle:"Truck-04",fuel:"Diesel",distance:360,cost:48.3,co2:96.4,trips:10},
+ {date:"2026-06-09",vehicle:"Van-03",fuel:"Petrol",distance:210,cost:30.2,co2:57.3,trips:8},
+ {date:"2026-06-10",vehicle:"Truck-05",fuel:"Diesel",distance:450,cost:61.8,co2:120.5,trips:14}
+];
+
+const FUEL_COLORS = {Diesel:"#6b7280",Petrol:"#2563eb",CNG:"#16a34a",Electric:"#7c3aed",EV:"#7c3aed",E85:"#f59e0b"};
+const FUEL_KB = {
+  Diesel:{pros:["High torque for heavy loads & towing","Best range per tank on long routes"],cons:["Highest CO₂ per km recorded in this fleet","Highest running cost per km vs CNG/Electric"],best:"Heavy-duty, long-haul trucking"},
+  Petrol:{pros:["Wide refuelling network availability","Lower upfront vehicle purchase cost"],cons:["Highest cost per km recorded in this fleet","CO₂ per km on par with Diesel"],best:"Short-haul light vans, occasional use"},
+  CNG:{pros:["Lower cost per km than Diesel & Petrol","Lower CO₂ per km than Diesel & Petrol"],cons:["Fewer refuelling stations available","Less cargo space lost to gas cylinders"],best:"Mid-distance van routes near CNG stations"},
+  Electric:{pros:["Zero recorded tailpipe CO₂","Lowest cost per km in this fleet"],cons:["Charging time can limit long routes","Higher upfront vehicle cost, typically"],best:"Short / urban delivery loops"},
+  EV:{pros:["Zero recorded tailpipe CO₂","Lowest cost per km in this fleet"],cons:["Charging time can limit long routes","Higher upfront vehicle cost, typically"],best:"Short / urban delivery loops"}
+};
+
+/* ---------------- aggregation ---------------- */
+function aggregate(rows){
+  const map={};
+  rows.forEach(r=>{
+    if(!map[r.fuel]) map[r.fuel]={fuel:r.fuel,distance:0,cost:0,co2:0,trips:0,count:0,records:[]};
+    const g=map[r.fuel];
+    g.distance+=r.distance; g.cost+=r.cost; g.co2+=r.co2; g.trips+=r.trips; g.count+=1; g.records.push(r);
+  });
+  return Object.values(map).map(g=>({...g,avgCost:g.cost/g.distance,avgCo2:g.co2/g.distance}));
+}
+
+const fuels = aggregate(rawData);
+const totalDistance = rawData.reduce((s,r)=>s+r.distance,0);
+const totalCost = rawData.reduce((s,r)=>s+r.cost,0);
+const totalCo2 = rawData.reduce((s,r)=>s+r.co2,0);
+const totalTrips = rawData.reduce((s,r)=>s+r.trips,0);
+const vehicles = new Set(rawData.map(r=>r.vehicle));
+const dates = [...new Set(rawData.map(r=>r.date))].sort();
+const numDays = Math.round((new Date(dates[dates.length-1])-new Date(dates[0]))/86400000)+1;
+const yr = new Date(dates[0]+"T00:00:00").getFullYear();
+const fleetAvgCost = totalCost/totalDistance;
+
+const baseline = fuels.reduce((a,b)=> b.distance>a.distance?b:a);
+const cheapest = fuels.reduce((a,b)=> b.avgCost<a.avgCost?b:a);
+const cleanest = fuels.reduce((a,b)=> b.avgCo2<a.avgCo2?b:a);
+const hasAlt = cheapest.fuel!==baseline.fuel;
+
+const costSavingsPct = hasAlt ? (1-cheapest.avgCost/baseline.avgCost)*100 : 0;
+const costRatio = Math.max(0,Math.min(1, hasAlt ? 1-cheapest.avgCost/baseline.avgCost : 0));
+const co2Ratio = Math.max(0,Math.min(1, baseline.avgCo2>0 ? 1-cleanest.avgCo2/baseline.avgCo2 : 0));
+const effScore = costRatio*(40/7) + co2Ratio*(30/7);
+
+const switchSavingCost = hasAlt ? baseline.cost - baseline.distance*cheapest.avgCost : 0;
+const switchSavingCo2 = baseline.co2 - baseline.distance*cleanest.avgCo2;
+const monthlyCostProjected = totalCost/numDays*30;
+const monthlySwitchSaving = switchSavingCost/numDays*30;
+
+/* ---------------- formatters ---------------- */
+const fmtCpkm = v => "₹"+v.toFixed(3);
+const fmtMoney = v => "₹"+v.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtCo2km = v => v.toFixed(3)+" kg";
+const fmtKg = v => v.toLocaleString("en-IN",{maximumFractionDigits:1})+" kg";
+const fmtPct = v => v.toFixed(1)+"%";
+const fmtDate = d => new Date(d+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
+const colorFor = key => key==="amber" ? "#f59e0b" : (FUEL_COLORS[key]||"#f59e0b");
+
+/* ---------------- anomaly detection ---------------- */
+function findAnomaly(){
+  let worst=null;
+  fuels.forEach(g=>{
+    if(g.count<3) return;
+    const vals=g.records.map(r=>r.cost/r.distance);
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const variance=vals.reduce((a,b)=>a+(b-mean)*(b-mean),0)/vals.length;
+    const sd=Math.sqrt(variance);
+    g.records.forEach((r,i)=>{
+      const v=vals[i];
+      const z = sd>0 ? (v-mean)/sd : 0;
+      if(!worst || Math.abs(z)>Math.abs(worst.z)){
+        worst={record:r,fuel:g.fuel,z,pct:((v-mean)/mean)*100};
+      }
+    });
+  });
+  return worst;
+}
+const anomaly = findAnomaly();
+
+/* ---------------- render: header / note ---------------- */
+function renderHeader(){
+  document.getElementById("header").innerHTML = `
+    <div class="h-top">
+      <div>
+        <div class="eyebrow">Fleet Fuel Telemetry</div>
+        <h1>${vehicles.size} Vehicles · ${fuels.length} Fuel Types</h1>
+      </div>
+      <div class="h-chips">
+        <span class="chip">${fmtDate(dates[0])} – ${fmtDate(dates[dates.length-1])}, ${yr}</span>
+        <span class="chip mono">${totalDistance.toLocaleString("en-IN")} km</span>
+        <span class="chip mono">${totalTrips} trips</span>
+      </div>
+    </div>`;
+}
+function renderNote(){
+  document.getElementById("dataNote").innerHTML = `📋 This CSV has <strong>Date, Vehicle, Fuel_Type, Distance_km, Fuel_Cost, CO2_kg, Trips</strong> only — no maintenance, refuel-time, vehicle-age or E85 columns. Age-bucket, E85-paradox and maintenance views from the original brief are replaced below with a real cost/km trend, an Efficiency Score built from cost + CO₂, and auto-generated Smart Insights. Currency shown as ₹.`;
+}
+
+/* ---------------- render: KPIs ---------------- */
+function renderKPIs(){
+  const items=[
+    {label:"Fleet Avg Cost/km",value:fmtCpkm(fleetAvgCost),accent:"amber",note:`blended across ${fuels.length} fuel types`},
+    {label:`Cheapest Fuel · ${cheapest.fuel}`,value:fmtCpkm(cheapest.avgCost),accent:cheapest.fuel,note:`vs ${fmtCpkm(baseline.avgCost)} for ${baseline.fuel}`},
+    {label:`Savings vs ${baseline.fuel}`,value: hasAlt? fmtPct(costSavingsPct)+" cheaper":"—",accent:baseline.fuel,note:`${cheapest.fuel} vs primary fuel`},
+    {label:`Fuel Spend (${numDays}d)`,value:fmtMoney(totalCost),accent:"amber",note:`${totalDistance.toLocaleString("en-IN")} km logged`},
+    {label:"Projected Monthly Cost",value:fmtMoney(monthlyCostProjected),accent:"amber",note:"extrapolated @ current daily rate"}
+  ];
+  document.getElementById("kpiGrid").innerHTML = items.map(it=>`
+    <div class="kpi" style="--accent:${colorFor(it.accent)}">
+      <div class="kpi-label">${it.label}</div>
+      <div class="kpi-value mono">${it.value}</div>
+      <div class="kpi-note">${it.note}</div>
+    </div>`).join("");
+}
+
+/* ---------------- render: AI Smart Insights ---------------- */
+function buildInsights(){
+  const insights=[];
+  insights.push({icon:"💰",text: hasAlt
+    ? `${cheapest.fuel} runs cheapest at ${fmtCpkm(cheapest.avgCost)}/km — ${fmtPct(costSavingsPct)} less than ${baseline.fuel}, the fleet's primary fuel (${fmtPct(baseline.distance/totalDistance*100)} of total distance).`
+    : `${baseline.fuel} is both the fleet's primary and cheapest fuel at ${fmtCpkm(baseline.avgCost)}/km.`});
+  insights.push({icon:"🌱",text: cleanest.avgCo2===0
+    ? `${cleanest.fuel} produced zero recorded tailpipe CO₂ across ${cleanest.count} vehicle${cleanest.count>1?"s":""}.`
+    : `${cleanest.fuel} produced the least CO₂ per km at ${fmtCo2km(cleanest.avgCo2)}/km.`});
+  if(hasAlt && switchSavingCost>0){
+    insights.push({icon:"🔁",text:`Shifting the ${baseline.distance.toLocaleString("en-IN")} km currently run on ${baseline.fuel} to ${cheapest.fuel} rates would have saved about ${fmtMoney(switchSavingCost)} and ${fmtKg(switchSavingCo2)} of CO₂ over this ${numDays}-day window — roughly ${fmtMoney(monthlySwitchSaving)}/mo projected.`});
+  }
+  if(anomaly && Math.abs(anomaly.z)>1){
+    const dir = anomaly.pct>=0 ? "above" : "below";
+    insights.push({icon:"⚠️",text:`${anomaly.record.vehicle} (${fmtDate(anomaly.record.date)}) ran ${fmtPct(Math.abs(anomaly.pct))} ${dir} the ${anomaly.fuel} fleet-average cost/km — worth a quick check.`});
+  }
+  insights.push({icon:"📊",text:`${baseline.fuel} accounts for ${fmtPct(baseline.distance/totalDistance*100)} of total fleet distance across ${baseline.count} vehicles — the biggest lever for cost and emissions reduction.`});
+  return insights;
+}
+function renderInsights(){
+  document.getElementById("aiPanel").innerHTML = `
+    <div class="ai-head"><span class="spark">✨</span><h2>Smart Insights</h2><span class="ai-tag">auto-generated from fleet data</span></div>
+    <ul class="ai-list">${buildInsights().map(i=>`<li><span class="ai-icon">${i.icon}</span><span>${i.text}</span></li>`).join("")}</ul>`;
+}
+
+/* ---------------- chart: bar ---------------- */
+function buildBarChart(){
+  const W=600,H=320,ML=56,MR=20,MT=30,MB=54;
+  const plotW=W-ML-MR, plotH=H-MT-MB;
+  const sorted=[...fuels].sort((a,b)=>a.avgCost-b.avgCost);
+  const maxVal=Math.max(...sorted.map(f=>f.avgCost))*1.2;
+  const n=sorted.length, slot=plotW/n, barW=Math.min(70,slot*0.55);
+  const baseY=MT+plotH;
+  let grid="";
+  for(let i=0;i<=4;i++){
+    const v=maxVal*i/4, y=baseY-(v/maxVal)*plotH;
+    grid+=`<line x1="${ML}" y1="${y}" x2="${ML+plotW}" y2="${y}" class="gridline"/><text x="${ML-8}" y="${y+4}" text-anchor="end" class="axis-label">${v.toFixed(3)}</text>`;
+  }
+  let bars="", labels="";
+  sorted.forEach((f,i)=>{
+    const x=ML+slot*i+(slot-barW)/2;
+    const h=(f.avgCost/maxVal)*plotH;
+    const y=baseY-h;
+    const color=FUEL_COLORS[f.fuel]||"#f59e0b";
+    bars+=`<rect class="bar" data-tip="${f.fuel}: ${fmtCpkm(f.avgCost)}/km" x="${x.toFixed(1)}" y="${baseY}" width="${barW.toFixed(1)}" height="0" data-target-y="${y.toFixed(1)}" data-target-h="${h.toFixed(1)}" fill="${color}" rx="4"></rect>`;
+    bars+=`<text x="${(x+barW/2).toFixed(1)}" y="${(y-10).toFixed(1)}" text-anchor="middle" class="bar-value mono" opacity="0">${fmtCpkm(f.avgCost)}</text>`;
+    labels+=`<text x="${(x+barW/2).toFixed(1)}" y="${baseY+22}" text-anchor="middle" class="axis-label">${f.fuel}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" id="barSvg">${grid}<line x1="${ML}" y1="${baseY}" x2="${ML+plotW}" y2="${baseY}" class="axis-line"/>${bars}${labels}</svg>`;
+}
+function animateBars(){
+  const svg=document.getElementById("barSvg");
+  if(!svg) return;
+  const bars=svg.querySelectorAll(".bar"), vals=svg.querySelectorAll(".bar-value");
+  requestAnimationFrame(()=>{
+    bars.forEach(b=>{ b.setAttribute("y",b.dataset.targetY); b.setAttribute("height",b.dataset.targetH); });
+    vals.forEach(v=>v.setAttribute("opacity","1"));
+  });
+}
+
+/* ---------------- chart: donut ---------------- */
+function buildDonut(){
+  const size=300,r=100,sw=42,cx=size/2,cy=size/2;
+  const circumference=2*Math.PI*r;
+  const total=fuels.reduce((s,f)=>s+f.avgCo2,0);
+  const sorted=[...fuels].sort((a,b)=>b.avgCo2-a.avgCo2);
+  let offset=0, arcs="";
+  sorted.forEach(f=>{
+    const frac=total>0?f.avgCo2/total:0;
+    const len=frac*circumference;
+    const color=FUEL_COLORS[f.fuel]||"#f59e0b";
+    if(len>0.001){
+      arcs+=`<circle class="donut-seg" data-tip="${f.fuel}: ${fmtCo2km(f.avgCo2)}/km (${fmtPct(frac*100)} of shown total)" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-dasharray="${len.toFixed(2)} ${(circumference-len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"></circle>`;
+    }
+    offset+=len;
+  });
+  const svg=`<svg viewBox="0 0 ${size} ${size}" id="donutSvg">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="${sw}"></circle>
+    ${arcs}
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" class="donut-center-label">CO₂/km</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" class="donut-center-sub">by fuel</text>
+  </svg>`;
+  return {svg,sorted};
+}
+function renderDonutLegend(sorted){
+  document.getElementById("donutLegend").innerHTML = sorted.map(f=>{
+    const color=FUEL_COLORS[f.fuel]||"#f59e0b";
+    const zero=f.avgCo2===0;
+    return `<div class="legend-row"><span class="dot" style="background:${color}"></span>${f.fuel} — ${zero?"0.000 kg/km (zero emissions)":fmtCo2km(f.avgCo2)+"/km"}</div>`;
+  }).join("");
+}
+
+/* ---------------- chart: line trend ---------------- */
+function buildLineChart(){
+  const W=600,H=320,ML=58,MR=20,MT=24,MB=40;
+  const plotW=W-ML-MR, plotH=H-MT-MB;
+  const recs=rawData.map(r=>({...r,cpk:r.cost/r.distance}));
+  const maxVal=Math.max(...recs.map(r=>r.cpk))*1.15;
+  const baseY=MT+plotH;
+  const xFor=i=> ML + (dates.length>1 ? i*(plotW/(dates.length-1)) : plotW/2);
+  const yFor=v=> baseY-(v/maxVal)*plotH;
+  let grid="", gridLabels="";
+  for(let i=0;i<=3;i++){
+    const v=maxVal*i/3, y=baseY-(v/maxVal)*plotH;
+    grid+=`<line x1="${ML}" y1="${y.toFixed(1)}" x2="${ML+plotW}" y2="${y.toFixed(1)}" class="gridline"/>`;
+    gridLabels+=`<text x="${ML-8}" y="${(y+4).toFixed(1)}" text-anchor="end" class="axis-label">${v.toFixed(2)}</text>`;
+  }
+  let xlabels="";
+  dates.forEach((d,i)=>{ xlabels+=`<text x="${xFor(i).toFixed(1)}" y="${baseY+22}" text-anchor="middle" class="axis-label">${fmtDate(d).split(" ")[1]}</text>`; });
+  let lines="", points="";
+  fuels.forEach(f=>{
+    const pts=recs.filter(r=>r.fuel===f.fuel).map(r=>({i:dates.indexOf(r.date),r})).sort((a,b)=>a.i-b.i);
+    const color=FUEL_COLORS[f.fuel]||"#f59e0b";
+    if(pts.length>1){
+      const d=pts.map(p=>`${xFor(p.i).toFixed(1)},${yFor(p.r.cpk).toFixed(1)}`).join(" ");
+      lines+=`<polyline points="${d}" fill="none" stroke="${color}" stroke-width="2.5" class="trend-line"/>`;
+    }
+    pts.forEach(p=>{
+      points+=`<circle cx="${xFor(p.i).toFixed(1)}" cy="${yFor(p.r.cpk).toFixed(1)}" r="5" fill="${color}" stroke="#fff" stroke-width="1.5" class="trend-pt" data-tip="${p.r.vehicle} · ${fmtDate(p.r.date)} · ${f.fuel} · ${fmtCpkm(p.r.cpk)}/km"></circle>`;
+    });
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" id="lineSvg">${grid}<line x1="${ML}" y1="${baseY}" x2="${ML+plotW}" y2="${baseY}" class="axis-line"/>${xlabels}${gridLabels}${lines}${points}</svg>`;
+}
+function renderLineLegend(){
+  document.getElementById("lineLegend").innerHTML = fuels.map(f=>`<div class="legend-row"><span class="dot" style="background:${FUEL_COLORS[f.fuel]||"#f59e0b"}"></span>${f.fuel}</div>`).join("");
+}
+
+/* ---------------- chart: gauge (speedometer) ---------------- */
+const GAUGE={cx:160,cy:180,R:140,trackW:22,start:180,end:0,max:10,W:320,H:210};
+const NEEDLE_LEN = GAUGE.R - GAUGE.trackW/2 - 40;
+function gAngle(s){ return GAUGE.start - (s/GAUGE.max)*(GAUGE.start-GAUGE.end); }
+function gXY(angleDeg,radius){ const rad=angleDeg*Math.PI/180; return [GAUGE.cx+radius*Math.cos(rad), GAUGE.cy-radius*Math.sin(rad)]; }
+function gArcPath(s0,s1,radius){
+  const a0=gAngle(s0), a1=gAngle(s1);
+  const [x0,y0]=gXY(a0,radius), [x1,y1]=gXY(a1,radius);
+  return `M${x0.toFixed(1)},${y0.toFixed(1)} A${radius},${radius} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)}`;
+}
+function buildGaugeSVG(){
+  const {W,H,cx,cy,R,trackW}=GAUGE;
+  const zones=[{from:0,to:3,color:"#ef4444"},{from:3,to:7,color:"#f59e0b"},{from:7,to:10,color:"#0d9488"}];
+  const zoneArcs=zones.map(z=>`<path d="${gArcPath(z.from,z.to,R)}" fill="none" stroke="${z.color}" stroke-width="${trackW}" opacity="0.85"/>`).join("");
+  let ticks="";
+  for(let i=0;i<=10;i++){
+    const a=gAngle(i);
+    const [ix1,iy1]=gXY(a,R-trackW/2-4), [ix2,iy2]=gXY(a,R-trackW/2-16);
+    ticks+=`<line x1="${ix1.toFixed(1)}" y1="${iy1.toFixed(1)}" x2="${ix2.toFixed(1)}" y2="${iy2.toFixed(1)}" stroke="#94a3b8" stroke-width="2"/>`;
+    if(i%2===0){
+      const [lx,ly]=gXY(a,R-trackW/2-30);
+      ticks+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" class="gauge-tick">${i}</text>`;
+    }
+  }
+  const pivotColor=FUEL_COLORS[cheapest.fuel]||"#f59e0b";
+  const [nx0,ny0]=gXY(gAngle(0),NEEDLE_LEN);
+  return `<svg viewBox="0 0 ${W} ${H}" id="gaugeSvg">
+    <path d="${gArcPath(0,10,R)}" fill="none" stroke="#e5e7eb" stroke-width="${trackW+6}"/>
+    ${zoneArcs}${ticks}
+    <line id="gaugeNeedle" x1="${cx}" y1="${cy}" x2="${nx0.toFixed(1)}" y2="${ny0.toFixed(1)}" stroke="#161b22" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="11" fill="${pivotColor}" stroke="#fff" stroke-width="2.5"/>
+  </svg>`;
+}
+function animateGauge(target){
+  const needle=document.getElementById("gaugeNeedle");
+  const scoreEl=document.getElementById("gaugeScoreNum");
+  if(!needle) return;
+  const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){
+    const [x,y]=gXY(gAngle(target),NEEDLE_LEN);
+    needle.setAttribute("x2",x.toFixed(1)); needle.setAttribute("y2",y.toFixed(1));
+    if(scoreEl) scoreEl.textContent=target.toFixed(1);
+    return;
+  }
+  const dur=1200, t0=performance.now();
+  function frame(now){
+    const t=Math.min(1,(now-t0)/dur);
+    const eased=1-Math.pow(1-t,3);
+    const s=target*eased;
+    const [x,y]=gXY(gAngle(s),NEEDLE_LEN);
+    needle.setAttribute("x2",x.toFixed(1)); needle.setAttribute("y2",y.toFixed(1));
+    if(scoreEl) scoreEl.textContent=s.toFixed(1);
+    if(t<1) requestAnimationFrame(frame); else if(scoreEl) scoreEl.textContent=target.toFixed(1);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- fuel cards ---------------- */
+function renderFuelCards(){
+  const sorted=[...fuels].sort((a,b)=>b.distance-a.distance);
+  document.getElementById("fuelCards").innerHTML = sorted.map(f=>{
+    const kb = FUEL_KB[f.fuel] || {pros:["Lower than fleet-average cost/km","Data captured for this fuel"],cons:["Limited sample size in this dataset","Needs more data to benchmark"],best:"Further analysis recommended"};
+    const isPrimary = f.fuel===baseline.fuel;
+    const color = FUEL_COLORS[f.fuel]||"#f59e0b";
+    return `<div class="fuelcard ${isPrimary?"primary":""}" style="--fc:${color}">
+      ${isPrimary?'<div class="badge">Primary Fleet Fuel</div>':""}
+      <div class="fc-head"><span class="dot" style="background:${color}"></span><h3>${f.fuel}</h3></div>
+      <div class="fc-stats">
+        <div><span class="fc-stat-label">Cost/km</span><span class="mono fc-stat-val">${fmtCpkm(f.avgCost)}</span></div>
+        <div><span class="fc-stat-label">CO₂/km</span><span class="mono fc-stat-val">${f.avgCo2===0?"0.000":fmtCo2km(f.avgCo2)}</span></div>
+      </div>
+      <div class="fc-meta">${f.count} vehicle${f.count>1?"s":""} · ${f.distance.toLocaleString("en-IN")} km · ${f.trips} trips</div>
+      <ul class="fc-list">${kb.pros.map(p=>`<li>✅ ${p}</li>`).join("")}${kb.cons.map(c=>`<li>❌ ${c}</li>`).join("")}</ul>
+      <div class="fc-best">🚗 Best for: ${kb.best}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ---------------- footer ---------------- */
+function renderFooter(){
+  document.getElementById("footer").textContent = `Computed live from ${rawData.length} rows · ${vehicles.size} vehicles · ${fmtDate(dates[0])} – ${fmtDate(dates[dates.length-1])}, ${yr}`;
+}
+
+/* ---------------- tooltips ---------------- */
+const tipEl = document.getElementById("tooltip");
+function showTip(e,text){ tipEl.textContent=text; tipEl.style.opacity=1; moveTip(e); }
+function moveTip(e){ tipEl.style.left=(e.clientX+14)+"px"; tipEl.style.top=(e.clientY+14)+"px"; }
+function hideTip(){ tipEl.style.opacity=0; }
+function attachTooltips(){
+  document.querySelectorAll("[data-tip]").forEach(el=>{
+    el.addEventListener("mouseenter",e=>showTip(e,el.dataset.tip));
+    el.addEventListener("mousemove",moveTip);
+    el.addEventListener("mouseleave",hideTip);
+  });
+}
+
+/* ---------------- init ---------------- */
+function init(){
+  renderHeader();
+  renderNote();
+  renderKPIs();
+  renderInsights();
+  document.getElementById("barBox").innerHTML = buildBarChart();
+  const donut = buildDonut();
+  document.getElementById("donutBox").innerHTML = donut.svg;
+  renderDonutLegend(donut.sorted);
+  document.getElementById("lineBox").innerHTML = buildLineChart();
+  renderLineLegend();
+  document.getElementById("gaugeBox").innerHTML = buildGaugeSVG();
+  document.getElementById("gaugeTitle").textContent = `${cheapest.fuel} Efficiency Score`;
+  document.getElementById("gaugeSub").innerHTML = `<span class="mono" id="gaugeScoreNum" style="font-size:1.3em;font-weight:700;">0.0</span> / 10 · vs ${baseline.fuel} · cost + CO₂ weighted`;
+  renderFuelCards();
+  renderFooter();
+  attachTooltips();
+  animateBars();
+  animateGauge(effScore);
+}
+document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
