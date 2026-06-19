@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Intelligence Profile</title>
+<style>
+:root{
+  --bg-deep:#0B2818; --bg-deep2:#0E331E; --bg-card:rgba(245,242,234,0.045);
+  --gold:#E8B84B; --gold-soft:#C9A24B; --chalk:#F5F2EA;
+  --sage:#8FAE9C; --sage-dim:#5C7A66; --line:rgba(245,242,234,0.14);
+  --messi-blue:#6FA3C7; --ronaldo-red:#C06A5E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  font-family:'Inter','Helvetica Neue',Arial,sans-serif;
+  background:radial-gradient(circle at 50% -10%, #143824 0%, var(--bg-deep) 45%, #071c12 100%);
+  color:var(--chalk);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:32px 16px 60px;
+  position:relative;
+  overflow-x:hidden;
+}
+.bg-circle{
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:900px; height:900px; border-radius:50%;
+  border:1.5px solid rgba(245,242,234,0.05);
+  pointer-events:none; z-index:0;
+}
+.bg-circle::after{
+  content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:6px; height:6px; border-radius:50%; background:rgba(245,242,234,0.08);
+}
+.condensed{font-family:'DejaVu Sans Condensed', Arial, sans-serif; font-weight:700;}
+
+.shell{ width:100%; max-width:680px; position:relative; z-index:1; }
+
+.top-eyebrow{
+  font-size:13px; letter-spacing:4px; text-transform:uppercase;
+  color:var(--gold); font-weight:600; text-align:center; margin-bottom:8px;
+}
+.top-title{
+  font-size:clamp(32px,7vw,46px); text-align:center; text-transform:uppercase;
+  letter-spacing:0.5px; margin-bottom:6px; line-height:1.02;
+}
+.top-title span{color:var(--gold);}
+.top-sub{
+  text-align:center; color:var(--sage); font-size:14.5px; margin-bottom:34px;
+  max-width:480px; margin-left:auto; margin-right:auto; line-height:1.6;
+}
+
+.progress-track{
+  display:flex; gap:6px; margin-bottom:30px;
+}
+.progress-seg{
+  flex:1; height:4px; border-radius:2px; background:rgba(245,242,234,0.12); overflow:hidden;
+}
+.progress-seg.done{background:var(--gold);}
+.progress-seg.active{background:linear-gradient(90deg,var(--gold) 50%, rgba(245,242,234,0.12) 50%);}
+
+.panel{
+  background:var(--bg-card); border:1px solid var(--line); border-radius:16px;
+  padding:32px 28px; margin-bottom:18px; animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+.sec-label{
+  display:flex; align-items:center; gap:10px; font-size:12px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--sage); font-weight:700; margin-bottom:18px;
+}
+.sec-label .num{color:var(--gold); font-size:13px;}
+.sec-label::after{content:''; flex:1; height:1px; background:var(--line);}
+
+.q-text{font-size:19px; font-weight:600; margin-bottom:18px; line-height:1.4;}
+.q-meta{font-size:12px; color:var(--sage-dim); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; font-weight:700;}
+
+.opt-grid{display:flex; flex-direction:column; gap:10px;}
+.opt-btn{
+  background:rgba(245,242,234,0.03); border:1.5px solid var(--line); border-radius:10px;
+  padding:14px 18px; text-align:left; color:var(--chalk); font-size:15px; cursor:pointer;
+  transition:all .15s ease; font-family:inherit;
+}
+.opt-btn:hover{border-color:var(--gold-soft); background:rgba(232,184,75,0.07);}
+.opt-btn.selected{border-color:var(--gold); background:rgba(232,184,75,0.14); color:var(--gold);}
+.opt-btn:disabled{cursor:default;}
+
+.rating-row{display:flex; gap:8px; justify-content:space-between;}
+.rating-btn{
+  flex:1; aspect-ratio:1; border-radius:10px; border:1.5px solid var(--line);
+  background:rgba(245,242,234,0.03); color:var(--chalk); font-size:16px; font-weight:700;
+  cursor:pointer; transition:all .15s ease;
+}
+.rating-btn:hover{border-color:var(--gold-soft);}
+.rating-btn.selected{border-color:var(--gold); background:var(--gold); color:var(--bg-deep);}
+.rating-labels{display:flex; justify-content:space-between; font-size:11px; color:var(--sage-dim); margin-top:8px; letter-spacing:0.3px;}
+
+.btn-row{display:flex; gap:12px; margin-top:8px;}
+.btn{
+  font-family:inherit; font-size:14px; font-weight:700; letter-spacing:0.5px;
+  padding:14px 26px; border-radius:10px; cursor:pointer; border:none;
+  transition:all .15s ease; text-transform:uppercase;
+}
+.btn-primary{background:var(--gold); color:var(--bg-deep); flex:1;}
+.btn-primary:hover{background:#f0c668;}
+.btn-primary:disabled{background:rgba(232,184,75,0.3); color:rgba(11,40,24,0.5); cursor:not-allowed;}
+.btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--sage);}
+.btn-ghost:hover{border-color:var(--gold-soft); color:var(--gold-soft);}
+
+/* Stage 1 prediction tiles */
+.predict-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px;}
+.predict-tile{
+  flex:1; min-width:140px; background:rgba(245,242,234,0.04); border:1px solid var(--line);
+  border-radius:10px; padding:16px 14px;
+}
+.predict-tile.win{border-color:rgba(232,184,75,0.45);}
+.predict-tile .role{font-size:10.5px; letter-spacing:2px; text-transform:uppercase; color:var(--sage-dim); font-weight:700; margin-bottom:6px;}
+.predict-tile .team{font-size:23px; margin-bottom:4px;}
+.predict-tile .conf{font-size:12.5px; color:var(--gold); font-weight:700;}
+.evidence-block{background:rgba(245,242,234,0.03); border-left:2px solid var(--gold-soft); border-radius:6px; padding:14px 16px; margin-bottom:14px;}
+.evidence-block .ev-title{font-size:13px; font-weight:700; color:var(--gold-soft); margin-bottom:6px; letter-spacing:0.3px;}
+.evidence-block p{font-size:13.5px; color:var(--sage); line-height:1.65;}
+.evidence-block p b{color:var(--chalk);}
+.players-list{display:flex; flex-direction:column; gap:8px; margin-top:14px;}
+.player-row{display:flex; justify-content:space-between; align-items:center; background:rgba(245,242,234,0.03); border-radius:8px; padding:10px 14px; font-size:14px;}
+.player-row .pname{font-weight:600;}
+.player-row .pmeta{color:var(--sage-dim); font-size:12.5px;}
+
+/* Gauge */
+.gauge-section{display:flex; align-items:center; gap:24px; flex-wrap:wrap;}
+.gauge-wrap{position:relative; width:140px; height:140px; flex-shrink:0;}
+.gauge-num{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+.gauge-num .n{font-size:38px; color:var(--gold);}
+.gauge-num .d{font-size:10px; color:var(--sage); letter-spacing:1px; margin-top:2px;}
+.gauge-text .class-name{font-size:26px; color:var(--chalk); text-transform:uppercase; margin-bottom:8px;}
+.gauge-text .meta{font-size:13.5px; color:var(--sage); line-height:1.6;}
+.gauge-text .meta b{color:var(--chalk); font-weight:600;}
+
+/* Compatibility bar */
+.compat-names{display:flex; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:6px;}
+.compat-names .name{font-size:17px; letter-spacing:0.3px;}
+.compat-names .messi{color:var(--messi-blue);}
+.compat-names .ronaldo{color:var(--ronaldo-red);}
+.compat-bar{height:30px; border-radius:8px; overflow:hidden; display:flex; border:1px solid var(--line); margin-bottom:12px;}
+.compat-bar .seg{display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700;}
+.compat-bar .messi-seg{background:var(--messi-blue); color:#0B2818;}
+.compat-bar .ronaldo-seg{background:var(--ronaldo-red); color:#1a0d0b;}
+.compat-note{font-size:13.5px; color:var(--sage); line-height:1.6;}
+.compat-note b{color:var(--chalk);}
+
+.archetype-box{
+  background:linear-gradient(120deg, rgba(232,184,75,0.14), rgba(232,184,75,0.03));
+  border:1px solid rgba(232,184,75,0.4); border-radius:14px; padding:22px 22px; margin-top:16px;
+}
+.archetype-box .kicker{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold-soft); font-weight:700; margin-bottom:6px;}
+.archetype-box .name{font-size:30px; color:var(--gold); text-transform:uppercase; margin-bottom:10px;}
+.archetype-box .desc{font-size:14px; color:var(--chalk); line-height:1.6; opacity:0.92;}
+.trait-pills{display:flex; flex-wrap:wrap; gap:7px; margin-top:14px;}
+.trait-pill{font-size:11.5px; font-weight:600; color:var(--bg-deep); background:var(--sage); padding:5px 12px; border-radius:20px;}
+
+.recs-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
+.rec-tile{background:rgba(245,242,234,0.04); border:1px solid var(--line); border-radius:10px; padding:14px 14px;}
+.rec-tile .label{font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--sage-dim); font-weight:700; margin-bottom:6px;}
+.rec-tile .value{font-size:16px; color:var(--chalk);}
+
+.nav-label{font-size:12px; color:var(--sage-dim); text-align:center; margin-bottom:14px; letter-spacing:0.3px;}
+
+/* Leaderboard */
+.lb-item{
+  display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px;
+  background:rgba(245,242,234,0.03); border:1px solid var(--line); margin-bottom:8px;
+}
+.lb-rank{font-size:15px; color:var(--gold-soft); width:24px; flex-shrink:0; text-align:center;}
+.lb-name{flex:1; font-size:14px; font-weight:600;}
+.lb-archetype{font-size:11.5px; color:var(--sage); flex-shrink:0;}
+.lb-leg{font-size:12px; font-weight:700; padding:3px 10px; border-radius:12px; flex-shrink:0;}
+.lb-leg.messi{background:rgba(111,163,199,0.2); color:var(--messi-blue);}
+.lb-leg.ronaldo{background:rgba(192,106,94,0.2); color:var(--ronaldo-red);}
+.empty-state{text-align:center; color:var(--sage-dim); font-size:13.5px; padding:24px 0;}
+
+.name-input{
+  width:100%; background:rgba(245,242,234,0.05); border:1.5px solid var(--line); border-radius:10px;
+  padding:14px 16px; color:var(--chalk); font-size:15px; font-family:inherit; margin-bottom:14px;
+}
+.name-input::placeholder{color:var(--sage-dim);}
+.name-input:focus{outline:none; border-color:var(--gold-soft);}
+
+.footer-credit{
+  text-align:center; font-size:11.5px; color:var(--sage-dim); margin-top:30px; letter-spacing:0.3px;
+}
+.loading-msg{text-align:center; color:var(--sage); font-size:13px; padding:30px 0;}
+.toggle-link{
+  display:block; text-align:center; color:var(--gold-soft); font-size:13px; margin-top:6px;
+  cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+
+/* ---- AI FEATURES ---- */
+.ai-badge{
+  display:inline-flex; align-items:center; gap:5px; font-size:10.5px; letter-spacing:1.5px;
+  text-transform:uppercase; font-weight:700; color:var(--bg-deep); background:var(--gold);
+  padding:3px 9px; border-radius:20px; margin-bottom:12px;
+}
+.ai-badge::before{ content:'✦'; font-size:9px; }
+
+.ai-commentary{
+  background:linear-gradient(135deg, rgba(232,184,75,0.10), rgba(232,184,75,0.03));
+  border:1px solid rgba(232,184,75,0.35); border-radius:12px; padding:18px 20px; margin-top:18px;
+}
+.ai-commentary p{ font-size:14px; color:var(--chalk); line-height:1.7; opacity:0.93; }
+.ai-loading{ display:flex; align-items:center; gap:8px; color:var(--sage); font-size:13px; padding:8px 0; }
+.ai-loading .dots span{ animation:blink 1.2s infinite; }
+.ai-loading .dots span:nth-child(2){ animation-delay:.2s; }
+.ai-loading .dots span:nth-child(3){ animation-delay:.4s; }
+@keyframes blink{ 0%,80%,100%{opacity:0.2;} 40%{opacity:1;} }
+
+/* AI Chat */
+.ai-chat-panel{
+  background:var(--bg-card); border:1px solid var(--line); border-radius:16px;
+  margin-bottom:18px; overflow:hidden;
+}
+.ai-chat-header{
+  display:flex; align-items:center; gap:10px; padding:16px 20px;
+  border-bottom:1px solid var(--line); cursor:pointer; user-select:none;
+}
+.ai-chat-header .ch-title{ flex:1; font-size:15px; font-weight:700; }
+.ai-chat-header .ch-icon{ font-size:18px; }
+.ai-chat-header .ch-toggle{ color:var(--sage-dim); font-size:12px; }
+.chat-body{ display:none; padding:0 0 0; }
+.chat-body.open{ display:flex; flex-direction:column; }
+.chat-messages{
+  max-height:340px; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:12px;
+  scrollbar-width:thin; scrollbar-color:rgba(245,242,234,0.1) transparent;
+}
+.msg{ display:flex; flex-direction:column; gap:4px; }
+.msg.user{ align-items:flex-end; }
+.msg.ai{ align-items:flex-start; }
+.msg-bubble{
+  max-width:85%; padding:11px 15px; border-radius:12px; font-size:13.5px; line-height:1.6;
+}
+.msg.user .msg-bubble{ background:rgba(232,184,75,0.18); border:1px solid rgba(232,184,75,0.3); color:var(--chalk); border-bottom-right-radius:3px; }
+.msg.ai .msg-bubble{ background:rgba(245,242,234,0.06); border:1px solid var(--line); color:var(--chalk); border-bottom-left-radius:3px; }
+.msg-label{ font-size:10px; letter-spacing:1px; color:var(--sage-dim); font-weight:700; text-transform:uppercase; padding:0 4px; }
+.chat-input-row{
+  display:flex; gap:8px; padding:14px 16px; border-top:1px solid var(--line); background:rgba(0,0,0,0.15);
+}
+.chat-input{
+  flex:1; background:rgba(245,242,234,0.05); border:1.5px solid var(--line); border-radius:8px;
+  padding:10px 14px; color:var(--chalk); font-size:13.5px; font-family:inherit; resize:none;
+  max-height:100px; min-height:40px;
+}
+.chat-input::placeholder{ color:var(--sage-dim); }
+.chat-input:focus{ outline:none; border-color:var(--gold-soft); }
+.chat-send{
+  background:var(--gold); border:none; border-radius:8px; padding:0 16px; cursor:pointer;
+  color:var(--bg-deep); font-size:16px; font-weight:700; flex-shrink:0; transition:background .15s;
+}
+.chat-send:hover{ background:#f0c668; }
+.chat-send:disabled{ background:rgba(232,184,75,0.3); cursor:not-allowed; color:rgba(11,40,24,0.5); }
+
+/* AI Match Predictor */
+.predictor-grid{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin-bottom:14px; }
+.pred-input{
+  background:rgba(245,242,234,0.05); border:1.5px solid var(--line); border-radius:10px;
+  padding:12px 14px; color:var(--chalk); font-size:14px; font-family:inherit; text-align:center;
+}
+.pred-input::placeholder{ color:var(--sage-dim); }
+.pred-input:focus{ outline:none; border-color:var(--gold-soft); }
+.vs-label{ color:var(--gold); font-size:15px; font-weight:700; text-align:center; }
+.pred-result-box{
+  background:rgba(245,242,234,0.03); border:1px solid var(--line); border-radius:12px;
+  padding:16px 18px; margin-top:12px; display:none;
+}
+.pred-result-box.visible{ display:block; }
+.pred-result-box .winner{ font-size:22px; color:var(--gold); font-weight:700; text-transform:uppercase; margin-bottom:6px; }
+.pred-result-box .reason{ font-size:13.5px; color:var(--sage); line-height:1.6; }
+.pred-result-box .reason b{ color:var(--chalk); }
+</style>
+</head>
+<body>
+<div class="bg-circle" id="bgCircle"></div>
+<div class="shell" id="app"></div>
+
+<script>
+/* ============== WORKBOOK DATA (embedded, grounded in ABTalks_WorldCup_Intelligence_Master.xlsx) ============== */
+const DATA = {
+  historical: [
+    {team:'Argentina', winPct:68}, {team:'France', winPct:62}, {team:'Brazil', winPct:70},
+    {team:'England', winPct:58}, {team:'Spain', winPct:60}, {team:'Germany', winPct:56},
+    {team:'Portugal', winPct:54}, {team:'Netherlands', winPct:58}, {team:'Croatia', winPct:48}, {team:'Morocco', winPct:44}
+  ],
+  finals: [
+    {year:2006, winner:'Italy', runnerUp:'France', goldenBall:'Zidane', goldenBoot:'Klose'},
+    {year:2010, winner:'Spain', runnerUp:'Netherlands', goldenBall:'Forlan', goldenBoot:'Muller'},
+    {year:2014, winner:'Germany', runnerUp:'Argentina', goldenBall:'Messi', goldenBoot:'Rodriguez'},
+    {year:2018, winner:'France', runnerUp:'Croatia', goldenBall:'Modric', goldenBoot:'Kane'},
+    {year:2022, winner:'Argentina', runnerUp:'France', goldenBall:'Messi', goldenBoot:'Mbappe'}
+  ],
+  contenders: [
+    {team:'Argentina', rank:1, formScore:92, goalsConceded:6, goalsScored:22},
+    {team:'Spain', rank:2, formScore:91, goalsConceded:5, goalsScored:24},
+    {team:'France', rank:3, formScore:90, goalsConceded:8, goalsScored:21},
+    {team:'England', rank:4, formScore:89, goalsConceded:7, goalsScored:20},
+    {team:'Portugal', rank:5, formScore:88, goalsConceded:7, goalsScored:19},
+    {team:'Brazil', rank:6, formScore:88, goalsConceded:10, goalsScored:23},
+    {team:'Germany', rank:9, formScore:87, goalsConceded:11, goalsScored:22},
+    {team:'Morocco', rank:12, formScore:86, goalsConceded:6, goalsScored:15}
+  ],
+  players: [
+    {name:'Lionel Messi', country:'Argentina', position:'Forward', goals:20, assists:12, rating:96},
+    {name:'Cristiano Ronaldo', country:'Portugal', position:'Forward', goals:18, assists:5, rating:94},
+    {name:'Kylian Mbappe', country:'France', position:'Forward', goals:22, assists:8, rating:95},
+    {name:'Erling Haaland', country:'Norway', position:'Forward', goals:25, assists:4, rating:94},
+    {name:'Jude Bellingham', country:'England', position:'Midfielder', goals:10, assists:9, rating:91}
+  ],
+  liveNote: 'Argentina opened 2026 with a 3-0 win over Algeria; Spain drew 0-0 with Cape Verde; Brazil drew 1-1 with Morocco; Germany beat Curaçao 7-1 (21 group matches played as of June 17, 2026).'
+};
+
+const ARCHETYPES = {
+  quiet_leader: {
+    name:'Quiet Leader',
+    desc:'You lead by example and substance, not noise — setting high private standards, staying composed under pressure, and measuring success by what the team achieves.',
+    traits:['Team-First','Composed','Analytical','Disciplined','Leads by Delegation']
+  },
+  relentless_competitor: {
+    name:'Relentless Competitor',
+    desc:'Losing fuels you. You chase records, demand more from yourself than anyone else could, and treat every setback as proof you need to work harder.',
+    traits:['Hyper-Driven','Self-Critical','Goal-Obsessed','High Intensity','Individually Ambitious']
+  },
+  creative_playmaker: {
+    name:'Creative Playmaker',
+    desc:'You see angles others miss. Structure matters less to you than invention — you would rather try something unexpected than repeat the safe, predictable option.',
+    traits:['Inventive','Instinctive','Flexible','Expressive','Risk-Tolerant']
+  },
+  tactical_visionary: {
+    name:'Tactical Visionary',
+    desc:'You think several steps ahead. Before acting, you map the system, anticipate consequences, and make decisions based on long-range logic rather than impulse.',
+    traits:['Strategic','Patient','Detail-Oriented','Calculated','Big-Picture']
+  },
+  fearless_attacker: {
+    name:'Fearless Attacker',
+    desc:'You move first and adjust later. Hesitation costs more than mistakes do in your mind — you back yourself to act decisively under pressure.',
+    traits:['Bold','Instinctive','High-Confidence','Action-Oriented','Pressure-Resistant']
+  },
+  strategic_commander: {
+    name:'Strategic Commander',
+    desc:'You take charge naturally, organizing people and resources toward a clear goal. Others look to you for direction in chaotic moments.',
+    traits:['Commanding','Organized','Decisive','Vocal','Big-Stage Ready']
+  },
+  consistent_performer: {
+    name:'Consistent Performer',
+    desc:'You show up at a high level every time, not just when it is easy. Reliability, not flash, is what defines your reputation.',
+    traits:['Dependable','Steady','Disciplined','Low-Ego','Process-Driven']
+  },
+  big_match_specialist: {
+    name:'Big-Match Specialist',
+    desc:'Ordinary days do not define you — the biggest moments do. You raise your level precisely when the stakes are highest.',
+    traits:['Clutch','Confident','Pressure-Thriving','Bold','Result-Focused']
+  }
+};
+
+/* ============== STATE ============== */
+let state = {
+  stage: 'landing',
+  knowledge: null,
+  quizAnswers: {},
+  quizScore: 0,
+  personalityAnswers: {},
+  messiPct: 0,
+  ronaldoPct: 0,
+  archetypeKey: null,
+  userName: ''
+};
+
+/* ============== QUIZ DEFINITIONS ============== */
+function getIQQuiz(level){
+  // calibrate difficulty mix based on knowledge level (1-4)
+  const base = [
+    {id:'q1', level:'Beginner', text:'A draw in the group stage gives each team how many points?', options:['0 points','1 point','2 points','3 points'], correct:1},
+    {id:'q2', level:'Beginner', text:'Per the workbook, who is the reigning World Cup winner (2022)?', options:['France','Brazil','Argentina','Spain'], correct:2},
+    {id:'q3', level:'Intermediate', text:"Per the workbook's contender table, which team currently has the BEST defense (fewest goals conceded recently)?", options:['Argentina','Spain','England','Brazil'], correct:1},
+    {id:'q4', level:'Intermediate', text:'Per the workbook, who won the Golden Ball (best player) at the 2018 World Cup?', options:['Lionel Messi','Cristiano Ronaldo','Kylian Mbappe','Luka Modric'], correct:3},
+    {id:'q5', level:'Advanced', text:"In the workbook's 2026 live data, which team has ALREADY drawn with Brazil in the group stage?", options:['Argentina','Morocco','Germany','Netherlands'], correct:1}
+  ];
+  return base;
+}
+
+const PERSONALITY_QUIZ = [
+  {id:'p1', type:'mc', trait:'leadership', text:"You're handed a major project with a tight deadline. What's your instinct?",
+    options:[
+      {label:'Map out a step-by-step plan immediately', value:'tactical'},
+      {label:'Dive in and figure it out as I go', value:'instinct'},
+      {label:'Rally a team and delegate pieces', value:'lead_delegate'},
+      {label:'Visualize the end result first, then reverse-engineer', value:'visionary'}
+    ]},
+  {id:'p2', type:'rating', trait:'discipline', text:'I stick to my routines even when no one is watching.'},
+  {id:'p3', type:'mc', trait:'leadership', text:'In a group project, you naturally end up...',
+    options:[
+      {label:'The quiet one who just gets things done', value:'quiet_doer'},
+      {label:'The one giving direction and motivating others', value:'vocal_leader'},
+      {label:'The one solving problems creatively on the fly', value:'creative'},
+      {label:'The one others copy because you are consistently reliable', value:'reliable'}
+    ]},
+  {id:'p4', type:'rating', trait:'risk', text:"I'd rather try a risky, creative solution than play it safe."},
+  {id:'p5', type:'mc', trait:'competitiveness', text:"When you lose at something competitive, what's your honest reaction?",
+    options:[
+      {label:'Losing is just data — analyze it and move on', value:'analytical'},
+      {label:'Losing genuinely bothers me for a while', value:'emotional'},
+      {label:'I get fired up and want an immediate rematch', value:'fiery'},
+      {label:'I focus on what I personally could have done better', value:'self_critical'}
+    ]},
+  {id:'p6', type:'mc', trait:'learning', text:'When learning a new skill, you learn best by...',
+    options:[
+      {label:'Watching others do it first, then copying the method', value:'observation'},
+      {label:'Trial and error — just doing it repeatedly', value:'trial_error'},
+      {label:'Studying theory/instructions before attempting', value:'theory'},
+      {label:'Getting direct feedback from a mentor or coach', value:'feedback'}
+    ]},
+  {id:'p7', type:'rating', trait:'confidence', text:"I genuinely believe I'm one of the best at what I do."},
+  {id:'p8', type:'mc', trait:'decision', text:'When making an important decision under pressure, you tend to...',
+    options:[
+      {label:'Go with my gut instinct immediately', value:'gut'},
+      {label:'Weigh pros and cons carefully before deciding', value:'analytical'},
+      {label:'Ask others for input before deciding', value:'collaborative'},
+      {label:"Decide based on what's worked before", value:'experience'}
+    ]},
+  {id:'p9', type:'mc', trait:'work_ethic', text:'Which best describes your work ethic?',
+    options:[
+      {label:'I push myself harder than anyone could push me', value:'relentless'},
+      {label:'I work hard but value rest and balance equally', value:'balanced'},
+      {label:'I work in intense bursts, not constant grind', value:'bursts'},
+      {label:'I work best with external accountability/deadlines', value:'accountability'}
+    ]},
+  {id:'p10', type:'rating', trait:'ambition', text:'I set extremely high, almost unreasonable goals for myself.'},
+  {id:'p11', type:'mc', trait:'pressure', text:'In a big, high-pressure moment, how do you behave?',
+    options:[
+      {label:'I get quieter and more focused', value:'quiet_focus'},
+      {label:'I get more vocal and animated', value:'vocal_energy'},
+      {label:'I stick to my normal process, nothing changes', value:'steady'},
+      {label:"I look to whoever's hot and follow their lead", value:'follow'}
+    ]},
+  {id:'p12', type:'mc', trait:'confidence_style', text:'How do you prefer to handle doubters/critics?',
+    options:[
+      {label:'Quietly proving people wrong through results', value:'quiet_proof'},
+      {label:"Vocally backing myself before I've even proven it", value:'vocal_backing'},
+      {label:"Letting the team's success speak for me", value:'team_speaks'},
+      {label:'Staying calm because I trust my preparation', value:'calm_trust'}
+    ]},
+  {id:'p13', type:'mc', trait:'teamwork', text:'What matters most to you in a long-term pursuit?',
+    options:[
+      {label:"Total team success, even if I'm not the headline", value:'team_success'},
+      {label:'Personal records and individual milestones', value:'personal_records'},
+      {label:'Being remembered as the greatest ever', value:'goat_status'},
+      {label:'Consistency — showing up at a high level every time', value:'consistency'}
+    ]}
+];
+
+/* ============== STORAGE HELPERS ============== */
+async function loadLeaderboard(){
+  try{
+    const res = await window.storage.get('leaderboard', true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveToLeaderboard(entry){
+  try{
+    const list = await loadLeaderboard();
+    list.unshift(entry);
+    const trimmed = list.slice(0, 100);
+    await window.storage.set('leaderboard', JSON.stringify(trimmed), true);
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ============== RENDER ENGINE ============== */
+const app = document.getElementById('app');
+
+function render(){
+  if(state.stage === 'landing') return renderLanding();
+  if(state.stage === 'stage0') return renderStage0();
+  if(state.stage === 'stage1') return renderStage1();
+  if(state.stage === 'stage2') return renderStage2();
+  if(state.stage === 'stage3') return renderStage3();
+  if(state.stage === 'results') return renderResults();
+  if(state.stage === 'leaderboard') return renderLeaderboard();
+}
+
+function progressBar(activeIdx){
+  const labels = ['Level','Predict','IQ Quiz','Personality','Profile'];
+  let html = '<div class="progress-track">';
+  for(let i=0;i<5;i++){
+    let cls = 'progress-seg';
+    if(i < activeIdx) cls += ' done';
+    else if(i === activeIdx) cls += ' active';
+    html += `<div class="${cls}"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderLanding(){
+  app.innerHTML = `
+    <div class="top-eyebrow">ABTalks Intelligence Report</div>
+    <div class="top-title condensed">FOOTBALL<br>INTELLIGENCE <span>PROFILE</span></div>
+    <div class="top-sub">Get a World Cup 2026 prediction, test your Football IQ, and find out whether you match Messi or Ronaldo — all built from real tournament data.</div>
+    <div class="panel" style="text-align:center;">
+      <div class="sec-label" style="justify-content:center;"><span class="num">START</span></div>
+      <p style="color:var(--sage); font-size:14px; margin-bottom:20px; line-height:1.6;">Takes about 3 minutes. Your result can be saved to the public leaderboard.</p>
+      <button class="btn btn-primary" style="width:100%;" onclick="goTo('stage0')">Begin My Profile</button>
+    </div>
+
+    <div class="ai-chat-panel">
+      <div class="ai-chat-header" onclick="togglePanel('predictorBody','predictorToggle')">
+        <span class="ch-icon">⚽</span>
+        <div class="ch-title">AI Match Predictor</div>
+        <div class="ai-badge" style="margin-bottom:0;">AI</div>
+        <span class="ch-toggle" id="predictorToggle">▼ Open</span>
+      </div>
+      <div class="chat-body" id="predictorBody">
+        <div style="padding:18px 20px;">
+          <p style="color:var(--sage); font-size:13.5px; margin-bottom:16px; line-height:1.6;">Enter any two national teams and get an AI-powered prediction with tactical analysis.</p>
+          <div class="predictor-grid">
+            <input class="pred-input" id="team1" placeholder="e.g. Argentina" />
+            <div class="vs-label">VS</div>
+            <input class="pred-input" id="team2" placeholder="e.g. France" />
+          </div>
+          <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="runPrediction()">Predict Match</button>
+          <div class="pred-result-box" id="predResult">
+            <div class="ai-loading" id="predLoading" style="display:none;"><span>AI analysing</span><div class="dots"><span>.</span><span>.</span><span>.</span></div></div>
+            <div id="predContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${buildChatPanel('Ask the AI analyst anything about football...')}
+
+    <div class="panel" style="cursor:pointer;" onclick="goTo('leaderboard')">
+      <div class="sec-label"><span class="num">★</span> Leaderboard</div>
+      <p style="color:var(--sage); font-size:13.5px;">See everyone else's archetypes and Messi/Ronaldo matches →</p>
+    </div>
+    <div class="footer-credit">Source: ABTalks World Cup Intelligence Master — historical, contender &amp; live 2026 data</div>
+  `;
+  initChat();
+}
+
+function goTo(stage){ state.stage = stage; window.scrollTo({top:0, behavior:'smooth'}); render(); }
+
+/* ---------- STAGE 0 ---------- */
+function renderStage0(){
+  const opts = [
+    'I know almost nothing',
+    'I have limited knowledge',
+    'I follow some tournaments and news',
+    'I actively follow football and major tournaments'
+  ];
+  app.innerHTML = `
+    ${progressBar(0)}
+    <div class="panel">
+      <div class="sec-label"><span class="num">00</span> Knowledge Check</div>
+      <div class="q-text">How familiar are you with football?</div>
+      <div class="opt-grid" id="s0opts">
+        ${opts.map((o,i)=>`<button class="opt-btn" data-i="${i}" onclick="selectKnowledge(${i})">${o}</button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+function selectKnowledge(i){
+  state.knowledge = i+1;
+  document.querySelectorAll('#s0opts .opt-btn').forEach((b,idx)=>{
+    b.classList.toggle('selected', idx===i);
+  });
+  setTimeout(()=>goTo('stage1'), 300);
+}
+
+/* ---------- STAGE 1: PREDICTION REPORT ---------- */
+function renderStage1(){
+  const deep = state.knowledge >= 3;
+  app.innerHTML = `
+    ${progressBar(1)}
+    <div class="panel">
+      <div class="sec-label"><span class="num">01</span> 2026 World Cup Prediction</div>
+      <div class="predict-row">
+        <div class="predict-tile win"><div class="role">Winner</div><div class="team condensed">Argentina</div><div class="conf">78% confidence</div></div>
+        <div class="predict-tile"><div class="role">Runner-Up</div><div class="team condensed">Spain</div><div class="conf">65% confidence</div></div>
+        <div class="predict-tile"><div class="role">Dark Horse</div><div class="team condensed">Morocco</div><div class="conf">40% confidence</div></div>
+      </div>
+
+      <div class="evidence-block">
+        <div class="ev-title">Why Argentina</div>
+        <p>${deep
+          ? 'Tops the contender table on Form Score (92/100) and FIFA rank (#1), with an 8-1-1 recent record and +16 goal difference. Reigning champions (2022), and the best long-term win rate in the historical table (68%). Opened 2026 with a 3-0 win over Algeria.'
+          : 'Argentina is the highest-ranked team right now and the current World Cup champions. They\'ve been winning a lot recently and started this tournament strong with a 3-0 win.'}</p>
+        <p style="margin-top:8px;"><b>Risk:</b> Only one 2026 match played so far — a small sample. Heavy reliance on an aging Messi.</p>
+      </div>
+      <div class="evidence-block">
+        <div class="ev-title">Why Spain (Runner-Up)</div>
+        <p>${deep
+          ? 'Spain sits #2 on Form Score (91) with the tightest defense among contenders (just 5 goals conceded recently) and a past World Cup title (2010).'
+          : "Spain is ranked #2 right now and has the best defense of any top team — very hard to score against."}</p>
+        <p style="margin-top:8px;"><b>Risk:</b> Opened 2026 with a flat 0-0 draw — not a dominant start.</p>
+      </div>
+      <div class="evidence-block">
+        <div class="ev-title">Why Morocco (Dark Horse)</div>
+        <p>${deep
+          ? 'Lowest-ranked contender in the table (FIFA #12) yet still posts a Form Score of 86 — punching above expectation. Drew 1-1 with six-time giant Brazil in their 2026 opener.'
+          : "Morocco isn't expected to be a top team, but they're playing better than their ranking suggests, including a draw with Brazil."}</p>
+        <p style="margin-top:8px;"><b>Risk:</b> Lowest goal output of any contender (15 scored) — tends to win ugly, low-scoring games.</p>
+      </div>
+
+      <div class="sec-label" style="margin-top:22px;"><span class="num">★</span> Players to Watch</div>
+      <div class="players-list">
+        ${DATA.players.map(p=>`<div class="player-row"><span class="pname">${p.name}</span><span class="pmeta">${p.country} · ${p.goals}G ${p.assists}A · ${p.rating} rating</span></div>`).join('')}
+      </div>
+      <p style="font-size:12px; color:var(--sage-dim); margin-top:14px; line-height:1.6;">📌 Based on the workbook's 10-nation historical table, 8-nation contender table, 5-player roster, and live 2026 results (21 matches through June 17).</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goTo('stage2')">Continue to IQ Quiz</button>
+    </div>
+  `;
+}
+
+/* ---------- STAGE 2: IQ QUIZ ---------- */
+function renderStage2(){
+  const quiz = getIQQuiz(state.knowledge);
+  let html = `${progressBar(2)}<div class="panel"><div class="sec-label"><span class="num">02</span> Football IQ Quiz</div>`;
+  quiz.forEach((q, qi)=>{
+    html += `
+      <div style="margin-bottom:${qi<quiz.length-1?'26px':'4px'};">
+        <div class="q-meta">${q.level} · Question ${qi+1} of ${quiz.length}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="opt-grid" data-qid="${q.id}">
+          ${q.options.map((o,oi)=>`<button class="opt-btn" onclick="selectQuizAnswer('${q.id}', ${oi})">${o}</button>`).join('')}
+        </div>
+      </div>`;
+  });
+  html += `</div>
+    <div class="nav-label" id="s2progress">0 / ${quiz.length} answered</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="s2submit" disabled onclick="submitQuiz()">See My Score</button>
+    </div>`;
+  app.innerHTML = html;
+}
+function selectQuizAnswer(qid, idx){
+  state.quizAnswers[qid] = idx;
+  document.querySelectorAll(`[data-qid="${qid}"] .opt-btn`).forEach((b,i)=>{
+    b.classList.toggle('selected', i===idx);
+  });
+  const quiz = getIQQuiz(state.knowledge);
+  const answered = Object.keys(state.quizAnswers).length;
+  document.getElementById('s2progress').textContent = `${answered} / ${quiz.length} answered`;
+  document.getElementById('s2submit').disabled = answered < quiz.length;
+}
+function submitQuiz(){
+  const quiz = getIQQuiz(state.knowledge);
+  let correct = 0;
+  quiz.forEach(q=>{ if(state.quizAnswers[q.id] === q.correct) correct++; });
+  state.quizScore = Math.round((correct/quiz.length)*100);
+  state.quizCorrect = correct;
+  state.quizTotal = quiz.length;
+  goTo('stage3');
+}
+
+/* ---------- STAGE 3: PERSONALITY QUIZ ---------- */
+function renderStage3(){
+  let html = `${progressBar(3)}<div class="panel"><div class="sec-label"><span class="num">03</span> Personality Match</div>`;
+  PERSONALITY_QUIZ.forEach((q, qi)=>{
+    html += `<div style="margin-bottom:${qi<PERSONALITY_QUIZ.length-1?'26px':'4px'};">
+      <div class="q-meta">Question ${qi+1} of ${PERSONALITY_QUIZ.length}</div>
+      <div class="q-text">${q.text}</div>`;
+    if(q.type === 'mc'){
+      html += `<div class="opt-grid" data-pid="${q.id}">
+        ${q.options.map((o,oi)=>`<button class="opt-btn" onclick="selectPersonalityMC('${q.id}', ${oi})">${o.label}</button>`).join('')}
+      </div>`;
+    } else {
+      html += `<div class="rating-row" data-pid="${q.id}">
+        ${[1,2,3,4,5].map(v=>`<button class="rating-btn" onclick="selectPersonalityRating('${q.id}', ${v})">${v}</button>`).join('')}
+      </div>
+      <div class="rating-labels"><span>Strongly disagree</span><span>Strongly agree</span></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>
+    <div class="nav-label" id="s3progress">0 / ${PERSONALITY_QUIZ.length} answered</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="s3submit" disabled onclick="submitPersonality()">Reveal My Match</button>
+    </div>`;
+  app.innerHTML = html;
+}
+function updateS3Progress(){
+  const answered = Object.keys(state.personalityAnswers).length;
+  document.getElementById('s3progress').textContent = `${answered} / ${PERSONALITY_QUIZ.length} answered`;
+  document.getElementById('s3submit').disabled = answered < PERSONALITY_QUIZ.length;
+}
+function selectPersonalityMC(qid, idx){
+  const q = PERSONALITY_QUIZ.find(x=>x.id===qid);
+  state.personalityAnswers[qid] = q.options[idx].value;
+  document.querySelectorAll(`[data-pid="${qid}"] .opt-btn`).forEach((b,i)=>{
+    b.classList.toggle('selected', i===idx);
+  });
+  updateS3Progress();
+}
+function selectPersonalityRating(qid, val){
+  state.personalityAnswers[qid] = val;
+  document.querySelectorAll(`[data-pid="${qid}"] .rating-btn`).forEach((b)=>{
+    b.classList.toggle('selected', parseInt(b.textContent)===val);
+  });
+  updateS3Progress();
+}
+
+function submitPersonality(){
+  const a = state.personalityAnswers;
+
+  // trait scores (1-5 scale) derived from answers
+  const traits = {
+    discipline: a.p2 || 3,
+    risk: a.p4 || 3,
+    confidence: a.p7 || 3,
+    ambition: a.p10 || 3,
+    leadership: a.p1 === 'lead_delegate' || a.p3 === 'vocal_leader' ? 5 : (a.p3 === 'reliable' ? 4 : 3),
+    teamwork: a.p13 === 'team_success' ? 5 : (a.p13 === 'consistency' ? 4 : 3),
+    decision: a.p8 === 'analytical' ? 4 : (a.p8 === 'gut' ? 2 : 3),
+    work_ethic: a.p9 === 'relentless' ? 5 : (a.p9 === 'balanced' ? 3 : 4)
+  };
+
+  // Messi-lean vs Ronaldo-lean qualitative scoring based on specific answer choices
+  let messiScore = 0, ronaldoScore = 0;
+
+  // Teamwork axis
+  if(a.p13 === 'team_success') messiScore += 3;
+  else if(a.p13 === 'personal_records' || a.p13 === 'goat_status') ronaldoScore += 3;
+  else messiScore += 1;
+
+  // Confidence style axis
+  if(a.p12 === 'quiet_proof' || a.p12 === 'calm_trust') messiScore += 2.5;
+  else if(a.p12 === 'vocal_backing') ronaldoScore += 2.5;
+  else messiScore += 1;
+
+  // Pressure behavior
+  if(a.p11 === 'quiet_focus') messiScore += 2;
+  else if(a.p11 === 'vocal_energy') ronaldoScore += 2;
+
+  // Decision making
+  if(a.p8 === 'analytical') messiScore += 1.5;
+  else if(a.p8 === 'gut') ronaldoScore += 1;
+
+  // Discipline / routine
+  ronaldoScore += (traits.discipline - 3) * 1.0;
+
+  // Ambition (unreasonable goals)
+  ronaldoScore += (traits.ambition - 3) * 0.8;
+  messiScore += (traits.ambition - 3) * 0.3;
+
+  // Work ethic
+  if(a.p9 === 'relentless') ronaldoScore += 2;
+  else if(a.p9 === 'balanced') messiScore += 1;
+
+  // Creativity / risk
+  messiScore += (traits.risk - 3) * 0.6;
+
+  // Leadership style
+  if(a.p1 === 'lead_delegate' || a.p3 === 'vocal_leader') { messiScore += 1; ronaldoScore += 0.5; }
+  if(a.p6 === 'trial_error') messiScore += 0.5;
+
+  // baseline so neither is ever 0
+  messiScore += 4;
+  ronaldoScore += 2.5;
+
+  const total = messiScore + ronaldoScore;
+  let messiPct = Math.round((messiScore/total)*100);
+  messiPct = Math.max(15, Math.min(85, messiPct)); // keep within believable bounds
+  state.messiPct = messiPct;
+  state.ronaldoPct = 100 - messiPct;
+  state.traits = traits;
+
+  // Archetype assignment
+  state.archetypeKey = assignArchetype(a, traits);
+
+  goTo('results');
+}
+
+function assignArchetype(a, t){
+  if(a.p13 === 'team_success' && (a.p12==='quiet_proof'||a.p12==='calm_trust') && a.p11==='quiet_focus') return 'quiet_leader';
+  if(a.p9 === 'relentless' && a.p5 === 'self_critical') return 'relentless_competitor';
+  if(a.p4 >= 4 && a.p6 === 'trial_error' && (a.p1==='instinct'||a.p1==='visionary')) return 'creative_playmaker';
+  if(a.p8 === 'analytical' && a.p1 === 'tactical' && a.p6 === 'theory') return 'tactical_visionary';
+  if(a.p11 === 'vocal_energy' && a.p8 === 'gut') return 'fearless_attacker';
+  if((a.p1==='lead_delegate'||a.p3==='vocal_leader') && a.p12==='vocal_backing') return 'strategic_commander';
+  if(a.p3 === 'reliable' && a.p9 === 'balanced') return 'consistent_performer';
+  if(a.p11 === 'quiet_focus' && a.p7 >= 4) return 'big_match_specialist';
+  // fallback by dominant trait
+  if(t.teamwork >= 4) return 'quiet_leader';
+  if(t.ambition >= 4) return 'relentless_competitor';
+  return 'consistent_performer';
+}
+
+/* ---------- RESULTS ---------- */
+function awarenessClass(score){
+  if(score >= 90) return 'Football Expert';
+  if(score >= 75) return 'Football Enthusiast';
+  if(score >= 55) return 'Football Follower';
+  if(score >= 35) return 'Casual Viewer';
+  return 'Beginner Fan';
+}
+
+function renderResults(){
+  const arch = ARCHETYPES[state.archetypeKey];
+  const score = state.quizScore;
+  const cls = awarenessClass(score);
+  const circumference = 2*Math.PI*60;
+  const offset = circumference * (1 - score/100);
+
+  app.innerHTML = `
+    ${progressBar(4)}
+    <div class="panel" style="text-align:center;">
+      <div class="top-eyebrow">YOUR PROFILE IS READY</div>
+      <div class="top-title condensed" style="font-size:32px;">FOOTBALL INTELLIGENCE <span>PROFILE</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label"><span class="num">02</span> Football Awareness Score</div>
+      <div class="gauge-section">
+        <div class="gauge-wrap">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(245,242,234,0.1)" stroke-width="10"/>
+            <circle cx="70" cy="70" r="60" fill="none" stroke="#E8B84B" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" transform="rotate(-90 70 70)"/>
+          </svg>
+          <div class="gauge-num"><div class="n condensed">${score}</div><div class="d">OUT OF 100</div></div>
+        </div>
+        <div class="gauge-text">
+          <div class="class-name condensed">${cls}</div>
+          <div class="meta">Scored <b>${state.quizCorrect}/${state.quizTotal}</b> on the IQ quiz.<br>Calibrated to your self-reported knowledge level.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label"><span class="num">03</span> Messi vs Ronaldo Compatibility</div>
+      <div class="compat-names">
+        <div class="name condensed messi">LIONEL MESSI — ${state.messiPct}%</div>
+        <div class="name condensed ronaldo">${state.ronaldoPct}% — CRISTIANO RONALDO</div>
+      </div>
+      <div class="compat-bar">
+        <div class="seg messi-seg" style="width:${state.messiPct}%;">${state.messiPct}%</div>
+        <div class="seg ronaldo-seg" style="width:${state.ronaldoPct}%;">${state.ronaldoPct}%</div>
+      </div>
+      <div class="compat-note">You match <b>${state.messiPct >= 50 ? 'Messi' : 'Ronaldo'}</b> most — based on your leadership style, confidence under pressure, and decision-making tendencies from the quiz.</div>
+
+      <div class="archetype-box">
+        <div class="kicker">Your Archetype</div>
+        <div class="name condensed">${arch.name}</div>
+        <div class="desc">${arch.desc}</div>
+        <div class="trait-pills">${arch.traits.map(t=>`<div class="trait-pill">${t}</div>`).join('')}</div>
+      </div>
+
+      <div class="ai-commentary" id="aiCommentary">
+        <div class="ai-badge">AI Analysis</div>
+        <div class="ai-loading" id="aiLoading"><span>Generating your personal football intelligence analysis</span><div class="dots"><span>.</span><span>.</span><span>.</span></div></div>
+        <div id="aiText" style="display:none;"><p></p></div>
+      </div>
+
+      <div class="recs-grid">
+        <div class="rec-tile"><div class="label">Player to Study</div><div class="value condensed">${state.messiPct>=50?'Lionel Messi':'Cristiano Ronaldo'}</div></div>
+        <div class="rec-tile"><div class="label">Club to Follow</div><div class="value condensed">${state.messiPct>=50?'FC Barcelona':'Al Nassr'}</div></div>
+        <div class="rec-tile"><div class="label">Team to Watch</div><div class="value condensed">${state.messiPct>=50?'Argentina':'Portugal'}</div></div>
+        <div class="rec-tile"><div class="label">Rivalry to Explore</div><div class="value condensed">Messi vs Ronaldo</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-label"><span class="num">★</span> Join the Leaderboard</div>
+      <input class="name-input" id="nameInput" placeholder="Enter your name to save your result" maxlength="30" value="${state.userName}">
+      <button class="btn btn-primary" style="width:100%;" onclick="saveResult()" id="saveBtn">Save My Result</button>
+      <div id="saveStatus" style="text-align:center; font-size:13px; color:var(--sage); margin-top:10px;"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1;" onclick="goTo('leaderboard')">View Leaderboard</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="restartQuiz()">Take Again</button>
+    </div>
+    <div class="footer-credit">Source: ABTalks World Cup Intelligence Master</div>
+  `;
+  // Trigger AI commentary asynchronously
+  generateAICommentary();
+}
+
+async function saveResult(){
+  const nameInput = document.getElementById('nameInput');
+  const name = nameInput.value.trim();
+  if(!name){ document.getElementById('saveStatus').textContent = 'Please enter a name first.'; return; }
+  state.userName = name;
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const entry = {
+    name,
+    archetype: ARCHETYPES[state.archetypeKey].name,
+    messiPct: state.messiPct,
+    ronaldoPct: state.ronaldoPct,
+    awarenessScore: state.quizScore,
+    awarenessClass: awarenessClass(state.quizScore),
+    ts: Date.now()
+  };
+  const ok = await saveToLeaderboard(entry);
+  document.getElementById('saveStatus').textContent = ok ? '✓ Saved! Visible to everyone on the leaderboard.' : 'Could not save — please try again.';
+  btn.textContent = 'Save My Result';
+  btn.disabled = false;
+}
+
+function restartQuiz(){
+  state = {stage:'landing', knowledge:null, quizAnswers:{}, quizScore:0, personalityAnswers:{}, messiPct:0, ronaldoPct:0, archetypeKey:null, userName: state.userName};
+  goTo('stage0');
+}
+
+/* ---------- LEADERBOARD ---------- */
+async function renderLeaderboard(){
+  app.innerHTML = `
+    ${progressBar(4)}
+    <div class="panel">
+      <div class="sec-label"><span class="num">★</span> Leaderboard</div>
+      <div class="loading-msg">Loading results...</div>
+    </div>
+    <div class="btn-row"><button class="btn btn-ghost" style="flex:1;" onclick="goTo('landing')">← Back Home</button></div>
+  `;
+  const list = await loadLeaderboard();
+  let body;
+  if(list.length === 0){
+    body = `<div class="empty-state">No results yet — be the first to save your profile!</div>`;
+  } else {
+    body = list.map((e,i)=>`
+      <div class="lb-item">
+        <div class="lb-rank condensed">${i+1}</div>
+        <div class="lb-name">${escapeHtml(e.name)}</div>
+        <div class="lb-archetype">${e.archetype}</div>
+        <div class="lb-leg ${e.messiPct>=50?'messi':'ronaldo'}">${e.messiPct>=50?'Messi '+e.messiPct+'%':'Ronaldo '+e.ronaldoPct+'%'}</div>
+      </div>
+    `).join('');
+  }
+  app.innerHTML = `
+    ${progressBar(4)}
+    <div class="panel">
+      <div class="sec-label"><span class="num">★</span> Leaderboard <span style="color:var(--sage-dim); font-weight:400; text-transform:none; letter-spacing:0;">(${list.length})</span></div>
+      ${body}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="flex:1;" onclick="goTo('landing')">← Back Home</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="goTo('stage0')">Take the Quiz</button>
+    </div>
+    <div class="footer-credit">Shared leaderboard — visible to all visitors</div>
+  `;
+}
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+/* ============== AI FEATURES ============== */
+
+const DATA_CONTEXT = `
+You are an expert football analyst assistant embedded in the "Football Intelligence Profile" app.
+Current date: June 2026. World Cup 2026 is underway.
+Key data from the app:
+- Contenders: Argentina (rank 1, form 92, goals conceded 6, scored 22), Spain (rank 2, form 91, conceded 5, scored 24), France (rank 3, form 90), England (rank 4, form 89), Portugal (rank 5), Brazil (rank 6, form 88), Germany (rank 9), Morocco (rank 12, form 86)
+- Historical win rates: Brazil 70%, Argentina 68%, France 62%, Spain 60%, England/Netherlands 58%, Germany 56%, Portugal 54%
+- Recent finals: 2022 Argentina def France (Messi Golden Ball), 2018 France def Croatia (Modric Golden Ball), 2014 Germany def Argentina (Messi Golden Ball), 2010 Spain def Netherlands, 2006 Italy def France (Zidane Golden Ball)
+- Top players: Messi (20G/12A, 96 rating), Mbappe (22G/8A, 95), Ronaldo (18G/5A, 94), Haaland (25G/4A, 94), Bellingham (10G/9A, 91)
+- 2026 live: Argentina beat Algeria 3-0, Spain drew Cape Verde 0-0, Brazil drew Morocco 1-1, Germany beat Curacao 7-1 (21 group matches played as of June 17 2026)
+Keep answers focused, insightful, and under 120 words. Use football-specific terminology. Be direct and confident.
+`;
+
+async function callClaude(messages, systemExtra='') {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:1000,
+      system: DATA_CONTEXT + systemExtra,
+      messages
+    })
+  });
+  const data = await resp.json();
+  return data.content?.map(b=>b.text||'').join('') || 'Unable to get AI response.';
+}
+
+/* AI Commentary on Results */
+async function generateAICommentary(){
+  const arch = ARCHETYPES[state.archetypeKey];
+  const legend = state.messiPct >= 50 ? 'Messi' : 'Ronaldo';
+  const prompt = `The user just completed the Football Intelligence Profile quiz. Here are their results:
+- Archetype: ${arch.name} (${arch.traits.join(', ')})
+- Football Awareness Score: ${state.quizScore}/100 (${state.quizCorrect}/${state.quizTotal} correct) — classified as "${awarenessClass(state.quizScore)}"
+- Messi/Ronaldo match: ${legend} (${state.messiPct >= 50 ? state.messiPct : state.ronaldoPct}% aligned)
+Write a personal, insightful 3-sentence commentary on this person's football profile. Mention their archetype, their awareness level, and connect their personality to how they'd actually behave watching or playing football. Make it feel like a real analyst is speaking to them. Start directly, no intro preamble.`;
+  try {
+    const text = await callClaude([{role:'user', content: prompt}]);
+    const el = document.getElementById('aiText');
+    const loading = document.getElementById('aiLoading');
+    if(el && loading){
+      loading.style.display = 'none';
+      el.style.display = 'block';
+      el.querySelector('p').textContent = text;
+    }
+  } catch(e) {
+    const loading = document.getElementById('aiLoading');
+    if(loading) loading.style.display = 'none';
+  }
+}
+
+/* Match Predictor */
+async function runPrediction(){
+  const t1 = document.getElementById('team1').value.trim();
+  const t2 = document.getElementById('team2').value.trim();
+  if(!t1 || !t2){ return; }
+  const box = document.getElementById('predResult');
+  const loading = document.getElementById('predLoading');
+  const content = document.getElementById('predContent');
+  box.classList.add('visible');
+  loading.style.display = 'flex';
+  content.innerHTML = '';
+  try {
+    const text = await callClaude([{role:'user',
+      content:`Predict a World Cup 2026 knockout match: ${t1} vs ${t2}. Use the data context provided. Give: 1) Likely winner with predicted scoreline, 2) Key tactical factor in 1 sentence, 3) One key player to watch. Format: "WINNER: [Team] [score] — [reason]. Key: [tactical]. Watch: [player, reason]." Be concise and analytical.`
+    }]);
+    loading.style.display = 'none';
+    content.innerHTML = `<div style="font-size:14px; color:var(--chalk); line-height:1.7;">${text.replace(/\n/g,'<br>')}</div>`;
+  } catch(e){
+    loading.style.display = 'none';
+    content.innerHTML = '<span style="color:var(--sage-dim); font-size:13px;">Could not get prediction — try again.</span>';
+  }
+}
+
+/* Chat */
+let chatHistory = [];
+
+function buildChatPanel(placeholder){
+  return `
+  <div class="ai-chat-panel">
+    <div class="ai-chat-header" onclick="togglePanel('chatBody','chatToggle')">
+      <span class="ch-icon">🧠</span>
+      <div class="ch-title">AI Football Analyst</div>
+      <div class="ai-badge" style="margin-bottom:0;">AI</div>
+      <span class="ch-toggle" id="chatToggle">▼ Open</span>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-label">AI Analyst</div>
+          <div class="msg-bubble">Ask me anything about football — tactics, history, players, World Cup 2026 predictions, or Messi vs Ronaldo debates. I'm here to analyse.</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" placeholder="${placeholder}" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"></textarea>
+        <button class="chat-send" id="chatSend" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function initChat(){ chatHistory = []; }
+
+function togglePanel(bodyId, toggleId){
+  const body = document.getElementById(bodyId);
+  const toggle = document.getElementById(toggleId);
+  if(!body) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if(toggle) toggle.textContent = isOpen ? '▼ Open' : '▲ Close';
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const send = document.getElementById('chatSend');
+  const messages = document.getElementById('chatMessages');
+  const text = input.value.trim();
+  if(!text || send.disabled) return;
+  input.value = '';
+  send.disabled = true;
+
+  // Add user message
+  chatHistory.push({role:'user', content: text});
+  messages.innerHTML += `<div class="msg user"><div class="msg-label">You</div><div class="msg-bubble">${escapeHtml(text)}</div></div>`;
+
+  // Typing indicator
+  const typingId = 'typing_' + Date.now();
+  messages.innerHTML += `<div class="msg ai" id="${typingId}"><div class="msg-label">AI Analyst</div><div class="msg-bubble"><div class="ai-loading" style="padding:0;"><div class="dots"><span>.</span><span>.</span><span>.</span></div></div></div></div>`;
+  messages.scrollTop = messages.scrollHeight;
+
+  try {
+    const reply = await callClaude(chatHistory.slice(-10));
+    chatHistory.push({role:'assistant', content: reply});
+    const typingEl = document.getElementById(typingId);
+    if(typingEl) typingEl.querySelector('.msg-bubble').innerHTML = reply.replace(/\n/g,'<br>');
+  } catch(e) {
+    const typingEl = document.getElementById(typingId);
+    if(typingEl) typingEl.querySelector('.msg-bubble').textContent = 'Something went wrong — please try again.';
+  }
+  messages.scrollTop = messages.scrollHeight;
+  send.disabled = false;
+  input.focus();
+}
+
+/* ============== INIT ============== */
+render();
+</script>
+</body>
+</html>
