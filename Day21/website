@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrivacyIQ Pro — Digital Footprint Intelligence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #060810;
+    --surface: #0d1117;
+    --surface2: #111827;
+    --surface3: #1a2235;
+    --border: #1f2d45;
+    --border2: #2a3f5f;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #00ff88;
+    --warn: #ff6b35;
+    --danger: #ff2d55;
+    --green: #00ff88;
+    --yellow: #ffd60a;
+    --orange: #ff6b35;
+    --red: #ff2d55;
+    --text: #e8f4fd;
+    --text2: #6b8299;
+    --text3: #3a4a5c;
+    --fact: #00d4ff;
+    --estimate: #a78bfa;
+    --font: 'Space Grotesk', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --glow-blue: 0 0 20px rgba(0,212,255,0.3);
+    --glow-purple: 0 0 20px rgba(124,58,237,0.3);
+    --glow-green: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* AMBIENT BG */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 800px 600px at 20% 10%, rgba(0,212,255,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 600px 500px at 80% 80%, rgba(124,58,237,0.05) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* SCAN LINE */
+  .scanline {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,212,255,0.015) 3px, rgba(0,212,255,0.015) 4px);
+    pointer-events: none; z-index: 0; animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100vh; }
+  }
+
+  /* LOAD BAR */
+  .load-bar {
+    position: fixed; top: 0; left: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    z-index: 9999; transition: width 0.4s; width: 0%;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(6,8,16,0.92);
+    backdrop-filter: blur(24px) saturate(180%);
+    border-bottom: 1px solid rgba(0,212,255,0.15);
+    padding: 0;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 64px;
+    max-width: 1600px; margin: 0 auto;
+  }
+
+  /* PREMIUM LOGO */
+  .logo-wrap { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+  .logo-emblem {
+    position: relative; width: 44px; height: 44px; flex-shrink: 0;
+  }
+  .logo-emblem svg { width: 44px; height: 44px; }
+  .logo-hex {
+    animation: hexRotate 20s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes hexRotate { to { transform: rotate(360deg); } }
+  .logo-text-wrap { display: flex; flex-direction: column; }
+  .logo-name {
+    font-family: var(--mono);
+    font-size: 18px; font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+  }
+  .logo-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(124,58,237,0.2));
+    border: 1px solid rgba(0,212,255,0.4);
+    border-radius: 3px; padding: 1px 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .logo-badge::before {
+    content: '◆'; font-size: 6px; color: var(--yellow);
+  }
+
+  /* NAV */
+  .nav-links {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .nav-link {
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    color: var(--text2); border-radius: 6px; cursor: pointer;
+    transition: all 0.2s; border: 1px solid transparent;
+    background: none; text-decoration: none; white-space: nowrap;
+  }
+  .nav-link:hover { color: var(--accent); border-color: rgba(0,212,255,0.2); background: rgba(0,212,255,0.05); }
+  .nav-link.active { color: var(--accent); border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.1); }
+
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+
+  .mode-toggle {
+    display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .mode-btn {
+    padding: 6px 16px; font-size: 11px; font-weight: 600; cursor: pointer;
+    border: none; background: transparent; color: var(--text2); transition: all 0.2s; letter-spacing: 0.5px; font-family: var(--font);
+  }
+  .mode-btn.active { background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(124,58,237,0.2)); color: var(--accent); }
+
+  .btn-ai {
+    display: flex; align-items: center; gap: 7px; padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.15));
+    border: 1px solid rgba(0,212,255,0.4); border-radius: 8px;
+    color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: var(--font);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+  }
+  .btn-ai:hover { background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(124,58,237,0.25)); box-shadow: var(--glow-blue); }
+
+  /* HEADER STATUS BAR */
+  .header-status {
+    display: flex; align-items: center; justify-content: center; gap: 28px;
+    padding: 6px 32px; background: rgba(0,212,255,0.03);
+    border-top: 1px solid rgba(0,212,255,0.08);
+    font-size: 10px; font-family: var(--mono); color: var(--text3);
+    max-width: 1600px; margin: 0 auto;
+  }
+  .status-item { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+  .status-dot.yellow { background: var(--yellow); }
+  .status-dot.red { background: var(--red); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* CONTAINER */
+  .container { max-width: 1600px; margin: 0 auto; padding: 28px 32px; position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero {
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+    color: var(--accent); font-weight: 600; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--accent); }
+  .hero-title {
+    font-size: 36px; font-weight: 700; letter-spacing: -1.5px;
+    line-height: 1.1; margin-bottom: 10px;
+    background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 60%, #7c3aed 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero-sub { font-size: 14px; color: var(--text2); max-width: 700px; line-height: 1.8; }
+  .hero-meta { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .meta-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 14px; font-size: 11px; color: var(--text2);
+    font-family: var(--mono);
+  }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* USER SETUP PANEL */
+  .setup-panel {
+    background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.06));
+    border: 1px solid rgba(0,212,255,0.2); border-radius: 16px;
+    padding: 24px; margin-bottom: 28px;
+  }
+  .setup-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--accent); }
+  .setup-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+  .setup-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .form-input {
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 8px 12px; color: var(--text); font-size: 12px; font-family: var(--font);
+    outline: none; transition: border-color 0.2s; min-width: 200px;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.1); }
+  .form-input::placeholder { color: var(--text3); }
+  .btn-analyze {
+    padding: 8px 20px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 8px; color: #000; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: var(--font); transition: opacity 0.2s; white-space: nowrap;
+  }
+  .btn-analyze:hover { opacity: 0.9; }
+  .apps-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .app-tag {
+    display: flex; align-items: center; gap: 5px; padding: 4px 10px;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px;
+    font-size: 11px; cursor: pointer; transition: all 0.15s;
+  }
+  .app-tag.selected { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.4); color: var(--accent); }
+  .app-tag .remove { opacity: 0.5; font-size: 10px; }
+  .app-tag:hover .remove { opacity: 1; color: var(--red); }
+
+  /* SCORE CARDS */
+  .scores-row {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 28px;
+  }
+  @media(max-width:1200px){ .scores-row { grid-template-columns: repeat(3,1fr); } }
+  @media(max-width:700px){ .scores-row { grid-template-columns: repeat(2,1fr); } }
+
+  .score-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; position: relative; overflow: hidden; cursor: pointer;
+    transition: all 0.25s;
+  }
+  .score-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .score-card .card-glow {
+    position: absolute; top: -30px; right: -30px; width: 100px; height: 100px;
+    border-radius: 50%; filter: blur(30px); opacity: 0.15;
+  }
+  .score-card .card-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    border-radius: 14px 14px 0 0;
+  }
+  .score-card .card-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--text2); font-weight: 600; margin-bottom: 10px; font-family: var(--mono);
+  }
+  .score-card .card-value {
+    font-size: 36px; font-weight: 700; letter-spacing: -2px; line-height: 1;
+    font-family: var(--mono);
+  }
+  .score-card .card-badge {
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 0.3px; font-family: var(--mono);
+  }
+  .score-card .card-sub { font-size: 10px; color: var(--text2); margin-top: 4px; }
+  .badge-green { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+  .badge-yellow { background: rgba(255,214,10,0.1); color: var(--yellow); border: 1px solid rgba(255,214,10,0.2); }
+  .badge-orange { background: rgba(255,107,53,0.1); color: var(--orange); border: 1px solid rgba(255,107,53,0.2); }
+  .badge-red { background: rgba(255,45,85,0.1); color: var(--red); border: 1px solid rgba(255,45,85,0.2); }
+  .badge-blue { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+
+  /* MOVEABLE PANELS */
+  .moveable-section {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    margin-bottom: 20px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .moveable-section.dragging {
+    opacity: 0.7; border-color: var(--accent); box-shadow: var(--glow-blue);
+    cursor: grabbing !important;
+  }
+  .moveable-section.drag-over {
+    border-color: var(--accent2); box-shadow: var(--glow-purple);
+    background: rgba(124,58,237,0.05);
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    cursor: grab; user-select: none;
+    background: rgba(255,255,255,0.01);
+  }
+  .panel-header:active { cursor: grabbing; }
+  .panel-header-left { display: flex; align-items: center; gap: 10px; }
+  .panel-icon {
+    width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-size: 15px; flex-shrink: 0;
+  }
+  .panel-title { font-size: 14px; font-weight: 700; letter-spacing: -0.3px; }
+  .panel-meta { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .panel-header-right { display: flex; align-items: center; gap: 8px; }
+  .drag-handle {
+    color: var(--text3); font-size: 14px; cursor: grab; padding: 4px;
+    transition: color 0.2s;
+  }
+  .drag-handle:hover { color: var(--accent); }
+  .panel-body { padding: 20px; }
+
+  /* TAG */
+  .tag {
+    font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+    letter-spacing: 0.8px; text-transform: uppercase; font-family: var(--mono);
+  }
+  .tag-fact { background: rgba(0,212,255,0.1); color: var(--fact); border: 1px solid rgba(0,212,255,0.25); }
+  .tag-estimate { background: rgba(167,139,250,0.1); color: var(--estimate); border: 1px solid rgba(167,139,250,0.25); }
+  .tag-premium { background: linear-gradient(135deg, rgba(255,214,10,0.2), rgba(255,107,53,0.2)); color: var(--yellow); border: 1px solid rgba(255,214,10,0.3); }
+
+  /* AI PANEL */
+  .ai-section {
+    background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(124,58,237,0.05));
+    border: 1px solid rgba(0,212,255,0.2); border-radius: 16px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .ai-header { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid rgba(0,212,255,0.1); }
+  .ai-icon-wrap {
+    width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  }
+  .ai-title { font-size: 14px; font-weight: 700; }
+  .ai-sub { font-size: 11px; color: var(--text2); }
+  .pulse-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+  .ai-body { padding: 16px 20px; }
+  .ai-messages {
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 260px; overflow-y: auto; margin-bottom: 12px;
+    scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+  }
+  .ai-msg {
+    padding: 10px 14px; border-radius: 10px; font-size: 12px; line-height: 1.6;
+    animation: fadeUp 0.3s ease; white-space: pre-wrap; word-break: break-word;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+  .ai-msg.user {
+    background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
+    align-self: flex-end; max-width: 80%;
+  }
+  .ai-msg.bot {
+    background: var(--surface2); border: 1px solid var(--border); max-width: 92%;
+  }
+  .ai-msg.typing { color: var(--text2); font-style: italic; }
+  .ai-suggestions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ai-sugg {
+    font-size: 11px; padding: 4px 12px;
+    background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 20px; cursor: pointer; color: var(--text2); transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .ai-sugg:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.1); }
+  .ai-input-row { display: flex; gap: 8px; }
+  .ai-input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 10px 14px; color: var(--text); font-size: 12px; outline: none;
+    transition: border-color 0.2s; font-family: var(--font);
+  }
+  .ai-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,212,255,0.08); }
+  .ai-input::placeholder { color: var(--text3); }
+  .ai-send {
+    padding: 10px 18px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px; color: #000; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.2s; font-family: var(--font);
+  }
+  .ai-send:hover { opacity: 0.85; }
+
+  /* TWIN */
+  .twin-grid { display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+  @media(max-width:900px){ .twin-grid { grid-template-columns:1fr; } }
+  .twin-avatar-panel {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .avatar-ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin-bottom: 14px; position: relative;
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.2), 0 0 30px rgba(0,212,255,0.15);
+  }
+  .avatar-ring::after {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%;
+    border: 2px dashed rgba(0,212,255,0.35); animation: spin 12s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .twin-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .twin-archetype { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-family: var(--mono); }
+  .twin-traits { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .trait-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .trait-label { font-size: 10px; color: var(--text2); }
+  .trait-value { font-size: 10px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+  .twin-details { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .twin-cat-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-family: var(--mono); }
+  .twin-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .twin-item:last-child { border-bottom: none; }
+
+  /* HEATMAP */
+  .heatmap-grid { display: grid; gap: 4px; grid-template-columns: 130px repeat(8, 1fr); }
+  .heatmap-header { font-size: 9px; color: var(--text2); text-align: center; padding: 4px 2px; font-weight: 600; font-family: var(--mono); }
+  .heatmap-row-label { font-size: 10px; color: var(--text2); display: flex; align-items: center; padding-right: 8px; font-weight: 500; }
+  .heatmap-cell {
+    height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    font-family: var(--mono);
+  }
+  .heatmap-cell:hover { transform: scale(1.1); z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  .heat-0 { background: rgba(255,255,255,0.03); color: var(--text3); }
+  .heat-1 { background: rgba(0,255,136,0.15); color: var(--green); }
+  .heat-2 { background: rgba(255,214,10,0.18); color: var(--yellow); }
+  .heat-3 { background: rgba(255,107,53,0.22); color: var(--orange); }
+  .heat-4 { background: rgba(255,45,85,0.25); color: var(--red); }
+
+  /* BAR CHART */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 11px; color: var(--text2); width: 130px; flex-shrink: 0; text-align: right; font-family: var(--mono); }
+  .bar-track { flex: 1; height: 22px; background: var(--surface3); border-radius: 6px; overflow: hidden; }
+  .bar-fill {
+    height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px;
+    font-size: 10px; font-weight: 700; color: #000; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    white-space: nowrap; font-family: var(--mono);
+  }
+  .bar-count { font-size: 11px; font-weight: 700; width: 40px; flex-shrink: 0; color: var(--text2); font-family: var(--mono); }
+
+  /* RADAR */
+  .radar-wrapper { display: flex; align-items: center; gap: 28px; }
+  @media(max-width:700px){ .radar-wrapper{flex-direction:column;} }
+  .radar-container { flex-shrink: 0; }
+  .radar-legend { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .radar-legend-item { display: flex; align-items: center; gap: 10px; }
+  .radar-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .radar-legend-label { font-size: 11px; color: var(--text2); flex: 1; }
+  .radar-legend-value { font-size: 12px; font-weight: 700; font-family: var(--mono); }
+
+  /* MATRIX */
+  .matrix-table { width: 100%; border-collapse: collapse; }
+  .matrix-table th { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 700; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+  .matrix-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 11px; vertical-align: middle; }
+  .matrix-table tr:last-child td { border-bottom: none; }
+  .matrix-table tr:hover td { background: rgba(255,255,255,0.015); }
+  .app-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--surface3); border: 1px solid var(--border2); border-radius: 6px; padding: 3px 8px; font-size: 10px; font-weight: 600; }
+  .risk-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; font-family: var(--mono); }
+  .dots-row { display: flex; gap: 3px; }
+  .data-dot { width: 8px; height: 8px; border-radius: 50%; cursor: pointer; transition: transform 0.15s; }
+  .data-dot:hover { transform: scale(1.5); }
+
+  /* WOW INSIGHTS */
+  .wow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media(max-width:900px){ .wow-grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:600px){ .wow-grid{grid-template-columns:1fr;} }
+  .wow-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; position: relative; overflow: hidden; cursor: default;
+    transition: all 0.2s;
+  }
+  .wow-card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .wow-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .wow-card.danger::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .wow-card.warning::before { background: var(--orange); }
+  .wow-card.info::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .wow-card.purple::before { background: var(--accent2); }
+  .wow-card.teal::before { background: var(--accent3); }
+  .wow-card.green::before { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .wow-number { font-size: 40px; font-weight: 700; letter-spacing: -2px; line-height: 1; margin-bottom: 4px; font-family: var(--mono); }
+  .wow-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .wow-desc { font-size: 10px; color: var(--text2); line-height: 1.6; }
+  .wow-tag { margin-top: 8px; }
+
+  /* ASSETS */
+  .assets-list { display: flex; flex-direction: column; gap: 10px; }
+  .asset-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; transition: all 0.2s;
+  }
+  .asset-item:hover { border-color: var(--border2); transform: translateX(4px); }
+  .asset-rank { font-size: 20px; font-weight: 900; color: var(--text3); width: 28px; flex-shrink: 0; text-align: center; font-family: var(--mono); }
+  .asset-icon { font-size: 22px; flex-shrink: 0; }
+  .asset-info { flex: 1; }
+  .asset-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .asset-desc { font-size: 10px; color: var(--text2); line-height: 1.5; }
+  .asset-value { text-align: right; flex-shrink: 0; }
+  .value-score { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+  .value-label { font-size: 9px; color: var(--text2); font-family: var(--mono); }
+  .asset-bar { width: 80px; height: 3px; background: var(--surface3); border-radius: 2px; margin-top: 4px; }
+  .asset-bar-fill { height: 100%; border-radius: 2px; }
+
+  /* SIMULATOR */
+  .simulator-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+  @media(max-width:900px){ .simulator-layout{grid-template-columns:1fr;} }
+  .sim-toggles { display: flex; flex-direction: column; gap: 8px; }
+  .sim-toggle-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .sim-toggle-row:hover { border-color: var(--border2); background: rgba(0,212,255,0.03); }
+  .toggle-switch {
+    width: 38px; height: 20px; background: var(--surface3); border-radius: 10px;
+    position: relative; transition: background 0.2s; flex-shrink: 0; border: 1px solid var(--border2);
+  }
+  .toggle-switch.on { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px rgba(0,255,136,0.3); }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle-switch.on::after { transform: translateX(18px); }
+  .toggle-info { flex: 1; }
+  .toggle-title { font-size: 12px; font-weight: 600; }
+  .toggle-sub { font-size: 10px; color: var(--text2); margin-top: 1px; }
+  .toggle-impact { font-size: 11px; font-weight: 700; flex-shrink: 0; font-family: var(--mono); }
+  .sim-results { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .sim-score-display { text-align: center; padding: 18px 0; }
+  .sim-score-number { font-size: 60px; font-weight: 700; letter-spacing: -3px; line-height: 1; font-family: var(--mono); }
+  .sim-score-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .sim-delta { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; }
+  .delta-text { font-size: 12px; font-weight: 700; font-family: var(--mono); }
+  .sim-breakdown { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+  .sim-break-row { display: flex; justify-content: space-between; font-size: 10px; padding: 5px 0; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+
+  /* VERDICT */
+  .verdict-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:700px){ .verdict-layout{grid-template-columns:1fr;} }
+  .verdict-score-panel {
+    background: linear-gradient(135deg, var(--surface2), var(--surface3));
+    border: 1px solid var(--border); border-radius: 14px; padding: 28px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .verdict-grade {
+    font-size: 80px; font-weight: 700; letter-spacing: -4px; line-height: 1;
+    background: linear-gradient(135deg, var(--orange), var(--red));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-family: var(--mono);
+  }
+  .verdict-grade-label { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .verdict-summary { font-size: 12px; color: var(--text); margin-top: 14px; line-height: 1.8; }
+  .verdict-actions { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .action-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .action-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); transition: border-color 0.2s;
+  }
+  .action-item:hover { border-color: rgba(0,212,255,0.2); }
+  .action-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; flex-shrink: 0; margin-top: 2px; color: #000;
+  }
+  .action-text { font-size: 11px; line-height: 1.6; }
+  .action-text strong { color: var(--text); font-weight: 700; display: block; margin-bottom: 2px; }
+
+  /* RATIONALE */
+  .rationale {
+    background: rgba(0,212,255,0.03); border: 1px solid rgba(0,212,255,0.1); border-radius: 10px;
+    padding: 14px; margin-top: 12px;
+  }
+  .rationale-title { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
+  .rationale-text { font-size: 10px; color: var(--text3); line-height: 1.7; }
+
+  /* TOOLTIP */
+  .tooltip {
+    position: fixed; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 8px 12px; font-size: 10px; line-height: 1.5;
+    pointer-events: none; z-index: 9999; opacity: 0; transition: opacity 0.15s;
+    max-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); font-family: var(--mono);
+  }
+  .tooltip.show { opacity: 1; }
+
+  .info-note {
+    font-size: 10px; color: var(--text2); background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 10px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+
+  .section.hidden { display: none !important; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* GRID LAYOUT */
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:1000px){ .dash-grid{grid-template-columns:1fr;} }
+
+  /* NOTIFICATION TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 12px 18px; font-size: 12px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: translateY(80px); opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border); padding: 24px 32px;
+    text-align: center; font-size: 11px; color: var(--text3); font-family: var(--mono);
+    max-width: 1600px; margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+<div class="load-bar" id="loadBar"></div>
+<div class="scanline"></div>
+<div class="tooltip" id="tooltip"></div>
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+</div>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="header">
+  <div class="header-top">
+    <!-- PREMIUM LOGO -->
+    <a class="logo-wrap" href="#" onclick="return false">
+      <div class="logo-emblem">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer hex -->
+          <polygon class="logo-hex" points="22,2 38,11 38,33 22,42 6,33 6,11"
+            stroke="rgba(0,212,255,0.6)" stroke-width="1.5" fill="none"/>
+          <!-- Inner hex -->
+          <polygon points="22,8 34,15 34,29 22,36 10,29 10,15"
+            stroke="rgba(124,58,237,0.4)" stroke-width="1" fill="rgba(0,212,255,0.05)"/>
+          <!-- Shield icon -->
+          <path d="M22 12 L29 16 L29 24 C29 28 22 32 22 32 C22 32 15 28 15 24 L15 16 Z"
+            fill="url(#shieldGrad)" opacity="0.9"/>
+          <!-- Lock -->
+          <rect x="19" y="22" width="6" height="5" rx="1" fill="white" opacity="0.9"/>
+          <path d="M20 22 L20 20 C20 18.3 23.7 18.3 23.7 20 L23.7 22" stroke="white" stroke-width="1.5" fill="none"/>
+          <defs>
+            <linearGradient id="shieldGrad" x1="15" y1="12" x2="29" y2="32">
+              <stop offset="0%" stop-color="#00d4ff"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="logo-text-wrap">
+        <div class="logo-name">PrivacyIQ</div>
+        <div class="logo-badge">PRO · INTELLIGENCE</div>
+      </div>
+    </a>
+
+    <!-- NAV LINKS -->
+    <nav class="nav-links" id="navLinks">
+      <a class="nav-link active" onclick="scrollTo('aiPanel')">AI Analyst</a>
+      <a class="nav-link" onclick="scrollTo('twinSection')">Digital Twin</a>
+      <a class="nav-link" onclick="scrollTo('heatSection')">Heatmap</a>
+      <a class="nav-link" onclick="scrollTo('radarSection')">Risk Radar</a>
+      <a class="nav-link" onclick="scrollTo('simSection')">Simulator</a>
+      <a class="nav-link" onclick="scrollTo('verdictSection')">Verdict</a>
+    </nav>
+
+    <div class="nav-right">
+      <div class="mode-toggle">
+        <button class="mode-btn active" onclick="setMode('overview',event)">Overview</button>
+        <button class="mode-btn" onclick="setMode('detailed',event)">Detailed</button>
+      </div>
+      <button class="btn-ai" onclick="focusAI()">
+        <div class="pulse-dot"></div>
+        Ask AI
+      </button>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="header-status">
+    <div class="status-item"><div class="status-dot green"></div>SYSTEM ACTIVE</div>
+    <div class="status-item"><div class="status-dot yellow"></div><span id="statusApps">15 APPS LOADED</span></div>
+    <div class="status-item"><div class="status-dot red"></div>HIGH EXPOSURE DETECTED</div>
+    <div class="status-item"><div class="status-dot green"></div>AI ONLINE</div>
+    <div class="status-item" style="margin-left:auto" id="statusTime">—</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Digital Footprint Intelligence Report — v2.0 PRO</div>
+    <h1 class="hero-title">Your Digital Shadow Analysis</h1>
+    <p class="hero-sub">Analyzing your digital ecosystem in real-time. Behavioral inferences are clearly labeled as <span style="color:var(--estimate);font-weight:700">Estimates</span>. Verified data points carry a <span style="color:var(--fact);font-weight:700">Fact</span> label. All data is processed locally — nothing leaves your browser.</p>
+    <div class="hero-meta" id="heroMeta">
+      <div class="meta-chip"><div class="dot" style="background:var(--green)"></div><span id="metaDate">Last analyzed: —</span></div>
+      <div class="meta-chip"><div class="dot" style="background:var(--accent)"></div><span id="metaApps">Dataset: loading…</span></div>
+      <div class="meta-chip"><div class="dot" style="background:var(--yellow)"></div><span id="metaCompanies">—</span></div>
+      <div class="meta-chip"><div class="dot" style="background:var(--red)"></div>High exposure risk</div>
+    </div>
+  </div>
+
+  <!-- USER SETUP PANEL -->
+  <div class="setup-panel" id="setupPanel">
+    <div class="setup-title">⚙️ Analyze Your Apps — Works for Anyone</div>
+    <div class="setup-sub">Enter your name and add the apps you use. The dashboard will recalculate all scores for you personally.</div>
+    <div class="setup-form">
+      <div class="form-field">
+        <div class="form-label">Your Name</div>
+        <input class="form-input" id="userName" placeholder="e.g. Alex" value="" style="min-width:140px">
+      </div>
+      <div class="form-field" style="flex:1">
+        <div class="form-label">Add App (type & press Enter)</div>
+        <input class="form-input" id="appInput" placeholder="e.g. Twitter, Netflix, Snapchat…" onkeydown="if(event.key==='Enter')addApp()">
+      </div>
+      <button class="btn-analyze" onclick="runAnalysis()">⚡ Analyze Now</button>
+    </div>
+    <div class="apps-tags" id="appsTags"></div>
+  </div>
+
+  <!-- SCORE CARDS -->
+  <div class="scores-row" id="scoreCards">
+    <div class="score-card" onclick="scrollTo('twinSection')">
+      <div class="card-glow" style="background:var(--red)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--red),transparent)"></div>
+      <div class="card-label">Digital Footprint Score</div>
+      <div class="card-value" style="color:var(--red)" id="dfsDisplay">0</div>
+      <div class="card-badge badge-red" id="dfsBadge">● Extensive</div>
+      <div class="card-sub"><span id="dfsAppsLabel">15 services</span> <span class="tag tag-fact">Fact</span></div>
+    </div>
+    <div class="score-card" onclick="scrollTo('simSection')">
+      <div class="card-glow" style="background:var(--orange)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--orange),transparent)"></div>
+      <div class="card-label">Privacy Score</div>
+      <div class="card-value" style="color:var(--orange)" id="psDisplay">0</div>
+      <div class="card-badge badge-orange" id="psBadge">● Fair</div>
+      <div class="card-sub">Inferred from app risks <span class="tag tag-estimate">Estimate</span></div>
+    </div>
+    <div class="score-card">
+      <div class="card-glow" style="background:var(--accent)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--accent),transparent)"></div>
+      <div class="card-label">Total Services Used</div>
+      <div class="card-value" style="color:var(--accent)" id="appCountDisplay">15</div>
+      <div class="card-sub" id="appListPreview">Instagram, Snapchat + 13 more <span class="tag tag-fact">Fact</span></div>
+    </div>
+    <div class="score-card">
+      <div class="card-glow" style="background:var(--accent2)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--accent2),transparent)"></div>
+      <div class="card-label">Parent Companies</div>
+      <div class="card-value" style="color:var(--accent2)" id="companiesDisplay">5</div>
+      <div class="card-sub" id="companiesLabel">Meta, Google, ByteDance + 2 <span class="tag tag-fact">Fact</span></div>
+    </div>
+    <div class="score-card">
+      <div class="card-glow" style="background:var(--yellow)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--yellow),transparent)"></div>
+      <div class="card-label">Ecosystem Concentration</div>
+      <div class="card-value" style="color:var(--yellow)" id="ecoDisplay">0</div>
+      <div class="card-sub">Top company dominance <span class="tag tag-estimate">Estimate</span></div>
+    </div>
+    <div class="score-card">
+      <div class="card-glow" style="background:var(--accent3)"></div>
+      <div class="card-line" style="background:linear-gradient(90deg,var(--accent3),transparent)"></div>
+      <div class="card-label">Tracking Surface</div>
+      <div class="card-value" style="color:var(--accent3)" id="trackDisplay">High</div>
+      <div class="card-sub">~<span id="trackerCount">12</span> active trackers est. <span class="tag tag-estimate">Estimate</span></div>
+    </div>
+  </div>
+
+  <!-- MOVEABLE SECTIONS WRAPPER -->
+  <div id="sectionsWrapper">
+
+    <!-- AI PANEL -->
+    <div class="ai-section" id="aiPanel">
+      <div class="ai-header">
+        <div class="ai-icon-wrap">🤖</div>
+        <div style="flex:1">
+          <div class="ai-title">AI Privacy Analyst</div>
+          <div class="ai-sub">Ask questions about your digital footprint — powered by Claude AI</div>
+        </div>
+        <div class="pulse-dot"></div>
+        <span class="tag tag-premium">PREMIUM AI</span>
+      </div>
+      <div class="ai-body">
+        <div class="ai-messages" id="aiMessages">
+          <div class="ai-msg bot">👋 Hi! I'm your AI privacy analyst. I've analyzed your app list and can answer questions about your digital footprint, risks, or privacy improvements. What would you like to know?</div>
+        </div>
+        <div class="ai-suggestions" id="aiSuggestions">
+          <div class="ai-sugg" onclick="sendAISugg(this)">Which app is most dangerous?</div>
+          <div class="ai-sugg" onclick="sendAISugg(this)">How much does Google know about me?</div>
+          <div class="ai-sugg" onclick="sendAISugg(this)">How can I improve my privacy score?</div>
+          <div class="ai-sugg" onclick="sendAISugg(this)">What data does TikTok collect?</div>
+          <div class="ai-sugg" onclick="sendAISugg(this)">Create a privacy action plan for me</div>
+          <div class="ai-sugg" onclick="sendAISugg(this)">Explain my biggest privacy risk</div>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" id="aiInput" type="text" placeholder="Ask anything about your privacy, data risks, or how to protect yourself…" onkeydown="if(event.key==='Enter')sendAI()">
+          <button class="ai-send" onclick="sendAI()">Send →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOVEABLE: DIGITAL TWIN -->
+    <div class="moveable-section" id="twinSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'twinSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'twinSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(124,58,237,0.2)">👤</div>
+          <div>
+            <div class="panel-title">Digital Twin Profile</div>
+            <div class="panel-meta">Inferred behavioral and demographic profile from your app ecosystem</div>
+          </div>
+        </div>
+        <div class="panel-header-right">
+          <span class="tag tag-estimate">Estimate</span>
+          <div class="drag-handle" title="Drag to reorder">⠿</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="twin-grid">
+          <div class="twin-avatar-panel">
+            <div class="avatar-ring" id="twinEmoji">🧑‍💻</div>
+            <div class="twin-name" id="twinName">Digital Twin #DT-2025</div>
+            <div class="twin-archetype" id="twinArchetype">Connected Millennial / Gen-Z</div>
+            <div style="font-size:10px;color:var(--text2);text-align:center;line-height:1.6" id="twinDesc">A highly digitally-active individual across social, entertainment, commerce and communication platforms.</div>
+            <div class="twin-traits" id="twinTraits">
+              <div class="trait-row"><span class="trait-label">Age Range</span><span class="trait-value">16–32 est.</span></div>
+              <div class="trait-row"><span class="trait-label">Digital Activity</span><span class="trait-value">Very High</span></div>
+              <div class="trait-row"><span class="trait-label">Privacy Awareness</span><span class="trait-value">Low–Moderate</span></div>
+              <div class="trait-row"><span class="trait-label">Risk Profile</span><span class="trait-value" style="color:var(--red)">High Exposure</span></div>
+            </div>
+          </div>
+          <div class="twin-details" id="twinDetails">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Profile inferred from your <strong id="twinAppCount" style="color:var(--accent)">15</strong> apps. Run analysis to update.</div>
+            <div class="twin-category">
+              <div class="twin-cat-title">🎭 LIFESTYLE & INTERESTS <span class="tag tag-estimate">Estimate</span></div>
+              <div class="twin-item"><div style="font-size:14px;margin-right:4px">🎵</div><div><strong>Music Enthusiast</strong><br><span style="color:var(--text2);font-size:10px">Spotify usage suggests regular music/podcast consumption</span></div></div>
+              <div class="twin-item"><div style="font-size:14px;margin-right:4px">🎮</div><div><strong>Mobile Gamer</strong><br><span style="color:var(--text2);font-size:10px">PUBG Mobile + Roblox indicates gaming interests</span></div></div>
+              <div class="twin-item"><div style="font-size:14px;margin-right:4px">📹</div><div><strong>Video Consumer</strong><br><span style="color:var(--text2);font-size:10px">TikTok + YouTube covers short & long-form content</span></div></div>
+              <div class="twin-item"><div style="font-size:14px;margin-right:4px">🛍️</div><div><strong>Value-Conscious Shopper</strong><br><span style="color:var(--text2);font-size:10px">Amazon + Meesho suggest online shopping habits</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="rationale">
+          <div class="rationale-title">⚠️ Methodology</div>
+          <div class="rationale-text">Digital Twin is constructed solely from the app names. No private databases accessed. All inferences are probabilistic.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOVEABLE: HEATMAP -->
+    <div class="moveable-section" id="heatSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'heatSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'heatSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(255,45,85,0.2)">🔥</div>
+          <div>
+            <div class="panel-title">Exposure Heatmap</div>
+            <div class="panel-meta">Data exposure intensity across categories and platforms</div>
+          </div>
+        </div>
+        <div class="panel-header-right">
+          <span class="tag tag-estimate">Estimate</span>
+          <div class="drag-handle" title="Drag to reorder">⠿</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--text2);font-family:var(--mono)">Exposure Level:</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(0,255,136,0.15)"></span> Low</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,214,10,0.18)"></span> Medium</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,107,53,0.22)"></span> High</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,45,85,0.25)"></span> Critical</span>
+        </div>
+        <div id="heatmapContainer"></div>
+      </div>
+    </div>
+
+    <!-- SIDE-BY-SIDE: Company + Matrix -->
+    <div class="dash-grid" id="gridRow1">
+
+      <!-- Company Exposure -->
+      <div class="moveable-section" id="companySection" draggable="true" style="margin-bottom:0">
+        <div class="panel-header" ondragstart="dragStart(event,'companySection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'companySection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+          <div class="panel-header-left">
+            <div class="panel-icon" style="background:rgba(0,212,255,0.2)">🏢</div>
+            <div>
+              <div class="panel-title">Company Exposure Ranking</div>
+              <div class="panel-meta">Which corporations see the most of your data</div>
+            </div>
+          </div>
+          <div class="panel-header-right">
+            <span class="tag tag-fact">Fact</span>
+            <div class="drag-handle">⠿</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="bar-chart" id="companyChart"></div>
+        </div>
+      </div>
+
+      <!-- WOW Insights -->
+      <div class="moveable-section" id="wowSection" draggable="true" style="margin-bottom:0">
+        <div class="panel-header" ondragstart="dragStart(event,'wowSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'wowSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+          <div class="panel-header-left">
+            <div class="panel-icon" style="background:rgba(0,255,136,0.2)">💡</div>
+            <div>
+              <div class="panel-title">WOW Insights</div>
+              <div class="panel-meta">Surprising intelligence from your digital footprint</div>
+            </div>
+          </div>
+          <div class="drag-handle" style="padding:4px;color:var(--text3)">⠿</div>
+        </div>
+        <div class="panel-body">
+          <div class="wow-grid" id="wowGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+        </div>
+      </div>
+
+    </div>
+    <div style="margin-top:20px"></div>
+
+    <!-- RADAR -->
+    <div class="moveable-section hidden" id="radarSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'radarSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'radarSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(255,107,53,0.2)">🎯</div>
+          <div>
+            <div class="panel-title">Risk Radar</div>
+            <div class="panel-meta">Multi-dimensional privacy risk assessment</div>
+          </div>
+        </div>
+        <div class="panel-header-right">
+          <span class="tag tag-estimate">Estimate</span>
+          <div class="drag-handle">⠿</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="radar-wrapper">
+          <div class="radar-container"><canvas id="radarCanvas" width="280" height="280"></canvas></div>
+          <div class="radar-legend" id="radarLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATRIX -->
+    <div class="moveable-section hidden" id="matrixSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'matrixSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'matrixSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(0,212,255,0.2)">📊</div>
+          <div>
+            <div class="panel-title">Data Collection Matrix</div>
+            <div class="panel-meta">Per-app breakdown of data types collected</div>
+          </div>
+        </div>
+        <div class="panel-header-right">
+          <span class="tag tag-estimate">Estimate</span>
+          <div class="drag-handle">⠿</div>
+        </div>
+      </div>
+      <div class="panel-body" style="overflow-x:auto">
+        <table class="matrix-table" id="matrixTable"></table>
+      </div>
+    </div>
+
+    <!-- ASSETS -->
+    <div class="moveable-section" id="assetsSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'assetsSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'assetsSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(255,214,10,0.2)">💎</div>
+          <div>
+            <div class="panel-title">Most Valuable Data Assets</div>
+            <div class="panel-meta">Your most commercially valuable data — ranked by advertiser demand</div>
+          </div>
+        </div>
+        <div class="panel-header-right">
+          <span class="tag tag-estimate">Estimate</span>
+          <div class="drag-handle">⠿</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="assets-list" id="assetsList"></div>
+      </div>
+    </div>
+
+    <!-- SIMULATOR -->
+    <div class="moveable-section" id="simSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'simSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'simSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(124,58,237,0.2)">⚡</div>
+          <div>
+            <div class="panel-title">Privacy Improvement Simulator</div>
+            <div class="panel-meta">Toggle actions to see real-time score changes</div>
+          </div>
+        </div>
+        <div class="drag-handle" style="padding:4px;color:var(--text3)">⠿</div>
+      </div>
+      <div class="panel-body">
+        <div class="simulator-layout">
+          <div class="sim-toggles" id="simToggles"></div>
+          <div class="sim-results">
+            <div class="sim-score-display">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px;font-family:var(--mono)">Simulated Privacy Score</div>
+              <div class="sim-score-number" id="simScore" style="color:var(--orange)">40</div>
+              <div class="sim-score-label">Toggle actions to improve</div>
+            </div>
+            <div class="sim-delta">
+              <div class="delta-text" id="simDelta" style="color:var(--green)">+0 points from baseline</div>
+            </div>
+            <div class="sim-breakdown" id="simBreakdown">
+              <div style="font-size:10px;color:var(--text3);text-align:center;padding:12px;font-family:var(--mono)">Toggle actions to simulate improvements</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VERDICT -->
+    <div class="moveable-section" id="verdictSection" draggable="true">
+      <div class="panel-header" ondragstart="dragStart(event,'verdictSection')" ondragover="dragOver(event)" ondrop="dragDrop(event,'verdictSection')" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+        <div class="panel-header-left">
+          <div class="panel-icon" style="background:rgba(255,45,85,0.2)">⚖️</div>
+          <div>
+            <div class="panel-title">Final Verdict</div>
+            <div class="panel-meta">Overall digital privacy standing and recommended next steps</div>
+          </div>
+        </div>
+        <div class="drag-handle" style="padding:4px;color:var(--text3)">⠿</div>
+      </div>
+      <div class="panel-body">
+        <div class="verdict-layout">
+          <div class="verdict-score-panel">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)">Overall Privacy Grade</div>
+            <div class="verdict-grade" id="verdictGrade">C–</div>
+            <div class="verdict-grade-label">Significant Exposure Risk</div>
+            <div class="verdict-summary" id="verdictSummary">Your digital footprint spans multiple apps, creating a comprehensive and monetizable data profile. Multiple companies build detailed behavioral models. Immediate attention recommended.</div>
+            <div style="margin-top:20px;display:flex;gap:16px;justify-content:center">
+              <div style="text-align:center">
+                <div style="font-size:24px;font-weight:700;color:var(--red);font-family:var(--mono)" id="verdictDFS">82</div>
+                <div style="font-size:9px;color:var(--text2);font-family:var(--mono)">Footprint Score</div>
+              </div>
+              <div style="width:1px;background:var(--border)"></div>
+              <div style="text-align:center">
+                <div style="font-size:24px;font-weight:700;color:var(--orange);font-family:var(--mono)" id="verdictPS">40</div>
+                <div style="font-size:9px;color:var(--text2);font-family:var(--mono)">Privacy Score</div>
+              </div>
+              <div style="width:1px;background:var(--border)"></div>
+              <div style="text-align:center">
+                <div style="font-size:24px;font-weight:700;color:var(--yellow);font-family:var(--mono)" id="verdictEco">67%</div>
+                <div style="font-size:9px;color:var(--text2);font-family:var(--mono)">Concentration</div>
+              </div>
+            </div>
+          </div>
+          <div class="verdict-actions">
+            <div style="font-size:14px;font-weight:700;margin-bottom:4px">🚀 Priority Action Plan</div>
+            <div style="font-size:10px;color:var(--text2);margin-bottom:12px">Ranked by impact on your privacy score</div>
+            <div class="action-list" id="actionList"></div>
+          </div>
+        </div>
+        <div class="rationale">
+          <div class="rationale-title">⚠️ Disclaimer</div>
+          <div class="rationale-text">This dashboard provides privacy awareness education. It is not a legal or compliance tool. All risk estimates are based on publicly documented app data collection practices as of 2025. Individual exposure varies based on actual usage and settings.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end sectionsWrapper -->
+
+</div><!-- end container -->
+
+<footer class="footer">
+  <div>PrivacyIQ Pro · Digital Footprint Intelligence · v2.0</div>
+  <div style="margin-top:4px;color:var(--text3)">Privacy awareness tool · No data leaves your browser · All analysis is local</div>
+</footer>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+
+// Default app list (user can modify)
+let USER_APPS = [
+  { name: 'Instagram', company: 'Meta', icon: '📸', risk: 4, category: 'Social Media' },
+  { name: 'Snapchat', company: 'Snap Inc.', icon: '👻', risk: 3, category: 'Social Media' },
+  { name: 'TikTok', company: 'ByteDance', icon: '🎵', risk: 4, category: 'Social Media' },
+  { name: 'YouTube', company: 'Google', icon: '▶️', risk: 3, category: 'Entertainment' },
+  { name: 'Discord', company: 'Discord Inc.', icon: '💬', risk: 2, category: 'Communication' },
+  { name: 'WhatsApp', company: 'Meta', icon: '📱', risk: 3, category: 'Communication' },
+  { name: 'iMessage', company: 'Apple', icon: '💬', risk: 1, category: 'Communication' },
+  { name: 'Spotify', company: 'Spotify AB', icon: '🎧', risk: 2, category: 'Entertainment' },
+  { name: 'Roblox', company: 'Roblox Corp.', icon: '🎮', risk: 3, category: 'Gaming' },
+  { name: 'PUBG Mobile', company: 'Krafton', icon: '🔫', risk: 3, category: 'Gaming' },
+  { name: 'Amazon', company: 'Amazon', icon: '📦', risk: 3, category: 'E-Commerce' },
+  { name: 'Meesho', company: 'Meesho', icon: '🛍️', risk: 2, category: 'E-Commerce' },
+  { name: 'Google Search', company: 'Google', icon: '🔍', risk: 4, category: 'Search' },
+  { name: 'Google Pay', company: 'Google', icon: '💳', risk: 3, category: 'Finance' },
+  { name: 'Google Photos', company: 'Google', icon: '🖼️', risk: 3, category: 'Cloud Storage' },
+];
+
+let USER_NAME = '';
+
+// App risk database for user-added apps
+const APP_RISK_DB = {
+  'twitter': { company: 'X Corp', icon: '🐦', risk: 3, category: 'Social Media' },
+  'x': { company: 'X Corp', icon: '✖️', risk: 3, category: 'Social Media' },
+  'facebook': { company: 'Meta', icon: '👍', risk: 4, category: 'Social Media' },
+  'netflix': { company: 'Netflix', icon: '📺', risk: 2, category: 'Entertainment' },
+  'linkedin': { company: 'Microsoft', icon: '💼', risk: 3, category: 'Professional' },
+  'gmail': { company: 'Google', icon: '📧', risk: 3, category: 'Email' },
+  'chrome': { company: 'Google', icon: '🌐', risk: 4, category: 'Browser' },
+  'maps': { company: 'Google', icon: '📍', risk: 4, category: 'Navigation' },
+  'uber': { company: 'Uber', icon: '🚗', risk: 3, category: 'Transport' },
+  'swiggy': { company: 'Swiggy', icon: '🍔', risk: 2, category: 'Food Delivery' },
+  'zomato': { company: 'Zomato', icon: '🍕', risk: 2, category: 'Food Delivery' },
+  'paytm': { company: 'Paytm', icon: '💰', risk: 3, category: 'Finance' },
+  'phonepe': { company: 'Walmart', icon: '📲', risk: 3, category: 'Finance' },
+  'pinterest': { company: 'Pinterest', icon: '📌', risk: 2, category: 'Social Media' },
+  'telegram': { company: 'Telegram', icon: '✈️', risk: 2, category: 'Communication' },
+  'signal': { company: 'Signal', icon: '🔐', risk: 1, category: 'Communication' },
+  'zoom': { company: 'Zoom', icon: '📹', risk: 2, category: 'Video' },
+  'microsoft': { company: 'Microsoft', icon: '🪟', risk: 2, category: 'Productivity' },
+  'apple': { company: 'Apple', icon: '🍎', risk: 1, category: 'Device' },
+  'clash of clans': { company: 'Supercell', icon: '⚔️', risk: 2, category: 'Gaming' },
+  'free fire': { company: 'Garena', icon: '🔥', risk: 3, category: 'Gaming' },
+};
+
+const DATA_TYPES = ['Location', 'Contacts', 'Biometrics', 'Behavioral', 'Financial', 'Media', 'Search', 'Identity'];
+
+const APP_DATA_MAP = {
+  'Instagram':[3,2,3,4,1,4,3,4],'Snapchat':[3,2,4,3,0,4,2,3],'TikTok':[4,2,4,4,1,4,4,4],
+  'YouTube':[2,0,0,4,0,3,4,3],'Discord':[1,2,0,3,0,2,2,3],'WhatsApp':[2,4,0,3,1,2,1,4],
+  'iMessage':[1,2,2,1,0,1,0,2],'Spotify':[1,0,0,4,1,3,3,3],'Roblox':[1,0,0,3,2,2,1,3],
+  'PUBG Mobile':[2,0,0,3,2,1,1,3],'Amazon':[2,1,0,4,4,1,4,4],'Meesho':[2,1,0,3,3,1,2,3],
+  'Google Search':[3,0,0,4,1,1,4,4],'Google Pay':[2,1,1,3,4,0,2,4],'Google Photos':[3,1,4,2,0,4,1,3],
+};
+
+const HEATMAP_ROWS = ['Social Media','Communication','Entertainment','Gaming','E-Commerce','Finance & Cloud'];
+const HEATMAP_COLS = ['Identity','Location','Behavior','Contacts','Financial','Media','Biometrics','Search'];
+const HEATMAP_DATA = [
+  [4,3,4,3,1,4,4,4],
+  [3,2,3,4,1,2,1,2],
+  [3,2,4,0,1,3,0,4],
+  [3,2,3,0,2,2,0,2],
+  [4,2,4,1,4,1,0,4],
+  [4,3,3,1,4,4,3,2],
+];
+
+const RADAR_DATA = [
+  { label: 'Data Harvesting', value: 88, color: '#ff2d55' },
+  { label: 'Tracking Surface', value: 82, color: '#ff6b35' },
+  { label: 'Third-Party Sharing', value: 75, color: '#ffd60a' },
+  { label: 'Location Exposure', value: 70, color: '#00d4ff' },
+  { label: 'Financial Risk', value: 65, color: '#7c3aed' },
+  { label: 'Identity Exposure', value: 90, color: '#00d4ff' },
+  { label: 'Behavioral Profiling', value: 95, color: '#00ff88' },
+  { label: 'Consent Clarity', value: 30, color: '#ec4899' },
+];
+
+const WOW_INSIGHTS = [
+  { type:'danger', number:'33', unit:' types', title:'Data Types Exposed', desc:'Across your apps, 33+ distinct data categories are collected — from facial recognition to payment behavior.', estFact:'Estimate' },
+  { type:'warning', number:'5', unit:' giants', title:'Corporate Data Overlords', desc:'5 companies collectively hold 78% of your digital footprint. You have no single vendor redundancy.', estFact:'Estimate' },
+  { type:'danger', number:'67%', unit:'', title:'Google Ecosystem Lock-In', desc:'Google apps account for an estimated 67% of your daily search, media, payment and storage exposure.', estFact:'Estimate' },
+  { type:'info', number:'5', unit:' channels', title:'Parallel Messaging Apps', desc:'You use 5 communication platforms simultaneously — each with different encryption and data policies.', estFact:'Fact' },
+  { type:'purple', number:'2', unit:' trackers', title:'Biometric Data at Risk', desc:'TikTok and Snapchat AR filters may collect biometric facial data. Google Photos uses face-recognition.', estFact:'Estimate' },
+  { type:'teal', number:'₹+', unit:'', title:'Financial Footprint', desc:'Google Pay + Amazon + Meesho triangulates your financial profile: payments, purchases, and price sensitivity.', estFact:'Estimate' },
+];
+
+const ASSETS = [
+  { icon:'🧠', name:'Behavioral Intent Data', desc:'Search, browse, and content engagement patterns — the most commercially valuable signal advertisers buy.', score:97, color:'#ff2d55' },
+  { icon:'👤', name:'Identity & Contact Graph', desc:'Who you know, how you communicate, your social relationships across platforms.', score:91, color:'#ff6b35' },
+  { icon:'📍', name:'Location History', desc:'Movement patterns inferred from Google, Instagram, Snapchat, and Maps-integrated apps.', score:85, color:'#ffd60a' },
+  { icon:'💳', name:'Financial Behavior Profile', desc:'Purchase patterns across Amazon, Meesho, and Google Pay create a spending archetype.', score:82, color:'#7c3aed' },
+  { icon:'🎭', name:'Psychological Profile', desc:'Content preference data from TikTok, YouTube, Spotify builds a psychographic model.', score:79, color:'#00d4ff' },
+  { icon:'🖼️', name:'Biometric & Media Data', desc:'Photos, face filter data may include biometric identifiers.', score:72, color:'#00ff88' },
+];
+
+const SIM_TOGGLES = [
+  { id:'delete_tiktok', title:'Delete TikTok', sub:'Removes highest-risk foreign data collector', impact:12 },
+  { id:'limit_instagram', title:'Restrict Instagram Data', sub:'Disable ad tracking, limit location', impact:8 },
+  { id:'use_vpn', title:'Use a VPN', sub:'Masks IP and reduces location tracking', impact:6 },
+  { id:'google_privacy', title:'Google Privacy Checkup', sub:'Disable Web & App Activity, Ad personalization', impact:10 },
+  { id:'replace_whatsapp', title:'Switch to Signal', sub:'Replace WhatsApp with end-to-end encrypted Signal', impact:5 },
+  { id:'twofactor', title:'Enable 2FA Everywhere', sub:'Reduces identity breach risk significantly', impact:4 },
+  { id:'delete_pubg', title:'Delete PUBG Mobile', sub:"Remove Krafton's data collection from your profile", impact:3 },
+];
+
+const ACTIONS = [
+  { title:'Audit TikTok Privacy Settings — or Delete', body:': ByteDance-operated TikTok has the highest data collection risk. Review or delete this app first.' },
+  { title:'Run Google Privacy Checkup', body:': Limit Ad personalization, Web & App Activity, and Location History for the biggest single-company privacy gain.' },
+  { title:"Review Meta's Off-Facebook Activity", body:": Use Meta's Off-Facebook Activity tool to clear and limit cross-site tracking from Instagram and WhatsApp." },
+  { title:'Enable 2FA on All Accounts', body:': Multi-factor authentication protects your identity graph across all platforms.' },
+  { title:'Switch to Signal for Messaging', body:': Signal provides strong end-to-end encryption and collects minimal metadata.' },
+];
+
+let DFS = 82, PS = 40, ECO = 67;
+let simState = {};
+SIM_TOGGLES.forEach(t => simState[t.id] = false);
+let currentMode = 'overview';
+let dragSrcId = null;
+
+// ══════════════════════════════════════════════
+// USER SETUP
+// ══════════════════════════════════════════════
+function addApp() {
+  const input = document.getElementById('appInput');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  const key = val.toLowerCase();
+  let info = APP_RISK_DB[key] || { company: 'Unknown', icon: '📱', risk: 2, category: 'App' };
+  // Check if already exists
+  if (USER_APPS.find(a => a.name.toLowerCase() === key)) { showToast('App already in list'); return; }
+  USER_APPS.push({ name: val, ...info });
+  renderAppTags();
+}
+
+function removeApp(name) {
+  USER_APPS = USER_APPS.filter(a => a.name !== name);
+  renderAppTags();
+}
+
+function renderAppTags() {
+  const tags = document.getElementById('appsTags');
+  tags.innerHTML = USER_APPS.map(a => `
+    <div class="app-tag selected">
+      <span>${a.icon} ${a.name}</span>
+      <span class="remove" onclick="removeApp('${a.name.replace(/'/g,"\\'")}')">✕</span>
+    </div>
+  `).join('');
+  document.getElementById('appInput').addEventListener('keydown', e => { if(e.key==='Enter') addApp(); }, {once:true});
+}
+
+function runAnalysis() {
+  USER_NAME = document.getElementById('userName').value.trim() || 'You';
+  recalcScores();
+  refreshAll();
+  showToast(`✅ Analysis complete for ${USER_NAME} — ${USER_APPS.length} apps analyzed`);
+  document.getElementById('setupPanel').style.opacity = '0.7';
+}
+
+function recalcScores() {
+  const n = USER_APPS.length;
+  DFS = Math.min(100, 40 + n * 3 + USER_APPS.reduce((s,a) => s + a.risk, 0) * 1.2);
+  DFS = Math.round(DFS);
+  const avgRisk = USER_APPS.reduce((s,a) => s + a.risk, 0) / n;
+  PS = Math.max(5, Math.round(100 - DFS * 0.65 + Math.random() * 5));
+  const companies = [...new Set(USER_APPS.map(a => a.company))];
+  const topCompany = companies.reduce((top, c) => {
+    const cnt = USER_APPS.filter(a => a.company === c).length;
+    return cnt > (top.cnt || 0) ? { c, cnt } : top;
+  }, {});
+  ECO = Math.round((topCompany.cnt || 1) / n * 100);
+
+  document.getElementById('dfsAppsLabel').textContent = n + ' services';
+  document.getElementById('appCountDisplay').textContent = n;
+  document.getElementById('appListPreview').innerHTML = USER_APPS.slice(0,2).map(a=>a.name).join(', ') + (n>2 ? ` + ${n-2} more` : '') + ' <span class="tag tag-fact">Fact</span>';
+  document.getElementById('companiesDisplay').textContent = companies.length;
+  document.getElementById('trackerCount').textContent = Math.round(n * 0.8);
+
+  const now = new Date();
+  document.getElementById('metaDate').textContent = 'Last analyzed: ' + now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  document.getElementById('metaApps').textContent = 'Dataset: ' + n + ' apps (Fact)';
+  document.getElementById('metaCompanies').textContent = companies.length + ' parent companies detected';
+  document.getElementById('statusApps').textContent = n + ' APPS LOADED';
+
+  document.getElementById('verdictDFS').textContent = DFS;
+  document.getElementById('verdictPS').textContent = PS;
+  document.getElementById('verdictEco').textContent = ECO + '%';
+
+  animateCount(document.getElementById('dfsDisplay'), DFS, 1200);
+  animateCount(document.getElementById('psDisplay'), PS, 1200);
+  animateCount(document.getElementById('ecoDisplay'), ECO, 1400);
+}
+
+// ══════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════════
+function refreshAll() {
+  buildHeatmap();
+  buildCompanyChart();
+  buildMatrix();
+  buildRadar();
+  buildWow();
+  buildAssets();
+  buildSimulator();
+  buildVerdict();
+}
+
+function buildHeatmap() {
+  const c = document.getElementById('heatmapContainer');
+  const labels = ['', ...HEATMAP_COLS];
+  let html = '<div class="heatmap-grid">';
+  html += labels.map(l => `<div class="heatmap-header">${l}</div>`).join('');
+  HEATMAP_ROWS.forEach((row, ri) => {
+    html += `<div class="heatmap-row-label">${row}</div>`;
+    HEATMAP_DATA[ri].forEach((v, ci) => {
+      const tips = ['None','Low','Medium','High','Critical'];
+      html += `<div class="heatmap-cell heat-${v}" onmouseenter="showTip(event,'${row} → ${HEATMAP_COLS[ci]}: ${tips[v]}')" onmouseleave="hideTip()">${v>0?tips[v].slice(0,3):''}</div>`;
+    });
+  });
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+function buildCompanyChart() {
+  const companies = {};
+  USER_APPS.forEach(a => { companies[a.company] = (companies[a.company] || 0) + 1; });
+  const sorted = Object.entries(companies).sort((a,b) => b[1]-a[1]);
+  const max = sorted[0][1];
+  const colors = ['#00d4ff','#7c3aed','#ff2d55','#ffd60a','#ff6b35','#00ff88','#ec4899','#14b8a6'];
+  document.getElementById('companyChart').innerHTML = sorted.map(([name, count], i) => {
+    const pct = Math.round(count / USER_APPS.length * 100);
+    return `
+      <div class="bar-row">
+        <div class="bar-label">${name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="background:${colors[i%colors.length]};width:0%" data-w="${count/max*100}%">${count} app${count>1?'s':''}</div>
+        </div>
+        <div class="bar-count" style="color:${colors[i%colors.length]}">${pct}%</div>
+      </div>`;
+  }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.transition = 'width 1.2s cubic-bezier(0.4,0,0.2,1)';
+      el.style.width = el.dataset.w;
+    });
+  }, 100);
+}
+
+function buildMatrix() {
+  const table = document.getElementById('matrixTable');
+  const riskColors = ['','#00ff88','#ffd60a','#ff6b35','#ff2d55'];
+  const riskLabels = ['','Low','Medium','High','Critical'];
+  const dotColors = ['rgba(255,255,255,0.1)','rgba(0,255,136,0.7)','rgba(255,214,10,0.7)','rgba(255,107,53,0.7)','rgba(255,45,85,0.7)'];
+
+  let html = `<thead><tr>
+    <th>App</th><th>Company</th><th>Risk</th>
+    ${DATA_TYPES.map(d=>`<th style="text-align:center">${d.slice(0,3)}</th>`).join('')}
+  </tr></thead><tbody>`;
+
+  USER_APPS.forEach(app => {
+    const dataMap = APP_DATA_MAP[app.name] || [1,1,0,2,0,1,1,2];
+    const rc = riskColors[app.risk] || '#00ff88';
+    html += `<tr>
+      <td><div class="app-chip">${app.icon} ${app.name}</div></td>
+      <td style="color:var(--text2)">${app.company}</td>
+      <td><div class="risk-pill" style="background:${rc}22;color:${rc};border:1px solid ${rc}44">${riskLabels[app.risk]||'Low'}</div></td>
+      ${dataMap.map((v,i) => `<td style="text-align:center">
+        <div class="data-dot" style="background:${dotColors[v]};width:10px;height:10px;border-radius:50%;margin:0 auto;display:block"
+          onmouseenter="showTip(event,'${app.name} → ${DATA_TYPES[i]}: ${['None','Low','Med','High','Critical'][v]}')"
+          onmouseleave="hideTip()"></div></td>`).join('')}
+    </tr>`;
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function buildRadar() {
+  const canvas = document.getElementById('radarCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, r = Math.min(w,h)/2 - 40;
+  const n = RADAR_DATA.length;
+  ctx.clearRect(0,0,w,h);
+
+  // Grid
+  for (let ring = 1; ring <= 5; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = (i/n)*Math.PI*2 - Math.PI/2;
+      const rr = r * ring/5;
+      if (i===0) ctx.moveTo(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+      else ctx.lineTo(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(0,212,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const a = (i/n)*Math.PI*2 - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
+    ctx.strokeStyle = 'rgba(0,212,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Data polygon
+  ctx.beginPath();
+  RADAR_DATA.forEach((d,i) => {
+    const a = (i/n)*Math.PI*2 - Math.PI/2;
+    const rr = r*(d.value/100);
+    if(i===0) ctx.moveTo(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+    else ctx.lineTo(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,45,85,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = '#ff2d55';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  RADAR_DATA.forEach((d,i) => {
+    const a = (i/n)*Math.PI*2 - Math.PI/2;
+    const rr = r*(d.value/100);
+    ctx.beginPath();
+    ctx.arc(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr, 4, 0, Math.PI*2);
+    ctx.fillStyle = d.color;
+    ctx.fill();
+  });
+
+  // Labels
+  RADAR_DATA.forEach((d,i) => {
+    const a = (i/n)*Math.PI*2 - Math.PI/2;
+    const lx = cx+Math.cos(a)*(r+22);
+    const ly = cy+Math.sin(a)*(r+22);
+    ctx.fillStyle = 'rgba(107,130,153,0.9)';
+    ctx.font = '9px Space Grotesk, sans-serif';
+    ctx.textAlign = lx>cx?'left':lx<cx-5?'right':'center';
+    ctx.fillText(d.label.split(' ')[0], lx, ly);
+  });
+
+  document.getElementById('radarLegend').innerHTML = RADAR_DATA.map(d => `
+    <div class="radar-legend-item">
+      <div class="radar-legend-dot" style="background:${d.color}"></div>
+      <div class="radar-legend-label">${d.label}</div>
+      <div class="radar-legend-value" style="color:${d.color}">${d.value}</div>
+    </div>`).join('');
+}
+
+function buildWow() {
+  const wowColors = { danger:var_('--red'), warning:var_('--orange'), info:var_('--accent'), purple:var_('--accent2'), teal:var_('--accent3'), green:var_('--green') };
+  document.getElementById('wowGrid').innerHTML = WOW_INSIGHTS.map(w => `
+    <div class="wow-card ${w.type}">
+      <div class="wow-number" style="color:${wowColors[w.type]||var_('--accent')}">${w.number}<span style="font-size:14px;font-weight:500">${w.unit||''}</span></div>
+      <div class="wow-title">${w.title}</div>
+      <div class="wow-desc">${w.desc}</div>
+      <div class="wow-tag"><span class="tag ${w.estFact.includes('Fact')?'tag-fact':'tag-estimate'}">${w.estFact}</span></div>
+    </div>`).join('');
+}
+
+function var_(v) {
+  return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+
+function buildAssets() {
+  document.getElementById('assetsList').innerHTML = ASSETS.map((a,i) => `
+    <div class="asset-item">
+      <div class="asset-rank">${i+1}</div>
+      <div class="asset-icon">${a.icon}</div>
+      <div class="asset-info">
+        <div class="asset-name">${a.name}</div>
+        <div class="asset-desc">${a.desc}</div>
+      </div>
+      <div class="asset-value">
+        <div class="value-score" style="color:${a.color}">${a.score}</div>
+        <div class="value-label">Value Score</div>
+        <div class="asset-bar" style="margin-top:4px">
+          <div class="asset-bar-fill" style="background:${a.color};width:0%;height:100%;border-radius:2px;transition:width 1.2s ease" data-w="${a.score}%"></div>
+        </div>
+      </div>
+    </div>`).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.asset-bar-fill').forEach(el => { el.style.width = el.dataset.w; });
+  }, 200);
+}
+
+function buildSimulator() {
+  simState = {};
+  SIM_TOGGLES.forEach(t => simState[t.id] = false);
+  document.getElementById('simToggles').innerHTML = SIM_TOGGLES.map(t => `
+    <div class="sim-toggle-row" onclick="toggleSim('${t.id}')">
+      <div class="toggle-switch" id="sw_${t.id}"></div>
+      <div class="toggle-info">
+        <div class="toggle-title">${t.title}</div>
+        <div class="toggle-sub">${t.sub}</div>
+      </div>
+      <div class="toggle-impact" style="color:var(--green)">+${t.impact} pts</div>
+    </div>`).join('');
+  updateSim();
+}
+
+function toggleSim(id) {
+  simState[id] = !simState[id];
+  const sw = document.getElementById('sw_'+id);
+  if (sw) sw.classList.toggle('on', simState[id]);
+  updateSim();
+}
+
+function updateSim() {
+  const gained = SIM_TOGGLES.filter(t => simState[t.id]).reduce((a,t)=>a+t.impact, 0);
+  const ns = Math.min(100, PS + gained);
+  const el = document.getElementById('simScore');
+  el.textContent = ns;
+  el.style.color = ns>=81?'var(--green)':ns>=61?'var(--yellow)':ns>=31?'var(--orange)':'var(--red)';
+  document.getElementById('simDelta').textContent = `+${gained} points from baseline (${PS} → ${ns})`;
+  const active = SIM_TOGGLES.filter(t => simState[t.id]);
+  document.getElementById('simBreakdown').innerHTML = active.length===0
+    ? '<div style="font-size:10px;color:var(--text3);text-align:center;padding:12px;font-family:var(--mono)">Toggle actions to simulate improvements</div>'
+    : active.map(t=>`<div class="sim-break-row"><span style="color:var(--text2)">${t.title}</span><span style="color:var(--green)">+${t.impact}</span></div>`).join('');
+}
+
+function buildVerdict() {
+  const grade = PS >= 80 ? 'A' : PS >= 60 ? 'B' : PS >= 40 ? 'C–' : PS >= 20 ? 'D' : 'F';
+  document.getElementById('verdictGrade').textContent = grade;
+  document.getElementById('actionList').innerHTML = ACTIONS.map((a,i) => `
+    <div class="action-item">
+      <div class="action-num">${i+1}</div>
+      <div class="action-text"><strong>${a.title}</strong>${a.body}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// DRAG & DROP (Panel Reordering)
+// ══════════════════════════════════════════════
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => { document.getElementById(id).classList.add('dragging'); }, 0);
+}
+
+function dragEnd(e) {
+  document.querySelectorAll('.moveable-section').forEach(el => {
+    el.classList.remove('dragging', 'drag-over');
+  });
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const section = e.currentTarget.closest('.moveable-section');
+  if (section && section.id !== dragSrcId) section.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+  const section = e.currentTarget.closest('.moveable-section');
+  if (section) section.classList.remove('drag-over');
+}
+
+function dragDrop(e, targetId) {
+  e.preventDefault();
+  if (dragSrcId === targetId) return;
+  const wrapper = document.getElementById('sectionsWrapper');
+  const src = document.getElementById(dragSrcId);
+  const tgt = document.getElementById(targetId);
+  if (!src || !tgt) return;
+
+  // Determine position
+  const srcIdx = Array.from(wrapper.children).indexOf(src);
+  const tgtIdx = Array.from(wrapper.children).indexOf(tgt);
+
+  if (srcIdx < tgtIdx) {
+    wrapper.insertBefore(src, tgt.nextSibling);
+  } else {
+    wrapper.insertBefore(src, tgt);
+  }
+  showToast('Panel reordered! ⠿');
+}
+
+// ══════════════════════════════════════════════
+// AI ASSISTANT
+// ══════════════════════════════════════════════
+function getAISystem() {
+  const appNames = USER_APPS.map(a => a.name).join(', ');
+  const userName = USER_NAME || 'the user';
+  return `You are a cybersecurity and digital privacy expert AI assistant embedded in a premium privacy dashboard. ${userName} uses these ${USER_APPS.length} apps: ${appNames}. Their Digital Footprint Score is ${DFS}/100 and Privacy Score is ${PS}/100. Always distinguish between Facts (from the app list) and Estimates (inferences). Be concise, specific, and actionable. Format responses clearly with line breaks. Never claim access to private databases.`;
+}
+
+async function sendAI() {
+  const input = document.getElementById('aiInput');
+  const text = input.value.trim();
+  if (!text) return;
+  addMsg(text, 'user');
+  input.value = '';
+  const typing = addMsg('🔍 Analyzing your digital footprint…', 'bot typing');
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: getAISystem(),
+        messages: [{ role: 'user', content: text }]
+      })
+    });
+    const data = await resp.json();
+    typing.remove();
+    const reply = data.content?.map(b => b.text||'').join('') || 'Sorry, could not generate a response.';
+    addMsg(reply, 'bot');
+  } catch(e) {
+    typing.remove();
+    addMsg('⚠️ AI request failed. Please check connection and try again.', 'bot');
+  }
+}
+
+function sendAISugg(el) {
+  document.getElementById('aiInput').value = el.textContent;
+  sendAI();
+}
+
+function addMsg(text, type) {
+  const msgs = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + type;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function focusAI() {
+  document.getElementById('aiInput').focus();
+  document.getElementById('aiPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ══════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════
+function scrollTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+}
+
+function setMode(mode, e) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  if (e) e.target.classList.add('active');
+  const detailedOnly = ['radarSection', 'matrixSection'];
+  detailedOnly.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', mode === 'overview');
+  });
+  if (mode === 'detailed') buildRadar();
+}
+
+function animateCount(el, target, duration = 1400) {
+  if (!el) return;
+  let start = 0;
+  const step = () => {
+    start += Math.ceil(target / (duration / 16));
+    if (start >= target) { el.textContent = target; return; }
+    el.textContent = start;
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function showTip(e, text) {
+  const tt = document.getElementById('tooltip');
+  tt.textContent = text;
+  tt.style.left = (e.clientX + 12) + 'px';
+  tt.style.top = (e.clientY - 10) + 'px';
+  tt.classList.add('show');
+}
+
+function hideTip() {
+  document.getElementById('tooltip').classList.remove('show');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function runLoadBar() {
+  const bar = document.getElementById('loadBar');
+  let w = 0;
+  const t = setInterval(() => {
+    w += Math.random() * 18;
+    if (w >= 100) { w = 100; clearInterval(t); setTimeout(() => { bar.style.opacity = '0'; }, 400); }
+    bar.style.width = w + '%';
+  }, 70);
+}
+
+function updateClock() {
+  const el = document.getElementById('statusTime');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('en-IN', { hour12: false });
+  }
+}
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  runLoadBar();
+  renderAppTags();
+  recalcScores();
+  refreshAll();
+
+  // Clock
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Set today's date
+  document.getElementById('metaDate').textContent = 'Last analyzed: ' + new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+
+  // Setup app input listener
+  document.getElementById('appInput').addEventListener('keydown', e => { if(e.key==='Enter') addApp(); });
+});
+</script>
+</body>
+</html>
