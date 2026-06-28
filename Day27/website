@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HARS — Hospital Admission Readiness Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0E1210;
+  --surface:rgba(18,22,18,0.82);
+  --surface2:rgba(22,28,22,0.9);
+  --surface3:rgba(28,35,28,0.95);
+  --border:rgba(180,200,180,0.1);
+  --border2:rgba(180,200,180,0.2);
+  --accent:#4CAF7D;
+  --accent2:#2D8653;
+  --accent-glow:rgba(76,175,125,0.18);
+  --gold:#C9A84C;
+  --gold-dim:rgba(201,168,76,0.12);
+  --amber:#E07B39;
+  --amber-dim:rgba(224,123,57,0.12);
+  --red:#D95C4A;
+  --red-dim:rgba(217,92,74,0.1);
+  --green:#4CAF7D;
+  --green-dim:rgba(76,175,125,0.1);
+  --teal:#3ABFB0;
+  --teal-dim:rgba(58,191,176,0.1);
+  --text:#EDF2ED;
+  --text2:#9EB09E;
+  --text3:#5A7060;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',sans-serif;
+  --r:8px;
+  --rsm:5px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ══ HERO BACKGROUND ══ */
+.hero-bg{
+  position:fixed;inset:0;z-index:0;
+  background-image:url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1800&q=80&auto=format&fit=crop');
+  background-size:cover;background-position:center;
+  filter:brightness(0.22) saturate(0.5);
+}
+.hero-bg::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(14,18,16,0.3) 0%,rgba(14,18,16,0.7) 40%,rgba(14,18,16,0.97) 100%);
+}
+
+/* ══ HEADER ══ */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,14,10,0.75);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 28px;height:60px;
+}
+.logo-mark{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;
+  box-shadow:0 0 18px rgba(76,175,125,0.3);
+}
+.header-title{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.01em}
+.header-sub{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.06em}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.role-pill{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.08em;
+  color:var(--accent);border:1px solid rgba(76,175,125,0.3);
+  background:rgba(76,175,125,0.06);padding:4px 12px;border-radius:20px;
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 7px var(--accent);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ══ LAYOUT ══ */
+.wrap{max-width:1060px;margin:0 auto;padding:32px 20px 80px;position:relative;z-index:1}
+
+/* ══ SETUP HERO ══ */
+.setup-hero{text-align:center;padding:56px 20px 40px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--accent);border:1px solid rgba(76,175,125,0.25);background:rgba(76,175,125,0.07);
+  padding:5px 15px;border-radius:20px;margin-bottom:22px;
+}
+.setup-hero h2{
+  font-size:38px;font-weight:700;letter-spacing:-0.03em;
+  color:var(--text);margin-bottom:12px;line-height:1.15;
+}
+.setup-hero h2 em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--accent),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.setup-hero p{font-size:14px;color:var(--text2);max-width:500px;margin:0 auto;line-height:1.65}
+
+/* ══ FORM CARD ══ */
+.form-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.form-sec{padding:24px 28px;border-bottom:1px solid var(--border)}
+.form-sec:last-child{border-bottom:none}
+.form-sec-label{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:18px;display:flex;align-items:center;gap:8px;
+}
+.form-sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:660px){.fg2,.fg3{grid-template-columns:1fr}}
+
+.f-grp{display:flex;flex-direction:column;gap:6px}
+.f-lbl{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text2);display:flex;align-items:center;gap:5px;
+}
+.f-note{font-size:9px;color:var(--text3);font-style:italic;text-transform:none;letter-spacing:0;font-family:var(--sans)}
+
+.f-input,.f-sel{
+  width:100%;background:rgba(0,0,0,0.4);
+  border:1px solid var(--border);border-radius:var(--rsm);
+  padding:10px 14px;color:var(--text);
+  font-family:var(--sans);font-size:13px;
+  outline:none;transition:border-color 0.18s,box-shadow 0.18s;
+  appearance:none;-webkit-appearance:none;
+}
+.f-input:focus,.f-sel:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(76,175,125,0.12)}
+.sel-wrap{position:relative}
+.sel-wrap::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:12px}
+.f-sel option{background:#0E1210;color:var(--text)}
+
+/* ══ ALERTS ══ */
+.alert{border-radius:var(--rsm);padding:12px 16px;font-size:12.5px;line-height:1.6;display:flex;gap:12px;align-items:flex-start;border:1px solid}
+.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.alert-info{background:rgba(58,191,176,0.07);border-color:rgba(58,191,176,0.22);color:#7DDDD4}
+.alert-warn{background:rgba(224,123,57,0.08);border-color:rgba(224,123,57,0.25);color:#F0A870}
+.alert-danger{background:rgba(217,92,74,0.08);border-color:rgba(217,92,74,0.25);color:#F0948A}
+.alert-success{background:rgba(76,175,125,0.08);border-color:rgba(76,175,125,0.25);color:#7DD4A8}
+
+/* ══ BUTTONS ══ */
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:13px;border:none;border-radius:var(--rsm);cursor:pointer;transition:all 0.18s;padding:11px 22px;letter-spacing:-0.01em}
+.btn-primary{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;box-shadow:0 4px 20px rgba(76,175,125,0.28)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(76,175,125,0.38)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);font-size:12px;padding:8px 16px}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--surface2)}
+
+/* ══ CHIPS ══ */
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;padding:3px 9px;border-radius:4px}
+.chip-green{background:rgba(76,175,125,0.12);color:#7DD4A8;border:1px solid rgba(76,175,125,0.25)}
+.chip-amber{background:rgba(224,123,57,0.12);color:#F0A870;border:1px solid rgba(224,123,57,0.25)}
+.chip-red{background:rgba(217,92,74,0.12);color:#F0948A;border:1px solid rgba(217,92,74,0.25)}
+.chip-gold{background:rgba(201,168,76,0.12);color:#E0C06A;border:1px solid rgba(201,168,76,0.25)}
+.chip-teal{background:rgba(58,191,176,0.12);color:#7DDDD4;border:1px solid rgba(58,191,176,0.25)}
+
+/* ══ SECTION HEAD ══ */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sec-eyebrow{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);white-space:nowrap}
+.sec-line{flex:1;height:1px;background:var(--border)}
+
+/* ══ SCORE PANEL ══ */
+.score-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:28px 32px;display:flex;align-items:center;gap:36px;margin-bottom:22px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  position:relative;overflow:hidden;
+}
+.score-panel::before{
+  content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(76,175,125,0.07) 0%,transparent 70%);pointer-events:none;
+}
+.score-arc-wrap{position:relative;width:132px;height:132px;flex-shrink:0}
+.score-arc-wrap svg{transform:rotate(-90deg)}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-pct{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1;letter-spacing:-0.02em;transition:color 0.5s}
+.score-sub-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.12em;margin-top:4px}
+.score-meta{flex:1;min-width:0}
+.score-title{font-size:19px;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin-bottom:6px;line-height:1.25}
+.score-detail{font-size:12.5px;color:var(--text2);line-height:1.75}
+.score-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+
+/* ══ PHASE TRACK ══ */
+.phase-track{display:flex;gap:4px;margin-bottom:6px}
+.phase-pip{height:5px;flex:1;border-radius:3px;background:rgba(255,255,255,0.06);transition:background 0.5s}
+.phase-pip.done{background:var(--accent)}
+.phase-pip.active{background:var(--gold);box-shadow:0 0 8px rgba(201,168,76,0.4)}
+.phase-labels{display:flex;justify-content:space-between;margin-bottom:24px}
+.phase-label-txt{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.phase-label-cur{font-family:var(--mono);font-size:10px;color:var(--gold)}
+
+/* ══ DOMAIN GRID ══ */
+.domains-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:660px){.domains-grid{grid-template-columns:repeat(2,1fr)}}
+.d-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;transition:transform 0.2s,border-color 0.2s;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  position:relative;overflow:hidden;cursor:default;
+}
+.d-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--dc,var(--border));transition:background 0.6s}
+.d-card:hover{transform:translateY(-2px);border-color:var(--border2)}
+.d-icon{font-size:20px;margin-bottom:8px;display:block}
+.d-name{font-size:11.5px;font-weight:600;color:var(--text);margin-bottom:4px}
+.d-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.d-pct{font-family:var(--mono);font-size:14px;font-weight:700}
+.d-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.d-bar-fill{height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(.4,0,.2,1)}
+
+/* ══ WEIGHT TABLE ══ */
+.wt-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:22px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.wt-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border);transition:background 0.15s}
+.wt-row:hover{background:var(--surface2)}
+.wt-row:last-child{border-bottom:none}
+.wt-name{font-size:12.5px;color:var(--text);width:185px;flex-shrink:0}
+.wt-pct{font-family:var(--mono);font-size:10px;color:var(--text3);width:30px;flex-shrink:0}
+.wt-bar-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.wt-bar-fill{height:100%;border-radius:3px;transition:width 0.8s cubic-bezier(.4,0,.2,1)}
+.wt-contrib{font-family:var(--mono);font-size:11px;color:var(--accent);width:42px;text-align:right;flex-shrink:0}
+.wt-total{background:var(--surface2);display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:10px 20px;border-top:1px solid var(--border2)}
+
+/* ══ PA BRANCH ══ */
+.pa-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:22px;backdrop-filter:blur(16px)}
+.pa-box-lbl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+.pa-acts{display:flex;flex-direction:column;gap:8px}
+.pa-btn{
+  background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:12px 16px;cursor:pointer;transition:all 0.18s;text-align:left;width:100%;
+  color:var(--text);font-family:var(--sans);font-size:12.5px;
+  display:flex;align-items:center;gap:12px;
+}
+.pa-btn:hover{border-color:var(--border2);background:rgba(76,175,125,0.06)}
+.pa-btn.taken{border-color:rgba(76,175,125,0.3);background:rgba(76,175,125,0.06);color:var(--accent)}
+.pa-btn:disabled{opacity:0.4;cursor:not-allowed}
+.pa-check{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all 0.25s;color:var(--text3)}
+.pa-btn.taken .pa-check{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ══ WORKFLOW ══ */
+.wf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:22px}
+.wf-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;cursor:pointer;transition:all 0.2s;text-align:left;
+  display:flex;flex-direction:column;gap:7px;position:relative;overflow:hidden;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.wf-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,0.35)}
+.wf-card.done{border-color:rgba(76,175,125,0.28);background:rgba(76,175,125,0.05);cursor:default}
+.wf-card.done:hover{transform:none}
+.wf-icon{font-size:22px;line-height:1}
+.wf-label{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.3}
+.wf-note{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.wf-tick{
+  position:absolute;top:12px;right:12px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:#fff;opacity:0;transition:opacity 0.3s,transform 0.3s;transform:scale(0.5);
+}
+.wf-card.done .wf-tick{opacity:1;transform:scale(1)}
+
+/* ══ TIMELINE ══ */
+.tl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;backdrop-filter:blur(16px)}
+.tl-step{display:flex;align-items:flex-start;gap:12px;padding-bottom:16px}
+.tl-step:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.tl-node{
+  width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--border2);background:rgba(0,0,0,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;color:var(--text3);transition:all 0.3s;
+}
+.tl-node.done{border-color:var(--accent);background:var(--accent);color:#fff}
+.tl-node.active{border-color:var(--gold);background:var(--gold);color:#000;box-shadow:0 0 12px rgba(201,168,76,0.5);animation:pulse-node 2s infinite}
+@keyframes pulse-node{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.5)}50%{box-shadow:0 0 0 7px rgba(201,168,76,0)}}
+.tl-line{width:2px;flex:1;min-height:14px;background:var(--border);margin-top:3px;border-radius:1px;transition:background 0.5s}
+.tl-line.done{background:var(--accent)}
+.tl-step:last-child .tl-line{display:none}
+.tl-content{flex:1;padding-top:3px}
+.tl-title{font-size:12.5px;font-weight:500;color:var(--text3);transition:color 0.3s}
+.tl-title.done{color:var(--text)}
+.tl-title.active{color:var(--gold)}
+.tl-note{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+
+/* ══ RISK ══ */
+.risk-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;backdrop-filter:blur(16px)}
+.risk-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.risk-item:last-child{border-bottom:none}
+.risk-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.risk-body{flex:1}
+.risk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.risk-name{font-size:12.5px;color:var(--text)}
+.risk-badge{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:0.06em;padding:3px 9px;border-radius:4px}
+.rh{background:rgba(217,92,74,0.12);color:#F0948A;border:1px solid rgba(217,92,74,0.25)}
+.rm{background:rgba(224,123,57,0.12);color:#F0A870;border:1px solid rgba(224,123,57,0.25)}
+.rl{background:rgba(76,175,125,0.12);color:#7DD4A8;border:1px solid rgba(76,175,125,0.25)}
+.risk-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:2px;transition:width 0.7s ease}
+
+/* ══ CARE CARDS ══ */
+.care-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(188px,1fr));gap:12px;margin-bottom:22px}
+.care-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:transform 0.2s,border-color 0.2s;backdrop-filter:blur(16px)}
+.care-card:hover{transform:translateY(-1px);border-color:var(--border2)}
+.care-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.care-avatar{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.care-name{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase}
+.care-role{font-size:11px;color:var(--text3);margin-bottom:8px}
+.care-tasks{font-size:11.5px;color:var(--text2);line-height:1.6}
+.care-tag{display:inline-block;font-family:var(--mono);font-size:9px;color:var(--gold);background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);padding:1px 6px;border-radius:3px;margin:2px 2px 0 0}
+
+/* ══ GOVERNANCE ══ */
+.gov-box{
+  background:linear-gradient(135deg,rgba(201,168,76,0.06),rgba(76,175,125,0.05));
+  border:1px solid rgba(201,168,76,0.2);border-radius:var(--r);padding:24px;margin-bottom:22px;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+}
+.gov-box::before{
+  content:'BENCHMARKS';position:absolute;right:-30px;top:50%;transform:translateY(-50%) rotate(90deg);
+  font-family:var(--mono);font-size:64px;font-weight:700;color:rgba(201,168,76,0.04);letter-spacing:0.1em;pointer-events:none;white-space:nowrap;
+}
+.gov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:16px}
+@media(max-width:580px){.gov-grid{grid-template-columns:1fr}}
+.gov-val{font-family:var(--mono);font-size:27px;font-weight:700;color:var(--text);letter-spacing:-0.02em;line-height:1}
+.gov-lbl{font-size:11.5px;color:var(--text2);margin-top:5px}
+.gov-note{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ══ DECISION ══ */
+.dec-box{border-radius:var(--r);padding:28px;margin-bottom:22px;backdrop-filter:blur(16px)}
+.dec-admit{background:linear-gradient(135deg,rgba(76,175,125,0.1),rgba(58,191,176,0.05));border:2px solid rgba(76,175,125,0.35)}
+.dec-notready{background:linear-gradient(135deg,rgba(224,123,57,0.1),rgba(224,123,57,0.04));border:2px solid rgba(224,123,57,0.3)}
+.dec-icon{font-size:36px;margin-bottom:12px;display:block}
+.dec-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px}
+.dec-meta{font-family:var(--mono);font-size:11px;letter-spacing:0.06em;margin-bottom:18px;opacity:0.7}
+.dec-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:560px){.dec-grid{grid-template-columns:1fr}}
+.dec-block{background:rgba(0,0,0,0.25);border-radius:var(--rsm);padding:14px}
+.dec-block-ttl{font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.dec-item{font-size:12.5px;color:var(--text);line-height:1.8;display:flex;align-items:center;gap:8px}
+.miss-list{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.miss-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,0.2);border-radius:var(--rsm);font-size:12.5px;color:#F0A870}
+
+/* ══ TOAST ══ */
+.toast-cont{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{
+  background:rgba(18,24,18,0.9);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:12px 18px;font-size:12.5px;color:var(--text);
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter:blur(16px);
+  animation:slideIn 0.3s ease,fadeOut 0.35s ease 2.65s forwards;
+  min-width:250px;max-width:340px;
+}
+@keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{to{transform:translateX(110%);opacity:0}}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.hidden{display:none!important}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-msg{font-size:12px;color:var(--red);margin-top:8px;display:flex;align-items:center;gap:6px}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+@media(max-width:660px){.two-col{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Hospital photo background -->
+<div class="hero-bg"></div>
+
+<!-- Toasts -->
+<div class="toast-cont" id="toasts"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-mark">🏥</div>
+  <div>
+    <div class="header-title">Hospital Admission Readiness Simulator</div>
+    <div class="header-sub">HARS · TRAINING ENVIRONMENT · v2.0</div>
+  </div>
+  <div class="header-right">
+    <div class="live-dot"></div>
+    <div class="role-pill">⚕ ADMISSION COORDINATOR</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ══════════ SETUP ══════════ -->
+<div id="setup-panel">
+  <div class="setup-hero">
+    <div class="hero-badge">⚕ Clinical Workflow Simulation</div>
+    <h2>Assess <em>Admission Readiness</em><br>Before the Patient Arrives</h2>
+    <p>Configure the patient scenario below. You'll receive a live readiness score, step-by-step workflow actions, and a final admission decision.</p>
+  </div>
+
+  <div class="form-card">
+
+    <div class="form-sec">
+      <div class="form-sec-label">Facility &amp; Clinical Team <span class="f-note">&nbsp;— all names are illustrative training data</span></div>
+      <div class="fg2">
+        <div class="f-grp">
+          <label class="f-lbl">Provider / Facility</label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="provider">
+              <option value="">Select provider…</option>
+              <option>Meridian Health System</option>
+              <option>BluePeak Regional Medical Center</option>
+              <option>Crestview University Hospital</option>
+              <option>Lakeside Community Hospital</option>
+              <option>Summit Medical Group</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Attending Physician</label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="physician">
+              <option value="">Select physician…</option>
+              <option>Dr. A. Patel, MD — Cardiology</option>
+              <option>Dr. M. Chen, MD — Internal Medicine</option>
+              <option>Dr. S. Rivera, MD — Hospitalist</option>
+              <option>Dr. L. Okafor, MD — Pulmonology</option>
+              <option>Dr. J. Thornton, MD — Orthopedics</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-sec">
+      <div class="form-sec-label">Clinical Details</div>
+      <div class="fg2" style="margin-bottom:14px">
+        <div class="f-grp">
+          <label class="f-lbl">Primary Diagnosis</label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="diagnosis">
+              <option value="">Select diagnosis…</option>
+              <option value="AMI">Acute MI</option>
+              <option value="CHF">Congestive Heart Failure (CHF)</option>
+              <option value="PNEU">Pneumonia</option>
+              <option value="ELEC">Elective Surgery</option>
+              <option value="HIP">Hip Fracture</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Admission Type</label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="admType">
+              <option value="">Select type…</option>
+              <option value="INP">Inpatient</option>
+              <option value="OBS">Observation</option>
+              <option value="ER">Emergency</option>
+              <option value="ICU">ICU</option>
+              <option value="SDS">Same-Day Surgery</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="obs-notice" class="alert alert-info hidden">
+        <span class="alert-icon">ℹ️</span>
+        <span><strong>Observation Status:</strong> CMS 2-Midnight Rule applies — different cost-sharing, SNF eligibility, and billing than inpatient. Medicare patients require written <strong>MOON</strong> (Medicare Outpatient Observation Notice) notification.</span>
+      </div>
+      <div id="iq-notice" class="alert alert-warn hidden" style="margin-top:10px">
+        <span class="alert-icon">⚠️</span>
+        <span><strong>Clinical Criteria Alert:</strong> InterQual/Milliman thresholds apply — ensure documentation meets medical necessity standards before UR review.</span>
+      </div>
+    </div>
+
+    <div class="form-sec">
+      <div class="form-sec-label">Insurance &amp; Authorization</div>
+      <div class="fg3">
+        <div class="f-grp">
+          <label class="f-lbl">Payer / Insurance <span class="f-note">— illustrative</span></label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="insurance">
+              <option value="">Select payer…</option>
+              <option value="MCR">Medicare (Traditional)</option>
+              <option value="MCD">Medicaid (State Plan)</option>
+              <option value="BCBS">BlueCrest Health Plan</option>
+              <option value="UHC">UnityPoint Commercial</option>
+              <option value="SELF">Self-Pay</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Prior Auth Status</label>
+          <div class="sel-wrap">
+            <select class="f-sel" id="paStatus">
+              <option value="">Select PA status…</option>
+              <option value="APR">✅ Approved</option>
+              <option value="PND">⏳ Pending</option>
+              <option value="DEN">❌ Denied</option>
+              <option value="NA">— Not Required</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Target Admission Date</label>
+          <input type="date" class="f-input" id="admDate">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-sec" style="background:rgba(0,0,0,0.25)">
+      <button class="btn btn-primary" onclick="startAnalysis()">🏥 Analyze Admission Readiness</button>
+      <div class="err-msg hidden" id="err-msg">⚠ Please complete all fields before analyzing.</div>
+    </div>
+
+  </div>
+</div><!-- /setup -->
+
+<!-- ══════════ ANALYSIS ══════════ -->
+<div id="analysis-panel" class="hidden">
+
+  <!-- Score -->
+  <div class="score-panel">
+    <div class="score-arc-wrap">
+      <svg width="132" height="132" viewBox="0 0 132 132">
+        <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>
+        <circle id="arc" cx="66" cy="66" r="54" fill="none" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"
+          style="transition:stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1),stroke 0.5s"/>
+      </svg>
+      <div class="score-center">
+        <span class="score-pct" id="score-num">0%</span>
+        <span class="score-sub-lbl">READINESS</span>
+      </div>
+    </div>
+    <div class="score-meta">
+      <div class="score-title" id="s-title">—</div>
+      <div class="score-detail" id="s-detail">—</div>
+      <div class="score-tags" id="s-tags"></div>
+    </div>
+  </div>
+
+  <!-- PA Branch -->
+  <div id="pa-area"></div>
+
+  <!-- Phase track -->
+  <div class="phase-track" id="phase-track"></div>
+  <div class="phase-labels">
+    <span class="phase-label-txt">PA REVIEW</span>
+    <span class="phase-label-cur" id="phase-cur">—</span>
+    <span class="phase-label-txt">COMPLETE</span>
+  </div>
+
+  <!-- Domains -->
+  <div class="sec-head"><span class="sec-eyebrow">Domain Status</span><div class="sec-line"></div></div>
+  <div class="domains-grid" id="domain-grid"></div>
+
+  <!-- Weights -->
+  <div class="sec-head"><span class="sec-eyebrow">Score Weighting</span><div class="sec-line"></div></div>
+  <div class="wt-table" id="wt-table"></div>
+
+  <!-- Governance -->
+  <div id="gov-area" class="hidden">
+    <div class="sec-head"><span class="sec-eyebrow">Governance Snapshot</span><div class="sec-line"></div></div>
+    <div class="gov-box">
+      <span class="chip chip-gold">Industry Benchmarks — Estimates Only</span>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">Reference data from CMS and CAQH. Not facility-specific.</div>
+      <div class="gov-grid">
+        <div><div class="gov-val">3–5 days</div><div class="gov-lbl">PA Turnaround</div><div class="gov-note">Industry average</div></div>
+        <div><div class="gov-val">~8–10%</div><div class="gov-lbl">Inpatient Denial Rate</div><div class="gov-note">CMS estimate</div></div>
+        <div><div class="gov-val">~$11</div><div class="gov-lbl">PA Rework Cost</div><div class="gov-note">Per transaction · CAQH est.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow -->
+  <div class="sec-head"><span class="sec-eyebrow">Workflow Actions</span><div class="sec-line"></div></div>
+  <div class="wf-grid" id="wf-grid"></div>
+
+  <!-- Timeline + Risk -->
+  <div class="two-col">
+    <div>
+      <div class="sec-head"><span class="sec-eyebrow">Admission Timeline</span><div class="sec-line"></div></div>
+      <div class="tl-wrap" id="tl-wrap"></div>
+    </div>
+    <div>
+      <div class="sec-head"><span class="sec-eyebrow">Risk Tracking</span><div class="sec-line"></div></div>
+      <div class="risk-wrap" id="risk-wrap"></div>
+    </div>
+  </div>
+
+  <!-- Care -->
+  <div class="sec-head"><span class="sec-eyebrow">Care Coordination</span><div class="sec-line"></div></div>
+  <div class="care-grid" id="care-grid"></div>
+
+  <!-- Final Decision -->
+  <div id="final" class="hidden">
+    <div class="sec-head"><span class="sec-eyebrow">Final Admission Decision</span><div class="sec-line"></div></div>
+    <div id="final-body"></div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:8px">
+    <button class="btn btn-ghost" onclick="resetSim()">↩ Start New Case</button>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ══════ DATA ══════
+const W = {PA:.25, DocRisk:.20, Orders:.20, Insurance:.15, Consent:.10, Bed:.10};
+const TL_STEPS = ['PA Review','Insurance Verification','Bed Assignment','Documentation Review','Consent Obtained','Patient Arrival','Registration','Clinical Assessment','Admission Complete'];
+const WF = [
+  {id:'bed',      icon:'🛏',  label:'Assign Bed',              note:'+10 pts · Bed domain',        pts:10},
+  {id:'ins',      icon:'💳',  label:'Verify Insurance',        note:'+15 pts · Insurance domain',  pts:15},
+  {id:'docs',     icon:'📋',  label:'Upload Documentation',    note:'+20 pts · Documentation',     pts:20},
+  {id:'consent',  icon:'✍️',  label:'Complete Consent',        note:'+10 pts · Consent domain',    pts:10},
+  {id:'physician',icon:'👨‍⚕️', label:'Contact Physician',       note:'+20 pts · Orders domain',     pts:20},
+  {id:'nursing',  icon:'🩺',  label:'Notify Nursing',          note:'+5 pts',                      pts:5},
+  {id:'arrival',  icon:'🚑',  label:'Prepare Patient Arrival', note:'+5 pts',                      pts:5},
+];
+
+const DIAG  = {AMI:'Acute MI',CHF:'CHF / Heart Failure',PNEU:'Pneumonia',ELEC:'Elective Surgery',HIP:'Hip Fracture'};
+const TYPE  = {INP:'Inpatient',OBS:'Observation',ER:'Emergency',ICU:'ICU',SDS:'Same-Day Surgery'};
+const INS   = {MCR:'Medicare (Traditional)',MCD:'Medicaid (State Plan)',BCBS:'BlueCrest Health Plan',UHC:'UnityPoint Commercial',SELF:'Self-Pay'};
+const PA_LB = {APR:'Approved',PND:'Pending',DEN:'Denied',NA:'Not Required'};
+
+let S = { score:0, domains:{}, paResolved:null, done:new Set(), tlStep:0, appealPending:false, appealDone:false, setup:{} };
+
+// ══════ SETUP WATCHERS ══════
+document.getElementById('admType').addEventListener('change',function(){
+  document.getElementById('obs-notice').classList.toggle('hidden',this.value!=='OBS');
+});
+document.getElementById('diagnosis').addEventListener('change',function(){
+  document.getElementById('iq-notice').classList.toggle('hidden',!['AMI','CHF'].includes(this.value));
+});
+
+// ══════ TOAST ══════
+function toast(msg, color='#4CAF7D'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<div class="toast-dot" style="background:${color}"></div><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),3100);
+}
+
+// ══════ SCORE COLOR (no blue) ══════
+function scoreColor(s){
+  if(s>=90) return '#4CAF7D';
+  if(s>=75) return '#3ABFB0';
+  if(s>=50) return '#E07B39';
+  return '#D95C4A';
+}
+
+// ══════ COMPUTE ══════
+function compute(){
+  const {paStatus,admType,insurance} = S.setup;
+  const paEff = S.paResolved || paStatus;
+  const d = S.done;
+
+  // PA domain score
+  let pa=0;
+  if(['APR','NA','approved','appealed'].includes(paEff)) pa=1;
+  else if(paEff==='PND'){
+    let n=0;
+    if(d.has('pa_follow'))n++;
+    if(d.has('pa_docs'))n++;
+    if(d.has('pa_phys'))n++;
+    pa=0.2+n*0.1;
+  } else if(paEff==='DEN'){
+    pa=0.08;
+    if(d.has('pa_review'))pa+=0.06;
+    if(d.has('pa_contact'))pa+=0.06;
+    if(S.appealPending)pa=Math.max(pa,0.35);
+  }
+
+  const ins  = d.has('ins')      ? 1 : (['MCR','MCD'].includes(insurance)?0.45:0.25);
+  const bed  = d.has('bed')      ? 1 : (admType==='ICU'?0.15:0.30);
+  const doc  = d.has('docs')     ? 1 : 0.20;
+  const ord  = d.has('physician')? 1 : 0.15;
+  const con  = d.has('consent')  ? 1 : 0.08;
+
+  S.domains = {PA:pa,Insurance:ins,Bed:bed,DocRisk:doc,Orders:ord,Consent:con};
+
+  let raw = pa*W.PA + doc*W.DocRisk + ord*W.Orders + ins*W.Insurance + con*W.Consent + bed*W.Bed;
+  if(d.has('nursing')) raw+=0.05;
+  if(d.has('arrival')) raw+=0.05;
+  raw=Math.min(1,raw);
+
+  // Hard caps
+  if(paEff==='DEN'&&admType==='ICU'&&!S.appealDone&&raw>0.65) raw=0.65;
+  if(paEff==='DEN'&&!S.appealDone&&raw>0.50) raw=0.50;
+
+  // Initial cap if no workflow actions yet
+  if(!['bed','ins','docs','consent','physician'].some(k=>d.has(k))) raw=Math.min(raw,0.60);
+
+  S.score=Math.round(raw*100);
+}
+
+// ══════ RENDER ALL ══════
+function renderAll(){
+  compute();
+  rScore(); rHeader(); rPABranch(); rPhase(); rDomains(); rWeights(); rWorkflow(); rTimeline(); rRisks(); rCare(); rGov(); rDecision();
+}
+
+function rScore(){
+  const s=S.score, c=scoreColor(s);
+  const el=document.getElementById('score-num');
+  el.textContent=s+'%';
+  el.style.color=c;
+  const arc=document.getElementById('arc');
+  arc.style.stroke=c;
+  const circ=2*Math.PI*54; // 339.3
+  arc.style.strokeDashoffset=circ-(circ*s/100);
+}
+
+function rHeader(){
+  const {diagnosis,admType,physician,provider,insurance,paStatus,admDate}=S.setup;
+  document.getElementById('s-title').textContent=`${DIAG[diagnosis]||diagnosis} — ${TYPE[admType]||admType} Admission`;
+  const dateStr=admDate?new Date(admDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+  document.getElementById('s-detail').innerHTML=
+    `📍 ${provider} &nbsp;·&nbsp; 👨‍⚕️ ${physician} &nbsp;·&nbsp; 💳 ${INS[insurance]||insurance} &nbsp;·&nbsp; 📅 ${dateStr}`;
+
+  const paEff=S.paResolved||paStatus;
+  let paCls='chip-amber',paLbl=PA_LB[paStatus]||paStatus;
+  if(['APR','NA','approved','appealed'].includes(paEff)){paCls='chip-green';paLbl=paEff==='appealed'?'Approved (Appeal)':(PA_LB[paStatus]||paStatus)}
+  else if(paEff==='DEN') paCls='chip-red';
+
+  let sCls='chip-red',sLbl='Critical Gaps';
+  if(S.score>=90){sCls='chip-green';sLbl='Admission Ready'}
+  else if(S.score>=75){sCls='chip-teal';sLbl='Progressing'}
+  else if(S.score>=50){sCls='chip-amber';sLbl='Action Needed'}
+
+  document.getElementById('s-tags').innerHTML=
+    `<span class="chip ${paCls}">PA: ${paLbl}</span><span class="chip ${sCls}">${sLbl}</span>`;
+}
+
+function rPABranch(){
+  const {paStatus,admType}=S.setup;
+  const paEff=S.paResolved||paStatus;
+  const d=S.done;
+  const area=document.getElementById('pa-area');
+
+  if(['APR','NA','approved','appealed'].includes(paEff)){
+    const msg=paEff==='NA'?'Prior Authorization not required for this payer/type.':paEff==='appealed'?'Appeal successful — PA converted to Approved. Complete remaining workflow actions.':'Prior Authorization is Approved. Proceed with admission workflow.';
+    area.innerHTML=`<div class="alert alert-success" style="margin-bottom:22px"><span class="alert-icon">✅</span><span>${msg}</span></div>`;
+    return;
+  }
+
+  if(paEff==='PND'){
+    const steps=[
+      {id:'pa_follow',icon:'📞',label:'Follow up with payer',note:'Contact the insurance PA department directly'},
+      {id:'pa_docs',  icon:'📎',label:'Upload clinical documents',note:'Attach H&P, labs, clinical notes'},
+      {id:'pa_phys',  icon:'👨‍⚕️',label:'Contact attending physician',note:'Obtain additional clinical justification'},
+    ];
+    area.innerHTML=`<div class="pa-box"><div class="pa-box-lbl">PA Branch — Pending: Complete Actions Below</div><div class="pa-acts">${
+      steps.map(s=>`<button class="pa-btn ${d.has(s.id)?'taken':''}" onclick="paAct('${s.id}')">
+        <div class="pa-check">${d.has(s.id)?'✓':''}</div>
+        <div><div style="font-size:12.5px;font-weight:600">${s.icon} ${s.label}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${s.note}</div></div>
+      </button>`).join('')
+    }</div></div>`;
+    return;
+  }
+
+  if(paEff==='DEN'){
+    const canAppeal=d.has('pa_review')&&d.has('pa_contact');
+    const steps=[
+      {id:'pa_review', icon:'🔍',label:'Review denial reason',note:'Obtain EOB and denial rationale from payer'},
+      {id:'pa_contact',icon:'📞',label:'Contact insurance',note:'Speak with Medical Review Department'},
+    ];
+    area.innerHTML=`<div class="pa-box">
+      <div class="pa-box-lbl">PA Branch — Denial: Response Required</div>
+      ${admType==='ICU'?`<div class="alert alert-danger" style="margin-bottom:12px"><span class="alert-icon">⛔</span><span><strong>ICU + Denied PA:</strong> Cannot reach 70%+ through administrative actions alone. Resolve PA first.</span></div>`:''}
+      <div class="pa-acts">
+        ${steps.map(s=>`<button class="pa-btn ${d.has(s.id)?'taken':''}" onclick="paAct('${s.id}')">
+          <div class="pa-check">${d.has(s.id)?'✓':''}</div>
+          <div><div style="font-size:12.5px;font-weight:600">${s.icon} ${s.label}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${s.note}</div></div>
+        </button>`).join('')}
+        ${S.appealPending&&!S.appealDone
+          ?`<div class="alert alert-info"><span class="alert-icon"><div class="spinner"></div></span><span>Appeal submitted — awaiting payer review…</span></div>`
+          :!S.appealDone
+            ?`<button class="pa-btn" onclick="doAppeal()" ${canAppeal?'':'disabled'} style="${canAppeal?'':'opacity:0.4;cursor:not-allowed'}">
+                <div class="pa-check">📝</div>
+                <div><div style="font-size:12.5px;font-weight:600">📝 Submit Formal Appeal</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">${canAppeal?'Ready — click to file appeal':'Complete both steps above first'}</div></div>
+              </button>`
+            :''}
+      </div>
+    </div>`;
+  }
+}
+
+function paAct(key){S.done.add(key);toast('Action recorded: '+key.replace('pa_','').replace('_',' '),'#3ABFB0');renderAll()}
+
+function doAppeal(){
+  if(!S.done.has('pa_review')||!S.done.has('pa_contact'))return;
+  S.appealPending=true;renderAll();
+  setTimeout(()=>{S.appealDone=true;S.paResolved='appealed';S.appealPending=false;toast('🎉 Appeal approved — PA Approved!','#4CAF7D');renderAll();},2400);
+}
+
+function rPhase(){
+  const d=S.done;let step=0;
+  if(d.has('ins'))      step=Math.max(step,2);
+  if(d.has('bed'))      step=Math.max(step,3);
+  if(d.has('docs'))     step=Math.max(step,4);
+  if(d.has('consent'))  step=Math.max(step,5);
+  if(d.has('arrival'))  step=Math.max(step,6);
+  if(d.has('nursing'))  step=Math.max(step,7);
+  if(S.score>=90)       step=8;
+  S.tlStep=step;
+  document.getElementById('phase-track').innerHTML=TL_STEPS.map((_,i)=>
+    `<div class="phase-pip ${i<step?'done':i===step?'active':''}" title="${TL_STEPS[i]}"></div>`).join('');
+  document.getElementById('phase-cur').textContent=TL_STEPS[step]||'Admission Complete';
+}
+
+function rDomains(){
+  const defs=[
+    {key:'PA',label:'Prior Authorization',icon:'📋'},
+    {key:'Insurance',label:'Insurance',icon:'💳'},
+    {key:'Bed',label:'Bed Assignment',icon:'🛏'},
+    {key:'DocRisk',label:'Documentation',icon:'📄'},
+    {key:'Orders',label:'Physician Orders',icon:'👨‍⚕️'},
+    {key:'Consent',label:'Patient Consent',icon:'✍️'},
+  ];
+  document.getElementById('domain-grid').innerHTML=defs.map(d=>{
+    const pct=Math.round((S.domains[d.key]||0)*100);
+    let color,cls,status;
+    if(pct>=80){color='var(--green)';cls='chip-green';status='Complete'}
+    else if(pct>=40){color='var(--amber)';cls='chip-amber';status='In Progress'}
+    else{color='var(--red)';cls='chip-red';status='Incomplete'}
+    return `<div class="d-card" style="--dc:${color}">
+      <span class="d-icon">${d.icon}</span>
+      <div class="d-name">${d.label}</div>
+      <div class="d-row">
+        <span class="d-pct" style="color:${color}">${pct}%</span>
+        <span class="chip ${cls}" style="font-size:9px">${status}</span>
+      </div>
+      <div class="d-bar"><div class="d-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function rWeights(){
+  const rows=[
+    {key:'PA',label:'Prior Authorization',wt:W.PA},
+    {key:'DocRisk',label:'Clinical Documentation',wt:W.DocRisk},
+    {key:'Orders',label:'Physician Orders',wt:W.Orders},
+    {key:'Insurance',label:'Insurance Verification',wt:W.Insurance},
+    {key:'Consent',label:'Patient Consent',wt:W.Consent},
+    {key:'Bed',label:'Bed Assignment',wt:W.Bed},
+  ];
+  const c=scoreColor(S.score);
+  document.getElementById('wt-table').innerHTML=rows.map(r=>{
+    const pct=Math.round((S.domains[r.key]||0)*100);
+    const contrib=Math.round(pct*r.wt);
+    return `<div class="wt-row">
+      <span class="wt-name">${r.label}</span>
+      <span class="wt-pct">${Math.round(r.wt*100)}%</span>
+      <div class="wt-bar-track"><div class="wt-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+      <span class="wt-contrib">${contrib}pts</span>
+    </div>`;
+  }).join('')+
+  `<div class="wt-total">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">TOTAL READINESS SCORE</span>
+    <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:${c}">${S.score}%</span>
+  </div>`;
+}
+
+function rWorkflow(){
+  document.getElementById('wf-grid').innerHTML=WF.map(a=>{
+    const done=S.done.has(a.id);
+    return `<div class="wf-card ${done?'done':''}" onclick="${done?'':'doWF(\''+a.id+'\')'}">
+      <div class="wf-tick">✓</div>
+      <div class="wf-icon">${a.icon}</div>
+      <div class="wf-label">${a.label}</div>
+      <div class="wf-note">${done?'<span style="color:var(--green)">✓ Applied</span>':a.note}</div>
+    </div>`;
+  }).join('');
+}
+
+function doWF(id){
+  if(S.done.has(id))return;
+  S.done.add(id);
+  const a=WF.find(x=>x.id===id);
+  toast(`${a.icon} ${a.label} complete`,'#4CAF7D');
+  renderAll();
+}
+
+function rTimeline(){
+  const step=S.tlStep;
+  document.getElementById('tl-wrap').innerHTML=TL_STEPS.map((t,i)=>{
+    let nc='',icon='';
+    if(i<step){nc='done';icon='✓'}
+    else if(i===step){nc='active';icon='●'}
+    else icon=(i+1)+'';
+    return `<div class="tl-step">
+      <div class="tl-left">
+        <div class="tl-node ${nc}">${icon}</div>
+        <div class="tl-line ${i<step?'done':''}"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-title ${nc}">${t}</div>
+        <div class="tl-note">${i<step?'Completed':i===step?'In progress — current milestone':'Pending'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function rRisks(){
+  const {diagnosis,admType}=S.setup;
+  const d=S.done;
+  const clinHigh=['AMI','CHF'].includes(diagnosis)||admType==='ICU';
+  const risks=[
+    {icon:'📄',name:'Documentation Risk',level:d.has('docs')?'LOW':'HIGH',bar:d.has('docs')?12:88},
+    {icon:'💳',name:'Insurance Risk',level:d.has('ins')?'LOW':'MED',bar:d.has('ins')?10:52},
+    {icon:'🛏',name:'Bed Availability',level:d.has('bed')?'LOW':(admType==='ICU'?'HIGH':'MED'),bar:d.has('bed')?10:admType==='ICU'?84:50},
+    {icon:'❤️',name:'Clinical Risk',level:clinHigh?(d.has('physician')?'MED':'HIGH'):'MED',bar:clinHigh?(d.has('physician')?44:86):44},
+  ];
+  document.getElementById('risk-wrap').innerHTML=risks.map(r=>{
+    const cls=r.level==='HIGH'?'rh':r.level==='MED'?'rm':'rl';
+    const color=r.level==='HIGH'?'var(--red)':r.level==='MED'?'var(--amber)':'var(--green)';
+    return `<div class="risk-item">
+      <span class="risk-icon">${r.icon}</span>
+      <div class="risk-body">
+        <div class="risk-top">
+          <span class="risk-name">${r.name}</span>
+          <span class="risk-badge ${cls}">${r.level}</span>
+        </div>
+        <div class="risk-bar"><div class="risk-bar-fill" style="width:${r.bar}%;background:${color}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function rCare(){
+  const {physician}=S.setup;
+  const cards=[
+    {icon:'👨‍⚕️',bg:'rgba(76,175,125,0.12)',name:'Attending Physician',role:physician,
+     tasks:'H&P completion, physician orders, clinical documentation, discharge planning initiation.',tags:[]},
+    {icon:'📋',bg:'rgba(58,191,176,0.12)',name:'Case Manager',role:'Care Coordination Lead',
+     tasks:'Insurance liaison, PA follow-up, length-of-stay management, post-acute planning.',tags:[]},
+    {icon:'🩺',bg:'rgba(201,168,76,0.12)',name:'Nursing',role:'Inpatient Unit Coordinator',
+     tasks:'Patient arrival prep, clinical assessment, medication reconciliation, care plan activation.',tags:[]},
+    {icon:'🔍',bg:'rgba(224,123,57,0.12)',name:'Utilization Review',role:'UR Department',
+     tasks:'Concurrent review, denial risk identification, clinical criteria application, payer communication.',
+     tags:['InterQual','Milliman','Concurrent Review','Denial Risk']},
+    {icon:'🏠',bg:'rgba(217,92,74,0.12)',name:'Discharge Planner',role:'Social Work / Discharge',
+     tasks:'SNF eligibility review, home health referrals, MOON notification (if Observation), family education.',tags:[]},
+  ];
+  document.getElementById('care-grid').innerHTML=cards.map(c=>`
+    <div class="care-card">
+      <div class="care-top">
+        <div class="care-avatar" style="background:${c.bg}">${c.icon}</div>
+        <div class="care-name">${c.name}</div>
+      </div>
+      <div class="care-role">${c.role}</div>
+      <div class="care-tasks">${c.tasks}</div>
+      ${c.tags.length?`<div style="margin-top:8px">${c.tags.map(t=>`<span class="care-tag">${t}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+
+function rGov(){document.getElementById('gov-area').classList.toggle('hidden',S.score<75)}
+
+function rDecision(){
+  const fd=document.getElementById('final');
+  const fb=document.getElementById('final-body');
+  const {diagnosis,admType,insurance,physician,provider}=S.setup;
+  const wfDone=['bed','ins','docs','consent','physician','nursing','arrival'].filter(k=>S.done.has(k)).length;
+
+  if(S.score>=90){
+    fd.classList.remove('hidden');
+    fb.innerHTML=`<div class="dec-box dec-admit">
+      <span class="dec-icon">✅</span>
+      <div class="dec-title" style="color:var(--green)">Admit — Admission Authorized</div>
+      <div class="dec-meta" style="color:rgba(76,175,125,0.7)">READINESS SCORE ${S.score}% · ALL CRITICAL DOMAINS SATISFIED</div>
+      <div class="dec-grid">
+        <div class="dec-block">
+          <div class="dec-block-ttl">Admission Summary</div>
+          <div class="dec-item">🏥 ${provider}</div>
+          <div class="dec-item">👨‍⚕️ ${physician}</div>
+          <div class="dec-item">📋 ${DIAG[diagnosis]||diagnosis} · ${TYPE[admType]||admType}</div>
+          <div class="dec-item">💳 ${INS[insurance]||insurance}</div>
+        </div>
+        <div class="dec-block">
+          <div class="dec-block-ttl">Clearances Confirmed</div>
+          <div class="dec-item"><span style="color:var(--green)">✓</span> Prior Authorization</div>
+          <div class="dec-item"><span style="color:var(--green)">✓</span> Insurance Verified</div>
+          <div class="dec-item"><span style="color:var(--green)">✓</span> Bed Assigned</div>
+          <div class="dec-item"><span style="color:var(--green)">✓</span> Documentation Complete</div>
+          <div class="dec-item"><span style="color:var(--green)">✓</span> Physician Orders &amp; Consent</div>
+        </div>
+      </div>
+      <div class="alert alert-success"><span class="alert-icon">🏥</span>
+        <span>All admission criteria satisfied. Proceed with patient registration, clinical assessment, and full admission documentation. Notify nursing unit and care coordination team immediately.</span>
+      </div>
+    </div>`;
+  } else if(wfDone>=2){
+    fd.classList.remove('hidden');
+    const missing=[];
+    if(S.domains.PA<0.8)       missing.push({icon:'📋',t:'Prior Authorization not resolved'});
+    if(S.domains.Insurance<0.8) missing.push({icon:'💳',t:'Insurance verification incomplete'});
+    if(S.domains.Bed<0.8)       missing.push({icon:'🛏',t:'Bed not assigned'});
+    if(S.domains.DocRisk<0.8)   missing.push({icon:'📄',t:'Clinical documentation insufficient'});
+    if(S.domains.Orders<0.8)    missing.push({icon:'👨‍⚕️',t:'Physician orders pending'});
+    if(S.domains.Consent<0.8)   missing.push({icon:'✍️',t:'Patient consent not obtained'});
+    fb.innerHTML=`<div class="dec-box dec-notready">
+      <span class="dec-icon">⚠️</span>
+      <div class="dec-title" style="color:var(--amber)">Not Ready — Cannot Proceed</div>
+      <div class="dec-meta" style="color:rgba(224,123,57,0.7)">READINESS SCORE ${S.score}% · TARGET 90%+</div>
+      <ul class="miss-list">${missing.map(m=>`<li class="miss-item">${m.icon} ${m.t}</li>`).join('')}</ul>
+      <div class="alert alert-warn"><span class="alert-icon">⚡</span>
+        <span>Complete outstanding workflow actions above to advance the score. Admission requires ≥90% with all critical domains at ≥80%.</span>
+      </div>
+    </div>`;
+  } else{
+    fd.classList.add('hidden');
+  }
+}
+
+// ══════ ENTRY ══════
+function startAnalysis(){
+  const fields=['provider','physician','diagnosis','admType','insurance','paStatus','admDate'];
+  let ok=true;
+  for(const f of fields){if(!document.getElementById(f).value){ok=false;break}}
+  const err=document.getElementById('err-msg');
+  if(!ok){err.classList.remove('hidden');return}
+  err.classList.add('hidden');
+  S={score:0,domains:{},paResolved:null,done:new Set(),tlStep:0,appealPending:false,appealDone:false,setup:{}};
+  for(const f of fields) S.setup[f]=document.getElementById(f).value;
+  document.getElementById('setup-panel').classList.add('hidden');
+  document.getElementById('analysis-panel').classList.remove('hidden');
+  renderAll();
+}
+
+function resetSim(){
+  S={score:0,domains:{},paResolved:null,done:new Set(),tlStep:0,appealPending:false,appealDone:false,setup:{}};
+  document.getElementById('setup-panel').classList.remove('hidden');
+  document.getElementById('analysis-panel').classList.add('hidden');
+  document.getElementById('obs-notice').classList.add('hidden');
+  document.getElementById('iq-notice').classList.add('hidden');
+  document.getElementById('err-msg').classList.add('hidden');
+  ['provider','physician','diagnosis','admType','insurance','paStatus'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('admDate').value='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
