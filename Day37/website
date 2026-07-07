@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Compass — School / University</title>
+<style>
+  :root{
+    --bg1:#0b1020;
+    --bg2:#141b34;
+    --glass: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.14);
+    --text:#e9edf5;
+    --muted:#9aa5c0;
+    --accent:#7c9dff;
+    --good:#4ade80;
+    --warn:#fbbf24;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+    color:var(--text);
+    background: linear-gradient(135deg,var(--bg1),var(--bg2),#1b1440,var(--bg1));
+    background-size:300% 300%;
+    animation: bgshift 18s ease infinite;
+    overflow-x:hidden;
+  }
+  @keyframes bgshift{
+    0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}
+  }
+  @media (prefers-reduced-motion: reduce){ body{ animation:none; } }
+
+  .wrap{max-width:960px;margin:0 auto;padding:26px 18px 60px;}
+  header{text-align:center;margin-bottom:22px;}
+  header h1{font-size:2rem;margin:0 0 4px;letter-spacing:0.02em;}
+  header p{color:var(--muted);margin:0;font-size:0.95rem;}
+
+  .progress{display:flex;gap:8px;margin:22px 0;justify-content:center;flex-wrap:wrap;}
+  .progress .dot{
+    width:14px;height:14px;border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    transition:all .3s ease;
+  }
+  .progress .dot.done{background:var(--good);}
+  .progress .dot.current{background:var(--accent);transform:scale(1.3);box-shadow:0 0 0 5px rgba(124,157,255,0.25);}
+
+  .stage-label{
+    text-align:center;color:var(--accent);font-weight:700;
+    text-transform:uppercase;font-size:0.78rem;letter-spacing:0.12em;margin-bottom:6px;
+  }
+
+  .card{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    padding:26px 24px;
+    backdrop-filter: blur(14px);
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    animation:fadeUp .5s ease;
+  }
+  @keyframes fadeUp{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+  @media (prefers-reduced-motion: reduce){ .card{animation:none;} }
+
+  .ticket{
+    background:linear-gradient(135deg, rgba(124,157,255,0.18), rgba(124,157,255,0.05));
+    border:1px dashed rgba(124,157,255,0.5);
+    border-radius:14px;
+    padding:18px 20px;
+    font-size:1.05rem;
+    margin-bottom:22px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .ticket .icon{font-size:1.6rem;}
+
+  h3.section-title{font-size:0.95rem;color:var(--muted);margin:0 0 12px;text-transform:uppercase;letter-spacing:0.08em;}
+
+  .dropzone{
+    min-height:64px;
+    border:2px dashed var(--glass-border);
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--muted);
+    margin-bottom:20px;
+    transition: all .25s ease;
+    font-size:0.92rem;
+    padding:10px;
+  }
+  .dropzone.filled{border-color:var(--accent);background:rgba(124,157,255,0.12);color:var(--text);}
+  .dropzone.dragover{border-color:var(--good);background:rgba(74,222,128,0.1);}
+
+  .rolecards{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px;}
+  .rolecard{
+    flex:0 0 auto;
+    padding:12px 16px;
+    border-radius:14px;
+    border:1.5px solid var(--glass-border);
+    background:rgba(255,255,255,0.05);
+    cursor:pointer;
+    user-select:none;
+    display:flex;align-items:center;gap:8px;
+    font-size:0.9rem;font-weight:600;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .18s ease;
+  }
+  .rolecard:hover{transform:translateY(-3px);}
+  .rolecard.chosen{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,157,255,0.25);}
+  .rolecard.selected{border-color:var(--good);box-shadow:0 0 0 3px rgba(74,222,128,0.25);background:rgba(74,222,128,0.12);}
+  .rolecard.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+  .rolecard .swatch{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+
+  .slots{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+  .slot{
+    flex:1 1 120px;
+    min-height:70px;
+    border:2px dashed var(--glass-border);
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    text-align:center;
+    font-size:0.82rem;color:var(--muted);
+    padding:8px;
+    position:relative;
+    transition: all .2s ease;
+  }
+  .slot .stepnum{position:absolute;top:-10px;left:8px;background:var(--bg2);border:1px solid var(--glass-border);border-radius:999px;padding:1px 8px;font-size:0.7rem;color:var(--accent);}
+  .slot.filled{border-color:var(--accent);background:rgba(124,157,255,0.1);color:var(--text);}
+  .slot.dragover{border-color:var(--good);}
+  .slot.active-anim{border-color:var(--good);background:rgba(74,222,128,0.18);}
+
+  .btn{
+    background:linear-gradient(135deg,var(--accent),#5b7fe0);
+    color:#0b1020;color:#fff;border:none;
+    padding:13px 26px;border-radius:12px;font-size:0.95rem;font-weight:700;
+    cursor:pointer;transition: transform .2s ease, opacity .2s ease;
+    box-shadow:0 8px 20px rgba(124,157,255,0.35);
+  }
+  .btn:disabled{opacity:0.35;cursor:not-allowed;}
+  .btn:not(:disabled):hover{transform:translateY(-2px);}
+  .btn.secondary{background:transparent;border:1.5px solid var(--glass-border);box-shadow:none;color:var(--text);}
+
+  .nav-row{display:flex;justify-content:space-between;gap:12px;margin-top:22px;flex-wrap:wrap;}
+
+  .reveal{
+    margin-top:20px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid var(--glass-border);
+    border-radius:14px;
+    padding:18px 20px;
+    animation:fadeUp .4s ease;
+    line-height:1.6;
+  }
+  .reveal .row{margin-bottom:10px;}
+  .reveal .row b{color:var(--accent);}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid var(--glass-border);
+    padding:4px 10px;border-radius:999px;font-size:0.82rem;margin:3px 4px 0 0;
+  }
+  .chip.match{border-color:var(--good);background:rgba(74,222,128,0.12);}
+
+  .bar-row{margin-bottom:18px;}
+  .bar-row .label{display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:6px;font-weight:600;}
+  .bar-track{height:12px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;}
+  .bar-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--good));transition:width 1.1s ease;}
+
+  .reflection p{margin:0 0 12px;line-height:1.65;color:var(--text);}
+  .reflection strong{color:var(--accent);}
+
+  .confetti{
+    position:fixed;top:-20px;font-size:1.4rem;pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{ to{ transform: translateY(110vh) rotate(360deg); opacity:0.2; } }
+
+  footer.note{text-align:center;color:var(--muted);font-size:0.75rem;margin-top:26px;}
+
+  @media (max-width:600px){
+    .slots{flex-direction:column;}
+    header h1{font-size:1.5rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧭 Task Compass</h1>
+    <p>Learn how work flows through real organizations — inside a School / University.</p>
+  </header>
+
+  <div class="stage-label" id="stageLabel">Stage 1 · Who Owns This?</div>
+  <div class="progress" id="progress"></div>
+
+  <div class="card" id="gameArea"></div>
+
+  <footer class="note">All decisions are simulated — there are no "gotchas," only reasoning to explore.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- DATA ---------------- */
+const ROLES = {
+  teacher:   {name:"Teacher / Faculty",        icon:"👩‍🏫", color:"#60a5fa"},
+  head:      {name:"Department Head",          icon:"📚", color:"#a78bfa"},
+  it:        {name:"IT Support",                icon:"💻", color:"#34d399"},
+  registrar: {name:"Registrar / Admissions",    icon:"🗂️", color:"#f59e0b"},
+  counselor: {name:"Student Counselor",         icon:"🧑‍⚕️", color:"#f472b6"},
+  facilities:{name:"Facilities Staff",          icon:"🔧", color:"#94a3b8"},
+  principal: {name:"Principal / Dean",          icon:"🏛️", color:"#f87171"},
+  comms:     {name:"Communications Office",     icon:"📣", color:"#22d3ee"}
+};
+const ROLE_IDS = Object.keys(ROLES);
+
+const STAGE1_TASKS = [
+  {icon:"🔐", text:"A student reports they can't access their online grades portal.",
+   owner:"it", why:"Login and portal access problems are technical systems issues that IT Support manages.",
+   assist:["registrar","teacher"]},
+  {icon:"📝", text:"A parent complains their child's final exam grade seems incorrect.",
+   owner:"teacher", why:"The teacher created and calculated the assessment, so they understand the grading context best.",
+   assist:["head","registrar"]},
+  {icon:"📽️", text:"A classroom projector has stopped working right before a lecture.",
+   owner:"it", why:"Audio-visual equipment typically falls under IT's technical maintenance responsibilities.",
+   assist:["facilities","teacher"]},
+  {icon:"💭", text:"A student is showing signs of severe stress before final exams.",
+   owner:"counselor", why:"Student Counselors are trained to support emotional wellbeing and mental health concerns.",
+   assist:["teacher","principal"]},
+  {icon:"📋", text:"A new student needs help enrolling mid-semester.",
+   owner:"registrar", why:"Registrar/Admissions manages enrollment records and course registration.",
+   assist:["counselor","head"]},
+  {icon:"🗓️", text:"Two teachers have a scheduling conflict for the same classroom.",
+   owner:"head", why:"Department Heads coordinate faculty schedules and shared resources.",
+   assist:["facilities","principal"]},
+  {icon:"💧", text:"A leaking pipe is flooding a hallway near classrooms.",
+   owner:"facilities", why:"Facilities Staff maintain and repair the physical building infrastructure.",
+   assist:["principal","it"]},
+  {icon:"📰", text:"A local news outlet asks for a statement about a recent incident on campus.",
+   owner:"comms", why:"The Communications Office manages public messaging and media relations.",
+   assist:["principal","counselor"]}
+];
+
+const STAGE2_TASKS = [
+  {icon:"📽️", text:"A broken classroom AV system disrupts a lecture.",
+   order:["it","facilities","head"],
+   explain:"IT diagnoses the technical fault first; if it's electrical or physical, Facilities steps in; the Department Head is informed in case the class needs rescheduling."},
+  {icon:"⚖️", text:"A student appeals a suspected unfair exam grade.",
+   order:["teacher","head","registrar","principal"],
+   explain:"The teacher reviews the grading first since they assessed it, the Department Head mediates if unresolved, Registrar updates the official record once decided, and the Principal oversees the final appeal."},
+  {icon:"🎓", text:"A prospective student's application needs review with a special exception request.",
+   order:["registrar","head","principal"],
+   explain:"Registrar screens the application details first, the Department Head weighs in on academic fit, and the Principal approves any exception."},
+  {icon:"🚨", text:"Multiple students report harassment in a class.",
+   order:["teacher","counselor","head","principal","comms"],
+   explain:"The teacher is often the first to witness or receive the report, Counselors support affected students, the Department Head investigates the classroom issue, the Principal makes disciplinary decisions, and Comms handles any public statement if needed."},
+  {icon:"🌐", text:"A campus-wide network outage affects online classes.",
+   order:["it","head","comms"],
+   explain:"IT resolves the technical outage, the Department Head coordinates class adjustments, and Comms notifies students and parents of the situation."}
+];
+
+const STAGE3_TASKS = [
+  {icon:"📉", text:"A student satisfaction survey shows a sharp drop in happiness across campus.",
+   primary:"principal", supporting:["counselor","teacher","comms"],
+   reasoning:"Leadership guides the response, but it needs faculty insight into classroom life, wellbeing support for students, and clear messaging to the community.",
+   flow:"Principal gathers input from Counselors & Teachers → Comms drafts a community update → Principal reviews & shares it."},
+  {icon:"📈", text:"Enrollment numbers increase dramatically for next semester.",
+   primary:"registrar", supporting:["principal","facilities","head"],
+   reasoning:"Registrar manages the enrollment surge itself, but classroom space (Facilities), staffing (Department Head), and overall direction (Principal) all need to be planned together.",
+   flow:"Registrar flags the growth → Principal & Department Head plan capacity → Facilities prepares the space."},
+  {icon:"🗞️", text:"Negative reviews about the school appear online criticizing teaching quality.",
+   primary:"comms", supporting:["principal","head","teacher"],
+   reasoning:"Public messaging matters, but it must be paired with a genuine look into the teaching concerns raised, not just a statement.",
+   flow:"Comms monitors the sentiment → Principal & Department Head review the concerns with Teachers → Comms issues a thoughtful public response."},
+  {icon:"🧩", text:"A major curriculum change is delayed right before the new semester.",
+   primary:"head", supporting:["teacher","registrar","principal"],
+   reasoning:"The Department Head owns curriculum planning, but the Teachers who deliver it, Registrar who schedules courses, and the Principal who approves changes all need to weigh in.",
+   flow:"Department Head assesses the delay → Teachers give feedback → Registrar adjusts schedules → Principal signs off."}
+];
+
+/* ---------------- STATE ---------------- */
+let state = {
+  stage:1, qIndex:0,
+  s1Tasks:[], s2Tasks:[], s3Tasks:[],
+  s1Choice:null,
+  s2Slots:[], s2Used:new Set(),
+  s3Selected:new Set(),
+  scores:{ownership:[], workflow:[], collaboration:[], delegation:[]}
+};
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function pickN(arr,n){ return shuffle(arr).slice(0,n); }
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+/* ---------------- PROGRESS ---------------- */
+function totalSteps(){ return 9; } // 3 stages x 3 questions
+function currentStepNumber(){
+  return (state.stage-1)*3 + state.qIndex + 1;
+}
+function renderProgress(){
+  const wrap = document.getElementById('progress');
+  wrap.innerHTML = '';
+  const total = totalSteps();
+  for(let i=1;i<=total;i++){
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i < currentStepNumber() ? ' done' : (i===currentStepNumber() ? ' current':''));
+    wrap.appendChild(dot);
+  }
+  const labels = {1:"Who Owns This?",2:"Task Routing",3:"Collaboration Challenge"};
+  document.getElementById('stageLabel').textContent = state.stage<=3
+    ? `Stage ${state.stage} · ${labels[state.stage]}`
+    : "Results";
+}
+
+/* ---------------- ROLE CARD BUILDER ---------------- */
+function makeRoleCard(roleId, opts){
+  opts = opts || {};
+  const r = ROLES[roleId];
+  const el = document.createElement('div');
+  el.className = 'rolecard';
+  el.draggable = !!opts.draggable;
+  el.dataset.role = roleId;
+  el.innerHTML = `<span class="swatch" style="background:${r.color}"></span><span>${r.icon} ${r.name}</span>`;
+  if(opts.onClick) el.addEventListener('click', ()=>opts.onClick(roleId, el));
+  if(opts.draggable){
+    el.addEventListener('dragstart', (e)=>{
+      e.dataTransfer.setData('text/plain', roleId);
+      e.dataTransfer.effectAllowed='move';
+    });
+  }
+  return el;
+}
+
+/* ================= STAGE 1 ================= */
+function initStage1(){
+  state.s1Tasks = pickN(STAGE1_TASKS, 3);
+  state.qIndex = 0;
+  renderStage1();
+}
+function renderStage1(){
+  renderProgress();
+  const task = state.s1Tasks[state.qIndex];
+  state.s1Choice = null;
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <div class="ticket"><span class="icon">${task.icon}</span><div>${task.text}</div></div>
+    <h3 class="section-title">Drag or click the role that should OWN this task</h3>
+    <div class="dropzone" id="dz1">Drop a role here, or click one below</div>
+    <div class="rolecards" id="cards1"></div>
+    <div class="nav-row">
+      <span></span>
+      <button class="btn" id="submit1" disabled>Submit Decision</button>
+    </div>
+    <div id="revealArea"></div>
+  `;
+  const cardsWrap = document.getElementById('cards1');
+  const dz = document.getElementById('dz1');
+
+  function selectRole(roleId, el){
+    document.querySelectorAll('#cards1 .rolecard').forEach(c=>c.classList.remove('chosen'));
+    el.classList.add('chosen');
+    state.s1Choice = roleId;
+    const r = ROLES[roleId];
+    dz.textContent = `${r.icon} ${r.name}`;
+    dz.classList.add('filled');
+    document.getElementById('submit1').disabled = false;
+  }
+
+  ROLE_IDS.forEach(id=>{
+    const card = makeRoleCard(id, {draggable:true, onClick:selectRole});
+    cardsWrap.appendChild(card);
+  });
+
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.classList.remove('dragover');
+    const roleId = e.dataTransfer.getData('text/plain');
+    if(roleId){
+      const el = cardsWrap.querySelector(`[data-role="${roleId}"]`);
+      if(el) selectRole(roleId, el);
+    }
+  });
+
+  document.getElementById('submit1').addEventListener('click', submitStage1);
+}
+function submitStage1(){
+  const task = state.s1Tasks[state.qIndex];
+  const choice = state.s1Choice;
+  let pct;
+  let verdict;
+  if(choice === task.owner){ pct = 100; verdict = "That's the strongest primary owner for this task."; }
+  else if(task.assist.includes(choice)){ pct = 50; verdict = "That role often helps here, but isn't usually the primary owner."; }
+  else { pct = 15; verdict = "That role is rarely the first point of ownership for this kind of task."; }
+  state.scores.ownership.push(pct);
+
+  const owner = ROLES[task.owner];
+  document.getElementById('submit1').disabled = true;
+  document.querySelectorAll('#cards1 .rolecard').forEach(c=>c.classList.add('disabled'));
+
+  document.getElementById('revealArea').innerHTML = `
+    <div class="reveal">
+      <div class="row">${verdict}</div>
+      <div class="row"><b>✓ Primary Owner:</b> ${owner.icon} ${owner.name}</div>
+      <div class="row"><b>Why:</b> ${task.why}</div>
+      <div class="row"><b>May assist:</b> ${task.assist.map(a=>`<span class="chip">${ROLES[a].icon} ${ROLES[a].name}</span>`).join('')}</div>
+    </div>
+    <div class="nav-row"><span></span><button class="btn" id="next1">Next →</button></div>
+  `;
+  document.getElementById('next1').addEventListener('click', ()=>{
+    state.qIndex++;
+    if(state.qIndex < state.s1Tasks.length){ renderStage1(); }
+    else { state.stage = 2; initStage2(); }
+  });
+}
+
+/* ================= STAGE 2 ================= */
+function initStage2(){
+  state.s2Tasks = pickN(STAGE2_TASKS, 3);
+  state.qIndex = 0;
+  renderStage2();
+}
+function renderStage2(){
+  renderProgress();
+  const task = state.s2Tasks[state.qIndex];
+  state.s2Slots = new Array(task.order.length).fill(null);
+  state.s2Used = new Set();
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <div class="ticket"><span class="icon">${task.icon}</span><div>${task.text}</div></div>
+    <h3 class="section-title">Build the workflow — place roles in the order this ticket should travel</h3>
+    <div class="slots" id="slots2"></div>
+    <h3 class="section-title">Available roles</h3>
+    <div class="rolecards" id="cards2"></div>
+    <div class="nav-row">
+      <span></span>
+      <button class="btn" id="submit2" disabled>Submit Route</button>
+    </div>
+    <div id="animArea2"></div>
+    <div id="revealArea2"></div>
+  `;
+  const slotsWrap = document.getElementById('slots2');
+  const cardsWrap = document.getElementById('cards2');
+
+  for(let i=0;i<task.order.length;i++){
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.dataset.index = i;
+    slot.innerHTML = `<span class="stepnum">Step ${i+1}</span><span class="slotcontent">Empty</span>`;
+    slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('dragover'); });
+    slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
+    slot.addEventListener('drop', e=>{
+      e.preventDefault(); slot.classList.remove('dragover');
+      const roleId = e.dataTransfer.getData('text/plain');
+      if(roleId) placeInSlot(roleId, i);
+    });
+    slot.addEventListener('click', ()=>{
+      if(state.s2Slots[i]){ clearSlot(i); }
+    });
+    slotsWrap.appendChild(slot);
+  }
+
+  ROLE_IDS.forEach(id=>{
+    const card = makeRoleCard(id, {draggable:true, onClick:(roleId)=>{
+      const nextEmpty = state.s2Slots.findIndex(v=>v===null);
+      if(nextEmpty !== -1 && !state.s2Used.has(roleId)) placeInSlot(roleId, nextEmpty);
+    }});
+    cardsWrap.appendChild(card);
+  });
+
+  function placeInSlot(roleId, idx){
+    if(state.s2Used.has(roleId)) return;
+    if(state.s2Slots[idx] !== null) return;
+    state.s2Slots[idx] = roleId;
+    state.s2Used.add(roleId);
+    const r = ROLES[roleId];
+    const slotEl = slotsWrap.children[idx];
+    slotEl.classList.add('filled');
+    slotEl.querySelector('.slotcontent').textContent = `${r.icon} ${r.name}`;
+    const cardEl = cardsWrap.querySelector(`[data-role="${roleId}"]`);
+    if(cardEl) cardEl.classList.add('disabled');
+    document.getElementById('submit2').disabled = state.s2Slots.includes(null);
+  }
+  function clearSlot(idx){
+    const roleId = state.s2Slots[idx];
+    if(!roleId) return;
+    state.s2Slots[idx] = null;
+    state.s2Used.delete(roleId);
+    const slotEl = slotsWrap.children[idx];
+    slotEl.classList.remove('filled');
+    slotEl.querySelector('.slotcontent').textContent = 'Empty';
+    const cardEl = cardsWrap.querySelector(`[data-role="${roleId}"]`);
+    if(cardEl) cardEl.classList.remove('disabled');
+    document.getElementById('submit2').disabled = true;
+  }
+
+  document.getElementById('submit2').addEventListener('click', ()=>submitStage2(task, slotsWrap));
+}
+function submitStage2(task, slotsWrap){
+  let matches = 0;
+  for(let i=0;i<task.order.length;i++){
+    if(state.s2Slots[i] === task.order[i]) matches++;
+  }
+  const pct = Math.round((matches/task.order.length)*100);
+  state.scores.workflow.push(pct);
+
+  document.getElementById('submit2').disabled = true;
+  document.querySelectorAll('#cards2 .rolecard').forEach(c=>c.classList.add('disabled'));
+
+  // animate ticket moving through the user's chosen order
+  let i = 0;
+  const slotEls = Array.from(slotsWrap.children);
+  const interval = setInterval(()=>{
+    slotEls.forEach(s=>s.classList.remove('active-anim'));
+    if(i < slotEls.length){
+      slotEls[i].classList.add('active-anim');
+      i++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 450);
+
+  document.getElementById('revealArea2').innerHTML = `
+    <div class="reveal">
+      <div class="row">Your route matched <b>${matches}/${task.order.length}</b> steps of a commonly used path.</div>
+      <div class="row"><b>A typical path:</b> ${task.order.map(r=>`<span class="chip">${ROLES[r].icon} ${ROLES[r].name}</span>`).join(' → ')}</div>
+      <div class="row"><b>Why this order:</b> ${task.explain}</div>
+    </div>
+    <div class="nav-row"><span></span><button class="btn" id="next2">Next →</button></div>
+  `;
+  document.getElementById('next2').addEventListener('click', ()=>{
+    state.qIndex++;
+    if(state.qIndex < state.s2Tasks.length){ renderStage2(); }
+    else { state.stage = 3; initStage3(); }
+  });
+}
+
+/* ================= STAGE 3 ================= */
+function initStage3(){
+  state.s3Tasks = pickN(STAGE3_TASKS, 3);
+  state.qIndex = 0;
+  renderStage3();
+}
+function renderStage3(){
+  renderProgress();
+  const task = state.s3Tasks[state.qIndex];
+  state.s3Selected = new Set();
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <div class="ticket"><span class="icon">${task.icon}</span><div>${task.text}</div></div>
+    <h3 class="section-title">Select up to 4 roles who should be involved in solving this</h3>
+    <div class="rolecards multiselect" id="cards3"></div>
+    <div class="nav-row">
+      <span></span>
+      <button class="btn" id="submit3" disabled>Submit Team</button>
+    </div>
+    <div id="revealArea3"></div>
+  `;
+  const cardsWrap = document.getElementById('cards3');
+  ROLE_IDS.forEach(id=>{
+    const card = makeRoleCard(id, {onClick:(roleId, el)=>{
+      if(state.s3Selected.has(roleId)){
+        state.s3Selected.delete(roleId);
+        el.classList.remove('selected');
+      } else {
+        if(state.s3Selected.size >= 4) return;
+        state.s3Selected.add(roleId);
+        el.classList.add('selected');
+      }
+      document.getElementById('submit3').disabled = state.s3Selected.size === 0;
+    }});
+    cardsWrap.appendChild(card);
+  });
+  document.getElementById('submit3').addEventListener('click', ()=>submitStage3(task));
+}
+function submitStage3(task){
+  const idealSet = [task.primary, ...task.supporting];
+  const selected = Array.from(state.s3Selected);
+  const matchCount = selected.filter(r=>idealSet.includes(r)).length;
+
+  const collabPct = Math.round((matchCount/idealSet.length)*100);
+  const delegPct = clamp(100 - Math.abs(selected.length - idealSet.length)*20, 0, 100);
+  state.scores.collaboration.push(collabPct);
+  state.scores.delegation.push(delegPct);
+
+  document.getElementById('submit3').disabled = true;
+  document.querySelectorAll('#cards3 .rolecard').forEach(c=>c.classList.add('disabled'));
+
+  const chips = idealSet.map(r=>{
+    const isPrimary = r === task.primary;
+    const matched = selected.includes(r);
+    return `<span class="chip${matched?' match':''}">${isPrimary?'⭐ ':''}${ROLES[r].icon} ${ROLES[r].name}${isPrimary?' (Primary)':''}</span>`;
+  }).join('');
+
+  document.getElementById('revealArea3').innerHTML = `
+    <div class="reveal">
+      <div class="row">You involved <b>${selected.length}</b> role(s); this scenario is commonly handled by about <b>${idealSet.length}</b>.</div>
+      <div class="row"><b>Primary Owner:</b> ${ROLES[task.primary].icon} ${ROLES[task.primary].name}</div>
+      <div class="row"><b>Supporting Teams:</b> ${chips}</div>
+      <div class="row"><b>Reasoning:</b> ${task.reasoning}</div>
+      <div class="row"><b>Possible communication flow:</b> ${task.flow}</div>
+    </div>
+    <div class="nav-row"><span></span><button class="btn" id="next3">Next →</button></div>
+  `;
+  document.getElementById('next3').addEventListener('click', ()=>{
+    state.qIndex++;
+    if(state.qIndex < state.s3Tasks.length){ renderStage3(); }
+    else { showResults(); }
+  });
+}
+
+/* ================= RESULTS ================= */
+function avg(arr){ return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
+
+function showResults(){
+  state.stage = 4;
+  renderProgress();
+  const s = {
+    ownership: avg(state.scores.ownership),
+    delegation: avg(state.scores.delegation),
+    collaboration: avg(state.scores.collaboration),
+    workflow: avg(state.scores.workflow)
+  };
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <h3 class="section-title">Your understanding, mapped</h3>
+    <div id="chart"></div>
+    <h3 class="section-title" style="margin-top:26px;">Final Reflection</h3>
+    <div class="reflection" id="reflection"></div>
+    <div class="nav-row">
+      <button class="btn secondary" id="restartBtn">↺ Play Again</button>
+      <span></span>
+    </div>
+  `;
+  const chart = document.getElementById('chart');
+  const labels = {
+    ownership:"Ownership", delegation:"Delegation",
+    collaboration:"Collaboration", workflow:"Workflow Thinking"
+  };
+  Object.keys(labels).forEach(key=>{
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<div class="label"><span>${labels[key]}</span><span>${s[key]}%</span></div>
+      <div class="bar-track"><div class="bar-fill" id="fill-${key}"></div></div>`;
+    chart.appendChild(row);
+  });
+  requestAnimationFrame(()=>{
+    Object.keys(s).forEach(key=>{
+      document.getElementById('fill-'+key).style.width = s[key]+'%';
+    });
+  });
+
+  document.getElementById('reflection').innerHTML = buildReflection(s);
+  document.getElementById('restartBtn').addEventListener('click', resetGame);
+
+  launchConfetti();
+}
+
+function buildReflection(s){
+  const parts = [];
+  const best = Object.entries(s).sort((a,b)=>b[1]-a[1])[0][0];
+  const worst = Object.entries(s).sort((a,b)=>a[1]-b[1])[0][0];
+  const niceNames = {ownership:"identifying clear owners",delegation:"delegating appropriately",collaboration:"recognizing collaboration",workflow:"thinking through workflows"};
+
+  parts.push(`<p>You tended to be strongest at <strong>${niceNames[best]}</strong>. This suggests a solid instinct for that part of how work moves through an organization.</p>`);
+
+  if(s.delegation < 60 && s.collaboration < 60){
+    parts.push(`<p>Across the collaboration challenges, you often leaned toward fewer people than a scenario typically needs. This suggests you may sometimes <strong>under-estimate collaboration</strong> — assuming one role can carry a complex situation alone.</p>`);
+  } else if(s.delegation < 60){
+    parts.push(`<p>You generally recognized who should be involved, but the number of people you chose didn't always match the situation's complexity — sometimes over-assigning to a single role, sometimes spreading too wide.</p>`);
+  } else {
+    parts.push(`<p>You showed a reasonable sense of when a task needs one clear owner versus a small team working together.</p>`);
+  }
+
+  if(s.workflow < 60){
+    parts.push(`<p>In the routing exercises, your sequences sometimes diverged from common paths. This isn't wrong — organizations vary — but it's worth noticing where a step might arrive too early or too late in a real workflow.</p>`);
+  }
+
+  parts.push(`<p><em>One insight to carry forward:</em> many real workplace problems are solved by teams rather than individuals, and ownership doesn't mean working alone — it often means knowing who to bring in, and when.</p>`);
+
+  return parts.join('');
+}
+
+function launchConfetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const emojis = ['🎉','✨','🎓','🏆','⭐'];
+  for(let i=0;i<24;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left = Math.random()*100+'vw';
+    el.style.animationDuration = (2.5+Math.random()*2)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 5000);
+  }
+}
+
+/* ---------------- RESET ---------------- */
+function resetGame(){
+  state = {
+    stage:1, qIndex:0,
+    s1Tasks:[], s2Tasks:[], s3Tasks:[],
+    s1Choice:null,
+    s2Slots:[], s2Used:new Set(),
+    s3Selected:new Set(),
+    scores:{ownership:[], workflow:[], collaboration:[], delegation:[]}
+  };
+  initStage1();
+}
+
+/* ---------------- START ---------------- */
+initStage1();
+
+})();
+</script>
+</body>
+</html>
