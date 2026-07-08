@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Speed Studio</title>
+<style>
+:root{
+  --ink-950:#0b0d12;
+  --ink-900:#12141c;
+  --ink-800:#191d28;
+  --ink-700:#232838;
+  --ink-600:#323a4d;
+  --paper:#e9e7de;
+  --paper-dim:#9199a8;
+  --brass:#d3a45c;
+  --brass-dim:#8a744f;
+  --ribbon:#c85a4a;
+  --ok:#6fbf8b;
+  --bad:#d3695c;
+  --font-display:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  --font-mono:'SFMono-Regular','JetBrains Mono',Consolas,'Liberation Mono',Menlo,monospace;
+  --font-ui:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --radius:10px;
+  --dur:220ms;
+}
+[data-theme="light"]{
+  --ink-950:#f3f1e9;
+  --ink-900:#ffffff;
+  --ink-800:#f6f4ec;
+  --ink-700:#e9e5d8;
+  --ink-600:#d6d0bd;
+  --paper:#2a2823;
+  --paper-dim:#75705f;
+  --brass:#9c6b28;
+  --brass-dim:#b9925a;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(211,164,92,0.08), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(200,90,74,0.06), transparent 40%),
+    var(--ink-950);
+  color:var(--paper);
+  font-family:var(--font-ui);
+  min-height:100vh;
+  transition:background var(--dur), color var(--dur);
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+}
+::selection{background:var(--brass); color:var(--ink-950);}
+a{color:inherit;}
+button{font-family:inherit;}
+:focus-visible{outline:2px solid var(--brass); outline-offset:2px;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+
+/* ---------- HEADER ---------- */
+header.top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;flex-wrap:wrap;gap:14px;
+}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand .mark{
+  font-family:var(--font-display);font-size:1.9rem;font-weight:600;
+  letter-spacing:0.5px;color:var(--paper);
+}
+.brand .mark em{font-style:italic;color:var(--brass);}
+.brand .tag{font-size:0.72rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--paper-dim);}
+.top-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--ink-600);
+  background:var(--ink-800);color:var(--paper);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  transition:transform var(--dur), border-color var(--dur), background var(--dur);
+}
+.icon-btn:hover{transform:translateY(-2px);border-color:var(--brass);}
+.icon-btn.active{border-color:var(--brass);color:var(--brass);}
+
+/* ---------- PANEL SHELL ---------- */
+.panel{
+  background:linear-gradient(180deg, var(--ink-800), var(--ink-900));
+  border:1px solid var(--ink-600);
+  border-radius:var(--radius);
+  padding:22px;
+  margin-bottom:22px;
+  box-shadow:0 20px 50px -30px rgba(0,0,0,0.6);
+}
+
+/* ---------- MODE / CATEGORY BARS ---------- */
+.selector-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.selector-row:last-child{margin-bottom:0;}
+.row-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--paper-dim);width:88px;flex-shrink:0;}
+.chip{
+  padding:7px 14px;border-radius:999px;border:1px solid var(--ink-600);
+  background:transparent;color:var(--paper-dim);font-size:0.82rem;cursor:pointer;
+  transition:all var(--dur);white-space:nowrap;
+}
+.chip:hover{border-color:var(--brass-dim);color:var(--paper);}
+.chip.active{background:var(--brass);border-color:var(--brass);color:var(--ink-950);font-weight:600;}
+.chip.small{padding:5px 11px;font-size:0.76rem;}
+.sub-row{display:none;}
+.sub-row.visible{display:flex;}
+
+/* ---------- TYPING STAGE ---------- */
+.stage{position:relative;}
+.stat-strip{
+  display:flex;gap:26px;flex-wrap:wrap;margin-bottom:18px;align-items:flex-end;
+}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:58px;}
+.stat .val{font-family:var(--font-mono);font-size:1.7rem;font-weight:600;color:var(--paper);line-height:1;font-variant-numeric:tabular-nums;}
+.stat .lab{font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--paper-dim);}
+.stat.accent .val{color:var(--brass);}
+.progress-track{
+  height:4px;border-radius:2px;background:var(--ink-700);overflow:hidden;margin-bottom:22px;
+}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--brass),var(--ribbon));width:0%;transition:width 120ms linear;}
+
+.type-field{
+  position:relative;font-family:var(--font-mono);font-size:1.45rem;line-height:2.15;
+  letter-spacing:0.3px; padding:8px 4px; user-select:none; cursor:text;
+  max-height:8.6em; overflow:hidden;
+}
+.type-field.focus-mode .tline{opacity:0.12;}
+.type-field.focus-mode .tline.current{opacity:1;}
+.type-field.zen-mode .stat-strip,.type-field.zen-mode .progress-track{display:none;}
+.tline{transition:opacity var(--dur);}
+.char{position:relative;white-space:pre;}
+.char.pending{color:var(--paper-dim);}
+.char.correct{color:var(--paper);}
+.char.incorrect{color:var(--bad);background:rgba(211,105,92,0.16);border-radius:2px;}
+.char.extra{color:var(--bad);text-decoration:underline wavy var(--bad);}
+.char.current::before{
+  content:'';position:absolute;left:-1px;top:2px;bottom:2px;width:2px;background:var(--brass);
+  animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0;}}
+.hidden-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
+
+.stage-overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,11,15,0.72);backdrop-filter:blur(3px);border-radius:8px;
+  flex-direction:column;gap:14px;
+}
+[data-theme="light"] .stage-overlay{background:rgba(240,238,230,0.82);}
+.stage-overlay p{color:var(--paper-dim);margin:0;font-size:0.95rem;}
+.big-btn{
+  padding:12px 26px;border-radius:999px;border:none;background:var(--brass);
+  color:var(--ink-950);font-weight:700;font-size:0.95rem;cursor:pointer;
+  transition:transform var(--dur);
+}
+.big-btn:hover{transform:scale(1.04);}
+.stage-footer{display:flex;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;gap:10px;}
+.ghost-btn{
+  padding:9px 16px;border-radius:8px;border:1px solid var(--ink-600);background:transparent;
+  color:var(--paper-dim);cursor:pointer;font-size:0.82rem;transition:all var(--dur);
+}
+.ghost-btn:hover{border-color:var(--brass-dim);color:var(--paper);}
+.hint{font-size:0.72rem;color:var(--paper-dim);}
+kbd{background:var(--ink-700);border:1px solid var(--ink-600);border-radius:4px;padding:1px 6px;font-family:var(--font-mono);font-size:0.75rem;}
+
+/* ---------- RESULTS ---------- */
+.results{display:none;}
+.results.visible{display:block; animation:rise 420ms ease both;}
+@keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.result-hero{display:flex;gap:40px;flex-wrap:wrap;margin-bottom:26px;}
+.hero-num{font-family:var(--font-display);font-size:4.4rem;font-weight:700;line-height:1;color:var(--brass);}
+.hero-num small{font-size:1.2rem;color:var(--paper-dim);font-family:var(--font-ui);font-weight:500;margin-left:6px;}
+.hero-block .lab{font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--paper-dim);margin-top:4px;}
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;margin-bottom:24px;}
+.grid-stats .cell{background:var(--ink-700);border-radius:8px;padding:12px 14px;}
+.grid-stats .cell .v{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;}
+.grid-stats .cell .l{font-size:0.64rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--paper-dim);margin-top:2px;}
+.dash-two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:24px;}
+@media(max-width:800px){.dash-two-col{grid-template-columns:1fr;}}
+.card-title{font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--paper-dim);margin-bottom:12px;}
+canvas{width:100%;display:block;}
+.heatmap-key-row{display:flex;justify-content:center;gap:4px;margin-bottom:5px;flex-wrap:wrap;}
+.hk{
+  width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:0.68rem;background:var(--ink-700);color:var(--paper-dim);font-family:var(--font-mono);
+}
+.badges{display:flex;flex-wrap:wrap;gap:10px;}
+.badge{
+  display:flex;align-items:center;gap:8px;background:var(--ink-700);border:1px solid var(--ink-600);
+  border-radius:999px;padding:8px 14px;font-size:0.8rem;
+}
+.badge .ic{font-size:1.1rem;}
+.badge.locked{opacity:0.35;}
+.summary-box{background:var(--ink-700);border-radius:8px;padding:16px 18px;margin-bottom:24px;font-size:0.9rem;line-height:1.6;color:var(--paper);}
+.summary-box b{color:var(--brass);}
+.history-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.history-table th{text-align:left;color:var(--paper-dim);text-transform:uppercase;font-size:0.65rem;letter-spacing:1.5px;padding:6px 10px;border-bottom:1px solid var(--ink-600);}
+.history-table td{padding:8px 10px;border-bottom:1px solid var(--ink-700);font-family:var(--font-mono);}
+.history-table tr:hover td{background:var(--ink-700);}
+.pb-tag{color:var(--brass);font-size:0.7rem;margin-left:6px;}
+
+footer.appfoot{text-align:center;color:var(--paper-dim);font-size:0.75rem;margin-top:30px;}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <span class="mark">Typing Speed <em>Studio</em></span>
+    <span class="tag">precision practice</span>
+  </div>
+  <div class="top-controls">
+    <button class="icon-btn" id="soundToggle" title="Toggle sound">&#128266;</button>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">&#9789;</button>
+    <button class="icon-btn" id="fontMinus" title="Smaller text">A-</button>
+    <button class="icon-btn" id="fontPlus" title="Larger text">A+</button>
+  </div>
+</header>
+
+<section class="panel" id="controlsPanel">
+  <div class="selector-row" id="modeRow">
+    <span class="row-label">Mode</span>
+    <button class="chip active" data-mode="time">Time</button>
+    <button class="chip" data-mode="words">Words</button>
+    <button class="chip" data-mode="quote">Quote</button>
+    <button class="chip" data-mode="programming">Programming</button>
+    <button class="chip" data-mode="custom">Custom Text</button>
+    <button class="chip" data-mode="adaptive">Adaptive</button>
+  </div>
+  <div class="selector-row sub-row visible" id="timeRow">
+    <span class="row-label">Duration</span>
+    <button class="chip small active" data-time="15">15s</button>
+    <button class="chip small" data-time="30">30s</button>
+    <button class="chip small" data-time="60">60s</button>
+    <button class="chip small" data-time="120">120s</button>
+  </div>
+  <div class="selector-row sub-row" id="wordsRow">
+    <span class="row-label">Word Count</span>
+    <button class="chip small active" data-words="25">25</button>
+    <button class="chip small" data-words="50">50</button>
+    <button class="chip small" data-words="100">100</button>
+    <button class="chip small" data-words="250">250</button>
+  </div>
+  <div class="selector-row sub-row" id="langRow">
+    <span class="row-label">Language</span>
+    <button class="chip small active" data-lang="javascript">JavaScript</button>
+    <button class="chip small" data-lang="python">Python</button>
+    <button class="chip small" data-lang="html">HTML</button>
+    <button class="chip small" data-lang="css">CSS</button>
+    <button class="chip small" data-lang="java">Java</button>
+    <button class="chip small" data-lang="cpp">C++</button>
+    <button class="chip small" data-lang="sql">SQL</button>
+  </div>
+  <div class="selector-row sub-row" id="categoryRow">
+    <span class="row-label">Category</span>
+    <button class="chip small active" data-cat="english">General English</button>
+    <button class="chip small" data-cat="academic">Academic</button>
+    <button class="chip small" data-cat="business">Business</button>
+    <button class="chip small" data-cat="medical">Medical</button>
+    <button class="chip small" data-cat="legal">Legal</button>
+    <button class="chip small" data-cat="creative">Creative Writing</button>
+    <button class="chip small" data-cat="programming">Programming</button>
+  </div>
+  <div class="selector-row sub-row" id="customRow">
+    <span class="row-label">Your Text</span>
+    <textarea id="customText" placeholder="Paste or type your own practice text here..." style="flex:1;min-width:220px;background:var(--ink-700);border:1px solid var(--ink-600);border-radius:8px;color:var(--paper);padding:10px;font-family:var(--font-mono);font-size:0.85rem;min-height:64px;"></textarea>
+  </div>
+  <div class="selector-row" id="toggleRow" style="margin-top:6px;">
+    <span class="row-label">Extras</span>
+    <button class="chip small" data-toggle="focus">Focus Mode</button>
+    <button class="chip small" data-toggle="zen">Zen Mode</button>
+  </div>
+</section>
+
+<section class="panel stage">
+  <div class="stat-strip">
+    <div class="stat accent"><span class="val" id="statWpm">0</span><span class="lab">WPM</span></div>
+    <div class="stat"><span class="val" id="statRaw">0</span><span class="lab">Raw WPM</span></div>
+    <div class="stat"><span class="val" id="statCpm">0</span><span class="lab">CPM</span></div>
+    <div class="stat"><span class="val" id="statAcc">100%</span><span class="lab">Accuracy</span></div>
+    <div class="stat"><span class="val" id="statTime">0.0s</span><span class="lab">Elapsed</span></div>
+    <div class="stat"><span class="val" id="statMistakes">0</span><span class="lab">Mistakes</span></div>
+    <div class="stat"><span class="val" id="statStreak">0</span><span class="lab">Streak</span></div>
+    <div class="stat"><span class="val" id="statRemain">15s</span><span class="lab">Remaining</span></div>
+    <div class="stat"><span class="val" id="statPct">0%</span><span class="lab">Complete</span></div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="type-field" id="typeField" tabindex="0">
+    <div id="textDisplay"></div>
+    <div class="stage-overlay" id="startOverlay">
+      <p>Click here or press any key to begin</p>
+      <button class="big-btn" id="startBtn">Start Typing</button>
+    </div>
+  </div>
+  <input class="hidden-input" id="hiddenInput" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+
+  <div class="stage-footer">
+    <div class="hint">
+      <kbd>Esc</kbd> restart &nbsp; <kbd>Tab</kbd> then <kbd>Enter</kbd> quick restart &nbsp; <kbd>Space</kbd> pause/resume
+    </div>
+    <div>
+      <button class="ghost-btn" id="pauseBtn">Pause</button>
+      <button class="ghost-btn" id="restartBtn">Restart</button>
+    </div>
+  </div>
+</section>
+
+<section class="panel results" id="resultsPanel">
+  <div class="result-hero">
+    <div class="hero-block">
+      <div class="hero-num" id="rWpm">0<small>wpm</small></div>
+      <div class="lab">Net Speed</div>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num" id="rAcc">0%<small></small></div>
+      <div class="lab">Accuracy</div>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num" id="rCons">0%<small></small></div>
+      <div class="lab">Consistency</div>
+    </div>
+    <div class="hero-block">
+      <div class="hero-num" id="rPct">--<small>th</small></div>
+      <div class="lab">Percentile</div>
+    </div>
+  </div>
+
+  <div class="grid-stats" id="gridStats"></div>
+
+  <div class="dash-two-col">
+    <div>
+      <div class="card-title">WPM &amp; Accuracy Over Time</div>
+      <canvas id="wpmGraph" height="180"></canvas>
+    </div>
+    <div>
+      <div class="card-title">Error Heatmap (key positions)</div>
+      <div id="heatmap"></div>
+    </div>
+  </div>
+
+  <div class="card-title">Achievements</div>
+  <div class="badges" id="badgeRow"></div>
+  <br>
+  <div class="card-title">Performance Summary</div>
+  <div class="summary-box" id="summaryBox"></div>
+
+  <div class="card-title">Session History</div>
+  <table class="history-table" id="historyTable">
+    <thead><tr><th>#</th><th>Mode</th><th>WPM</th><th>Acc</th><th>Chars</th><th>Date</th></tr></thead>
+    <tbody id="historyBody"></tbody>
+  </table>
+</section>
+
+<footer class="appfoot">Typing Speed Studio &middot; all data stored locally in your browser &middot; no account required</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= TEXT BANKS ================= */
+const BANK = {
+english:[
+"The old lighthouse keeper climbed the spiral stairs every evening, counting each step out of habit rather than necessity.",
+"A gentle rain began to fall over the harbor, blurring the lights of distant ships into soft golden smudges.",
+"She kept a small notebook in her coat pocket, filling its pages with observations about strangers on the train.",
+"The market was loud and crowded, full of vendors calling out prices and children weaving between the stalls.",
+"He had always believed that patience was a skill you could sharpen, like a knife against a worn stone.",
+"Autumn arrived quietly that year, turning the leaves amber before anyone noticed the days had grown shorter.",
+"The recipe called for more butter than seemed reasonable, but the kitchen filled with a warm, comforting smell anyway.",
+"Somewhere beyond the hills, a train whistle echoed, and the dog raised its head before settling back to sleep.",
+"The museum's newest exhibit traced the history of navigation, from star charts to satellite positioning systems.",
+"They argued about which route was faster, though neither of them had actually driven either road in years."
+],
+academic:[
+"The study examined the correlation between sleep duration and cognitive performance across a sample of adult participants.",
+"Researchers observed a statistically significant increase in retention rates following the introduction of spaced repetition.",
+"The hypothesis was tested using a controlled experiment with randomized assignment to treatment and control groups.",
+"According to the literature, socioeconomic factors play a substantial role in determining educational outcomes.",
+"The methodology section outlines the sampling strategy, data collection instruments, and analytical framework employed.",
+"Peer review remains a cornerstone of scientific publishing, ensuring that findings are scrutinized before dissemination.",
+"The findings suggest a moderate effect size, though further replication is required to confirm generalizability.",
+"Citation analysis reveals that this theory has influenced subsequent research across several adjacent disciplines.",
+"The abstract summarizes the central argument, the methods used, and the implications of the reported results.",
+"Longitudinal data collected over a decade indicate a gradual shift in public attitudes toward renewable energy."
+],
+business:[
+"Please find attached the quarterly report outlining revenue growth and projected expenditures for the coming fiscal year.",
+"We are pleased to announce a strategic partnership that will expand our distribution network across three new regions.",
+"The board has approved the proposed budget, pending final review from the finance and compliance departments.",
+"Our team remains committed to delivering measurable results while maintaining transparency with all stakeholders involved.",
+"Following the merger, both organizations will consolidate operations to improve efficiency and reduce overhead costs.",
+"The client requested a revised timeline that accommodates the additional testing phase before product launch.",
+"Management has identified several key performance indicators to track progress toward our annual growth targets.",
+"Please schedule a follow-up meeting to discuss the terms of the contract before the end of the week.",
+"The marketing department will lead the rollout of the new campaign across digital and print channels.",
+"We appreciate your continued partnership and look forward to building on the success of this initiative."
+],
+medical:[
+"The patient presented with acute abdominal pain accompanied by mild fever and elevated white blood cell count.",
+"A thorough physical examination revealed tenderness in the lower right quadrant, consistent with possible appendicitis.",
+"The physician prescribed a course of antibiotics and recommended follow-up imaging to monitor inflammation levels.",
+"Chronic hypertension increases the risk of cardiovascular complications, including stroke and myocardial infarction.",
+"The nursing staff monitored vital signs every four hours to detect any early indicators of postoperative infection.",
+"Diagnostic imaging, including MRI and CT scans, confirmed the presence of a small benign lesion near the liver.",
+"The treatment plan includes physical therapy, dietary modifications, and regular monitoring of blood glucose levels.",
+"Informed consent was obtained prior to the procedure, and the risks were clearly explained to the patient.",
+"The pharmacist advised against combining the medication with alcohol due to potential adverse interactions.",
+"Vaccination schedules are designed to build immunity gradually while minimizing the risk of adverse reactions."
+],
+legal:[
+"The plaintiff alleges that the defendant breached the terms of the contract by failing to deliver goods on time.",
+"Pursuant to Section 12 of the agreement, either party may terminate the contract with thirty days written notice.",
+"The court found sufficient evidence to support the claim of negligence on the part of the property owner.",
+"Counsel for the defense moved to dismiss the case, citing lack of jurisdiction over the matter in question.",
+"The witness testified under oath that she observed the incident from a distance of approximately twenty feet.",
+"This agreement shall be governed by and construed in accordance with the laws of the applicable jurisdiction.",
+"The appellant argues that the lower court erred in its interpretation of the statute governing liability.",
+"All parties are required to disclose relevant documents during the discovery phase of the litigation process.",
+"The settlement stipulates that neither party shall disclose the terms of the agreement to third parties.",
+"Failure to comply with the terms outlined herein may result in penalties as prescribed by applicable law."
+],
+creative:[
+"The moon hung low over the water, spilling silver across the waves like something spoken but not quite believed.",
+"In the attic, dust settled over forgotten letters, each one a small ghost of a conversation long since ended.",
+"She walked into the storm without an umbrella, as if daring the sky to notice her at all.",
+"The garden had grown wild in his absence, roses tangled with weeds in a quiet, patient rebellion.",
+"He remembered the smell of woodsmoke and rain, and for a moment he was seven years old again.",
+"The city never truly slept; it merely changed its voice, trading car horns for the hush of streetlights.",
+"Her laughter carried across the courtyard like a bell struck once, clear and impossible to ignore.",
+"The old man told the same story every winter, and every winter it felt like the first time.",
+"Somewhere between the second and third stanza, the poem stopped being about the river and started being about her.",
+"The lighthouse beam swept the coastline in slow, deliberate arcs, indifferent to the ships it could not save."
+]
+};
+
+const CODE = {
+javascript:[
+"function debounce(fn, delay) {\n  let timer = null;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn.apply(this, args), delay);\n  };\n}",
+"const fetchUsers = async () => {\n  const response = await fetch('/api/users');\n  if (!response.ok) throw new Error('Request failed');\n  return response.json();\n};",
+"class Stack {\n  constructor() {\n    this.items = [];\n  }\n  push(item) {\n    this.items.push(item);\n  }\n  pop() {\n    return this.items.pop();\n  }\n}",
+"function quickSort(arr) {\n  if (arr.length <= 1) return arr;\n  const pivot = arr[0];\n  const left = arr.slice(1).filter(x => x < pivot);\n  const right = arr.slice(1).filter(x => x >= pivot);\n  return [...quickSort(left), pivot, ...quickSort(right)];\n}"
+],
+python:[
+"def fibonacci(n, memo={}):\n    if n in memo:\n        return memo[n]\n    if n <= 1:\n        return n\n    memo[n] = fibonacci(n - 1, memo) + fibonacci(n - 2, memo)\n    return memo[n]",
+"class BankAccount:\n    def __init__(self, balance=0):\n        self.balance = balance\n\n    def deposit(self, amount):\n        self.balance += amount\n        return self.balance",
+"def read_csv(path):\n    with open(path, 'r') as f:\n        lines = [line.strip().split(',') for line in f]\n    return lines",
+"import functools\n\n@functools.lru_cache(maxsize=None)\ndef factorial(n):\n    return 1 if n == 0 else n * factorial(n - 1)"
+],
+html:[
+"<section class=\"card\">\n  <h2>Profile</h2>\n  <p class=\"bio\">Frontend developer based in Austin.</p>\n  <a href=\"/contact\" class=\"btn\">Contact</a>\n</section>",
+"<form action=\"/submit\" method=\"post\">\n  <label for=\"email\">Email</label>\n  <input type=\"email\" id=\"email\" name=\"email\" required>\n  <button type=\"submit\">Send</button>\n</form>",
+"<nav class=\"navbar\">\n  <ul>\n    <li><a href=\"/\">Home</a></li>\n    <li><a href=\"/about\">About</a></li>\n  </ul>\n</nav>"
+],
+css:[
+".card {\n  display: flex;\n  flex-direction: column;\n  padding: 1.5rem;\n  border-radius: 8px;\n  box-shadow: 0 4px 12px rgba(0,0,0,0.1);\n}",
+"@media (max-width: 768px) {\n  .sidebar {\n    display: none;\n  }\n  .main {\n    width: 100%;\n  }\n}",
+".btn:hover {\n  transform: translateY(-2px);\n  transition: transform 200ms ease;\n  background-color: var(--accent);\n}"
+],
+java:[
+"public class Node {\n    int value;\n    Node next;\n\n    public Node(int value) {\n        this.value = value;\n        this.next = null;\n    }\n}",
+"public static int binarySearch(int[] arr, int target) {\n    int low = 0, high = arr.length - 1;\n    while (low <= high) {\n        int mid = (low + high) / 2;\n        if (arr[mid] == target) return mid;\n        else if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}"
+],
+cpp:[
+"int factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}",
+"std::vector<int> mergeSort(std::vector<int>& arr) {\n    if (arr.size() <= 1) return arr;\n    int mid = arr.size() / 2;\n    return arr;\n}"
+],
+sql:[
+"SELECT customers.name, COUNT(orders.id) AS total_orders\nFROM customers\nJOIN orders ON customers.id = orders.customer_id\nGROUP BY customers.name\nORDER BY total_orders DESC;",
+"UPDATE employees\nSET salary = salary * 1.05\nWHERE department = 'Engineering' AND years_of_service > 3;"
+]
+};
+
+const QUOTES = [
+"The only way to do great work is to love what you do, and if you have not found it yet, keep looking.",
+"In the middle of every difficulty lies opportunity, waiting patiently for someone willing to notice it.",
+"Success is not final, failure is not fatal, it is the courage to continue that truly counts.",
+"The future belongs to those who believe in the beauty of their dreams and act on them daily.",
+"Simplicity is the ultimate sophistication, achieved not by addition but by careful, deliberate subtraction.",
+"What we think, we become, so choose your thoughts the way you would choose your closest company.",
+"It does not matter how slowly you go as long as you never stop moving toward something better."
+];
+
+/* ================= STATE ================= */
+let state = {
+  mode:"time", timeLimit:15, wordCount:25, lang:"javascript", category:"english",
+  focus:false, zen:false, soundOn:true, fontSize:1.45
+};
+let session = null; // active session object
+let historyData = JSON.parse(localStorage.getItem('tss_history')||'[]');
+let personalBests = JSON.parse(localStorage.getItem('tss_bests')||'{}');
+let adaptiveLevel = parseInt(localStorage.getItem('tss_adaptive_level')||'1',10);
+
+/* ================= TEXT GENERATION ================= */
+function wordsFromPool(pool, minWords){
+  let out = [];
+  while(out.length < minWords){
+    const s = pool[Math.floor(Math.random()*pool.length)];
+    out = out.concat(s.split(/\s+/));
+  }
+  return out.slice(0,minWords).join(' ');
+}
+
+function generateText(){
+  if(state.mode === 'quote'){
+    return QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  }
+  if(state.mode === 'programming'){
+    const pool = CODE[state.lang] || CODE.javascript;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  if(state.mode === 'custom'){
+    const t = document.getElementById('customText').value.trim();
+    return t.length ? t : "Type your custom text in the box above to begin practicing with your own material.";
+  }
+  let cat = state.category;
+  if(state.mode === 'adaptive'){
+    // adaptive cycles category and scales word count by level
+    const cats = Object.keys(BANK);
+    cat = cats[adaptiveLevel % cats.length];
+  }
+  if(cat === 'programming'){
+    const langs = Object.keys(CODE);
+    const l = langs[Math.floor(Math.random()*langs.length)];
+    return CODE[l][Math.floor(Math.random()*CODE[l].length)];
+  }
+  const pool = BANK[cat] || BANK.english;
+  if(state.mode === 'time'){
+    return wordsFromPool(pool, 220); // generous buffer, timer cuts it off
+  }
+  if(state.mode === 'words'){
+    return wordsFromPool(pool, state.wordCount);
+  }
+  if(state.mode === 'adaptive'){
+    return wordsFromPool(pool, 40 + adaptiveLevel*10);
+  }
+  return wordsFromPool(pool, 40);
+}
+
+/* ================= AUDIO ================= */
+let actx = null;
+function beep(freq, dur, vol){
+  if(!state.soundOn) return;
+  try{
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(actx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime+dur);
+    o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+
+/* ================= DOM REFS ================= */
+const textDisplay = document.getElementById('textDisplay');
+const typeField = document.getElementById('typeField');
+const hiddenInput = document.getElementById('hiddenInput');
+const startOverlay = document.getElementById('startOverlay');
+const progressFill = document.getElementById('progressFill');
+
+/* ================= SESSION ENGINE ================= */
+function buildSession(){
+  const raw = generateText();
+  const chars = raw.split('');
+  session = {
+    text: raw,
+    chars: chars,
+    typed: [], // per-index: 'correct' | 'incorrect' | null
+    extra: [], // extra chars typed beyond text length (rare, ignored positionally)
+    cursor: 0,
+    startTime: null,
+    endTime: null,
+    lastTickTime: null,
+    mistakeCount: 0,
+    totalKeystrokes: 0,
+    correctKeystrokes: 0,
+    streak: 0,
+    bestStreak: 0,
+    running: false,
+    paused: false,
+    finished: false,
+    wpmSamples: [], // {t, wpm}
+    intervalId: null,
+    remaining: state.mode==='time' ? state.timeLimit : null,
+    erroredKeys: {} // char -> count of mistakes made when that char was expected
+  };
+  renderText();
+  resetStatsDisplay();
+  startOverlay.style.display = 'flex';
+  document.getElementById('resultsPanel').classList.remove('visible');
+}
+
+function renderText(){
+  const lines = wrapIntoLines(session.chars);
+  textDisplay.innerHTML = '';
+  session.lineMap = []; // char index -> line element index
+  let idx = 0;
+  lines.forEach((line)=>{
+    const div = document.createElement('div');
+    div.className = 'tline';
+    line.forEach(ch=>{
+      const span = document.createElement('span');
+      span.className = 'char pending';
+      span.textContent = ch === '\n' ? '¬\n' : ch;
+      span.dataset.idx = idx;
+      div.appendChild(span);
+      session.lineMap.push(div);
+      idx++;
+    });
+    textDisplay.appendChild(div);
+  });
+  markCurrentLine();
+  updateCursorVisual();
+}
+
+function wrapIntoLines(chars){
+  // simple wrap: split on existing newlines, and also soft-wrap long lines by char budget
+  const budget = 64;
+  const lines = [];
+  let cur = [];
+  let lineLen = 0;
+  chars.forEach(ch=>{
+    cur.push(ch);
+    lineLen++;
+    if(ch === '\n' || lineLen >= budget && ch === ' '){
+      lines.push(cur); cur = []; lineLen = 0;
+    }
+  });
+  if(cur.length) lines.push(cur);
+  return lines;
+}
+
+function markCurrentLine(){
+  document.querySelectorAll('.tline').forEach(l=>l.classList.remove('current'));
+  const el = session.lineMap[Math.min(session.cursor, session.lineMap.length-1)];
+  if(el) el.classList.add('current');
+}
+
+function updateCursorVisual(){
+  document.querySelectorAll('.char.current').forEach(c=>c.classList.remove('current'));
+  const span = textDisplay.querySelector('[data-idx="'+session.cursor+'"]');
+  if(span) span.classList.add('current');
+}
+
+function resetStatsDisplay(){
+  document.getElementById('statWpm').textContent = '0';
+  document.getElementById('statRaw').textContent = '0';
+  document.getElementById('statCpm').textContent = '0';
+  document.getElementById('statAcc').textContent = '100%';
+  document.getElementById('statTime').textContent = '0.0s';
+  document.getElementById('statMistakes').textContent = '0';
+  document.getElementById('statStreak').textContent = '0';
+  document.getElementById('statPct').textContent = '0%';
+  document.getElementById('statRemain').textContent = state.mode==='time' ? state.timeLimit+'s' : (state.mode==='words'? state.wordCount+' w' : '--');
+  progressFill.style.width = '0%';
+}
+
+function startSession(){
+  if(session.running) return;
+  session.running = true;
+  session.paused = false;
+  session.startTime = performance.now();
+  session.lastTickTime = session.startTime;
+  startOverlay.style.display = 'none';
+  hiddenInput.value = '';
+  hiddenInput.focus();
+  session.intervalId = setInterval(tick, 100);
+}
+
+function tick(){
+  if(!session.running || session.paused || session.finished) return;
+  const now = performance.now();
+  const elapsedSec = (now - session.startTime)/1000;
+  document.getElementById('statTime').textContent = elapsedSec.toFixed(1)+'s';
+  // sample wpm every ~1s for consistency graph
+  if(now - session.lastTickTime >= 1000){
+    session.lastTickTime = now;
+    const wpm = computeWpm(elapsedSec);
+    session.wpmSamples.push({t: elapsedSec, wpm: wpm, acc: computeAccuracy()});
+  }
+  if(state.mode === 'time'){
+    const remain = Math.max(0, state.timeLimit - elapsedSec);
+    document.getElementById('statRemain').textContent = Math.ceil(remain)+'s';
+    if(remain <= 0){ finishSession(); return; }
+  }
+  updateLiveStats(elapsedSec);
+}
+
+function computeWpm(elapsedSec){
+  const minutes = Math.max(elapsedSec/60, 1/600);
+  const correctChars = session.typed.filter(t=>t==='correct').length;
+  return Math.round((correctChars/5) / minutes);
+}
+function computeRawWpm(elapsedSec){
+  const minutes = Math.max(elapsedSec/60, 1/600);
+  return Math.round((session.totalKeystrokes/5) / minutes);
+}
+function computeAccuracy(){
+  if(session.totalKeystrokes === 0) return 100;
+  return Math.max(0, Math.round((session.correctKeystrokes/session.totalKeystrokes)*1000)/10);
+}
+
+function updateLiveStats(elapsedSec){
+  const wpm = computeWpm(elapsedSec);
+  const raw = computeRawWpm(elapsedSec);
+  const acc = computeAccuracy();
+  const cpm = Math.round((session.correctKeystrokes / Math.max(elapsedSec/60,1/600)));
+  document.getElementById('statWpm').textContent = clampDisplay(wpm);
+  document.getElementById('statRaw').textContent = clampDisplay(raw);
+  document.getElementById('statCpm').textContent = clampDisplay(cpm);
+  document.getElementById('statAcc').textContent = acc+'%';
+  document.getElementById('statMistakes').textContent = session.mistakeCount;
+  document.getElementById('statStreak').textContent = session.bestStreak;
+  const pct = Math.round((session.cursor/session.chars.length)*100);
+  document.getElementById('statPct').textContent = pct+'%';
+  progressFill.style.width = pct+'%';
+  if(state.mode === 'words'){
+    document.getElementById('statRemain').textContent = Math.max(0, state.wordCount - countWordsTyped())+' w';
+  }
+}
+function clampDisplay(v){
+  // sanity clamp: realistic human typing tops out well under 400 wpm
+  if(!isFinite(v) || v<0) return 0;
+  return Math.min(v, 400);
+}
+function countWordsTyped(){
+  return session.text.slice(0, session.cursor).trim().split(/\s+/).filter(Boolean).length;
+}
+
+function handleKeydown(e){
+  if(!session) return;
+  if(e.key === 'Escape'){ e.preventDefault(); buildSession(); return; }
+  if(e.key === ' ' && session.running && !session.finished){ 
+    // allow space as normal char unless it's meant as pause - we use dedicated pause button + shortcut below only when not typing space char expected
+  }
+}
+
+hiddenInput.addEventListener('keydown', function(e){
+  if(!session || session.finished) return;
+  if(session.paused) return;
+  if(e.key === 'Escape'){ e.preventDefault(); buildSession(); return; }
+  if(e.key === 'Backspace'){
+    e.preventDefault();
+    if(session.cursor > 0){
+      session.cursor--;
+      session.typed[session.cursor] = null;
+      const span = textDisplay.querySelector('[data-idx="'+session.cursor+'"]');
+      if(span){ span.className = 'char pending'; }
+      markCurrentLine(); updateCursorVisual();
+    }
+    return;
+  }
+  if(e.key.length !== 1) return; // ignore control keys
+  e.preventDefault();
+  if(!session.running) startSession();
+  processChar(e.key);
+});
+
+function processChar(key){
+  const expected = session.chars[session.cursor];
+  const span = textDisplay.querySelector('[data-idx="'+session.cursor+'"]');
+  session.totalKeystrokes++;
+  if(key === expected){
+    session.typed[session.cursor] = 'correct';
+    session.correctKeystrokes++;
+    session.streak++;
+    session.bestStreak = Math.max(session.bestStreak, session.streak);
+    if(span) span.className = 'char correct';
+    beep(880,0.05,0.03);
+  } else {
+    session.typed[session.cursor] = 'incorrect';
+    session.mistakeCount++;
+    session.streak = 0;
+    session.erroredKeys[expected] = (session.erroredKeys[expected]||0)+1;
+    if(span) span.className = 'char incorrect';
+    beep(180,0.08,0.05);
+  }
+  session.cursor++;
+  markCurrentLine();
+  updateCursorVisual();
+  if(session.cursor >= session.chars.length){
+    finishSession();
+  }
+}
+
+function finishSession(){
+  if(session.finished) return;
+  session.finished = true;
+  session.running = false;
+  clearInterval(session.intervalId);
+  session.endTime = performance.now();
+  const elapsedSec = (session.endTime - session.startTime)/1000;
+  session.finalElapsed = elapsedSec;
+  showResults();
+  if(state.mode === 'adaptive'){
+    const acc = computeAccuracy();
+    const wpm = computeWpm(elapsedSec);
+    if(acc > 96 && wpm > 45) adaptiveLevel = Math.min(adaptiveLevel+1, 20);
+    else if(acc < 88) adaptiveLevel = Math.max(adaptiveLevel-1, 1);
+    localStorage.setItem('tss_adaptive_level', adaptiveLevel);
+  }
+}
+
+/* ================= RESULTS / ANALYTICS ================= */
+function showResults(){
+  const elapsedSec = session.finalElapsed;
+  const wpm = computeWpm(elapsedSec);
+  const raw = computeRawWpm(elapsedSec);
+  const acc = computeAccuracy();
+  const correct = session.typed.filter(t=>t==='correct').length;
+  const incorrect = session.typed.filter(t=>t==='incorrect').length;
+  const missed = session.chars.length - session.cursor;
+  const consistency = computeConsistency();
+  const pct = Math.round((session.cursor/session.chars.length)*100);
+  const percentile = estimatePercentile(wpm);
+
+  document.getElementById('rWpm').innerHTML = wpm+'<small>wpm</small>';
+  document.getElementById('rAcc').innerHTML = acc+'%';
+  document.getElementById('rCons').innerHTML = consistency+'%';
+  document.getElementById('rPct').innerHTML = percentile+'<small>th</small>';
+
+  const key = state.mode+'_'+(state.mode==='time'?state.timeLimit:state.mode==='words'?state.wordCount:'');
+  const prevBest = personalBests[key];
+  const isPB = !prevBest || wpm > prevBest.wpm;
+  if(isPB){ personalBests[key] = {wpm, acc, date: Date.now()}; localStorage.setItem('tss_bests', JSON.stringify(personalBests)); }
+
+  const grid = document.getElementById('gridStats');
+  grid.innerHTML = '';
+  const cells = [
+    ['Raw WPM', raw], ['Session', elapsedSec.toFixed(1)+'s'], ['Mistakes', session.mistakeCount],
+    ['Best Streak', session.bestStreak], ['Completion', pct+'%'],
+    ['Correct Chars', correct], ['Incorrect', incorrect], ['Extra', 0], ['Missed', missed],
+    ['Personal Best', isPB ? 'New!' : prevBest.wpm+' wpm']
+  ];
+  cells.forEach(([l,v])=>{
+    const div = document.createElement('div');
+    div.className='cell';
+    div.innerHTML = '<div class="v">'+v+'</div><div class="l">'+l+(l==='Personal Best'&&isPB?' <span class="pb-tag">★</span>':'')+'</div>';
+    grid.appendChild(div);
+  });
+
+  drawGraph();
+  drawHeatmap();
+  drawBadges(wpm, acc, session.mistakeCount, consistency);
+  drawSummary(wpm, acc, consistency, session.erroredKeys);
+  saveHistory(wpm, acc, elapsedSec, correct+incorrect);
+  renderHistoryTable();
+
+  document.getElementById('resultsPanel').classList.add('visible');
+  document.getElementById('resultsPanel').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function computeConsistency(){
+  const samples = session.wpmSamples.map(s=>s.wpm).filter(v=>v>0);
+  if(samples.length < 2) return 100;
+  const mean = samples.reduce((a,b)=>a+b,0)/samples.length;
+  const variance = samples.reduce((a,b)=>a+(b-mean)*(b-mean),0)/samples.length;
+  const sd = Math.sqrt(variance);
+  const cv = mean>0 ? sd/mean : 0;
+  return Math.max(0, Math.round(100 - cv*100));
+}
+
+function estimatePercentile(wpm){
+  // heuristic distribution modeled roughly on typical adult typing speed (mean ~40, sd ~15)
+  const mean = 40, sd = 15;
+  const z = (wpm-mean)/sd;
+  const p = 1/(1+Math.exp(-1.7*z)); // logistic approx of normal CDF
+  return Math.min(99, Math.max(1, Math.round(p*100)));
+}
+
+function drawGraph(){
+  const canvas = document.getElementById('wpmGraph');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth, h = 180;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const samples = session.wpmSamples.length ? session.wpmSamples : [{t:0,wpm:computeWpm(session.finalElapsed),acc:computeAccuracy()}];
+  const maxWpm = Math.max(...samples.map(s=>s.wpm), 10);
+  const stepX = w/Math.max(samples.length-1,1);
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = h - (i/4)*h*0.85 - 10;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+  // wpm line
+  ctx.strokeStyle = '#d3a45c'; ctx.lineWidth = 2.5; ctx.beginPath();
+  samples.forEach((s,i)=>{
+    const x = i*stepX;
+    const y = h - (s.wpm/maxWpm)*h*0.85 - 10;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // acc line
+  ctx.strokeStyle = '#6fbf8b'; ctx.lineWidth = 1.5; ctx.beginPath();
+  samples.forEach((s,i)=>{
+    const x = i*stepX;
+    const y = h - (s.acc/100)*h*0.85 - 10;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+const KEY_ROWS = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+function drawHeatmap(){
+  const container = document.getElementById('heatmap');
+  container.innerHTML = '';
+  const maxErr = Math.max(1, ...Object.values(session.erroredKeys));
+  KEY_ROWS.forEach(row=>{
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'heatmap-key-row';
+    row.split('').forEach(k=>{
+      const lower = k.toLowerCase();
+      const err = session.erroredKeys[lower] || session.erroredKeys[k] || 0;
+      const intensity = err/maxErr;
+      const div = document.createElement('div');
+      div.className = 'hk';
+      div.textContent = k;
+      if(err>0){
+        const r = 211, g = Math.round(105 - intensity*60), b = Math.round(92 - intensity*50);
+        div.style.background = 'rgba('+r+','+g+','+b+','+(0.25+intensity*0.6)+')';
+        div.style.color = '#fff';
+      }
+      rowDiv.appendChild(div);
+    });
+    container.appendChild(rowDiv);
+  });
+}
+
+function drawBadges(wpm, acc, mistakes, consistency){
+  const defs = [
+    {id:'first', name:'First Session', ic:'🎯', test:()=>true},
+    {id:'speed40', name:'40+ WPM', ic:'⚡', test:()=>wpm>=40},
+    {id:'speed70', name:'70+ WPM', ic:'🚀', test:()=>wpm>=70},
+    {id:'speed100', name:'Centurion (100+ WPM)', ic:'🏆', test:()=>wpm>=100},
+    {id:'acc100', name:'Flawless', ic:'💎', test:()=>acc>=100},
+    {id:'acc95', name:'Sharp Shooter', ic:'🎯', test:()=>acc>=95},
+    {id:'cons90', name:'Steady Hands', ic:'🩶', test:()=>consistency>=90},
+    {id:'nomiss', name:'Zero Mistakes', ic:'✨', test:()=>mistakes===0},
+    {id:'marathon', name:'120s Marathon', ic:'🕐', test:()=>state.mode==='time'&&state.timeLimit===120}
+  ];
+  const row = document.getElementById('badgeRow');
+  row.innerHTML = '';
+  defs.forEach(d=>{
+    const earned = d.test();
+    const div = document.createElement('div');
+    div.className = 'badge'+(earned?'':' locked');
+    div.innerHTML = '<span class="ic">'+d.ic+'</span> '+d.name;
+    row.appendChild(div);
+  });
+}
+
+function drawSummary(wpm, acc, consistency, erroredKeys){
+  const box = document.getElementById('summaryBox');
+  const sortedKeys = Object.entries(erroredKeys).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>'"'+e[0]+'"');
+  let strengths = [];
+  let weaknesses = [];
+  if(wpm>=70) strengths.push('excellent raw speed');
+  else if(wpm>=40) strengths.push('solid, dependable pace');
+  else weaknesses.push('speed has room to grow with regular practice');
+  if(acc>=97) strengths.push('near-perfect accuracy');
+  else if(acc<90) weaknesses.push('accuracy dipped below 90%, consider slowing down slightly');
+  if(consistency>=85) strengths.push('very consistent rhythm');
+  else weaknesses.push('rhythm varied — try to keep an even pace rather than bursts');
+  if(sortedKeys.length) weaknesses.push('frequently mistyped keys: '+sortedKeys.join(', '));
+
+  box.innerHTML =
+    '<b>Strengths:</b> '+(strengths.length?strengths.join('; '):'building a baseline — keep practicing to reveal your strengths.')+'<br><br>'+
+    '<b>Areas to improve:</b> '+(weaknesses.length?weaknesses.join('; '):'no major weaknesses detected in this session.')+'<br><br>'+
+    '<b>Suggestion:</b> '+suggestionFor(wpm,acc,consistency);
+}
+function suggestionFor(wpm,acc,consistency){
+  if(acc<90) return 'Focus on accuracy drills at a slower pace before pushing for higher WPM.';
+  if(consistency<70) return 'Try Zen Mode to build a smoother, more even rhythm without time pressure.';
+  if(wpm<40) return 'Practice short, frequent sessions (Word Count mode, 25 words) to build muscle memory.';
+  return 'Push your limits with a 120s Time Mode session or a harder Programming snippet.';
+}
+
+function saveHistory(wpm, acc, elapsed, chars){
+  historyData.unshift({
+    mode: state.mode + (state.mode==='time'?(' '+state.timeLimit+'s'):state.mode==='words'?(' '+state.wordCount+'w'):''),
+    wpm, acc, chars, date: Date.now()
+  });
+  historyData = historyData.slice(0,50);
+  localStorage.setItem('tss_history', JSON.stringify(historyData));
+}
+function renderHistoryTable(){
+  const body = document.getElementById('historyBody');
+  body.innerHTML = '';
+  historyData.slice(0,15).forEach((h,i)=>{
+    const tr = document.createElement('tr');
+    const d = new Date(h.date);
+    tr.innerHTML = '<td>'+(i+1)+'</td><td>'+h.mode+'</td><td>'+h.wpm+'</td><td>'+h.acc+'%</td><td>'+h.chars+'</td><td>'+d.toLocaleDateString()+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</td>';
+    body.appendChild(tr);
+  });
+}
+
+/* ================= UI WIRING ================= */
+document.getElementById('typeField').addEventListener('click', ()=>{
+  hiddenInput.focus();
+  if(session && !session.running && !session.finished) startSession();
+});
+document.getElementById('startBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  hiddenInput.focus();
+  startSession();
+});
+document.getElementById('restartBtn').addEventListener('click', buildSession);
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  if(!session || session.finished) return;
+  if(!session.running) return;
+  session.paused = !session.paused;
+  document.getElementById('pauseBtn').textContent = session.paused ? 'Resume' : 'Pause';
+  if(session.paused){
+    // freeze start time offset
+    session.pauseStart = performance.now();
+  } else {
+    const pausedFor = performance.now() - session.pauseStart;
+    session.startTime += pausedFor;
+    hiddenInput.focus();
+  }
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ e.preventDefault(); buildSession(); }
+});
+
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const body = document.body;
+  const next = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', next);
+  document.getElementById('themeToggle').classList.toggle('active', next==='light');
+  if(session && session.finished) { drawGraph(); }
+});
+document.getElementById('soundToggle').addEventListener('click', ()=>{
+  state.soundOn = !state.soundOn;
+  document.getElementById('soundToggle').classList.toggle('active', !state.soundOn);
+  document.getElementById('soundToggle').textContent = state.soundOn ? '🔊' : '🔇';
+});
+document.getElementById('fontPlus').addEventListener('click', ()=>{
+  state.fontSize = Math.min(state.fontSize+0.15, 2.4);
+  document.querySelector('.type-field').style.fontSize = state.fontSize+'rem';
+});
+document.getElementById('fontMinus').addEventListener('click', ()=>{
+  state.fontSize = Math.max(state.fontSize-0.15, 0.9);
+  document.querySelector('.type-field').style.fontSize = state.fontSize+'rem';
+});
+
+function setActiveChip(row, selector, value, dataAttr){
+  document.querySelectorAll(row+' .chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector(row+' [data-'+dataAttr+'="'+value+'"]').classList.add('active');
+}
+
+document.querySelectorAll('#modeRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.mode = btn.dataset.mode;
+    document.querySelectorAll('#modeRow .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    updateSubRows();
+    buildSession();
+  });
+});
+document.querySelectorAll('#timeRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.timeLimit = parseInt(btn.dataset.time,10);
+    setActiveChip('#timeRow','chip',state.timeLimit,'time');
+    buildSession();
+  });
+});
+document.querySelectorAll('#wordsRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.wordCount = parseInt(btn.dataset.words,10);
+    setActiveChip('#wordsRow','chip',state.wordCount,'words');
+    buildSession();
+  });
+});
+document.querySelectorAll('#langRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.lang = btn.dataset.lang;
+    setActiveChip('#langRow','chip',state.lang,'lang');
+    buildSession();
+  });
+});
+document.querySelectorAll('#categoryRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    state.category = btn.dataset.cat;
+    setActiveChip('#categoryRow','chip',state.category,'cat');
+    buildSession();
+  });
+});
+document.getElementById('customText').addEventListener('change', buildSession);
+document.querySelectorAll('#toggleRow .chip').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const t = btn.dataset.toggle;
+    if(t==='focus'){ state.focus = !state.focus; btn.classList.toggle('active', state.focus); typeField.classList.toggle('focus-mode', state.focus); }
+    if(t==='zen'){ state.zen = !state.zen; btn.classList.toggle('active', state.zen); typeField.classList.toggle('zen-mode', state.zen); }
+  });
+});
+
+function updateSubRows(){
+  document.getElementById('timeRow').classList.toggle('visible', state.mode==='time');
+  document.getElementById('wordsRow').classList.toggle('visible', state.mode==='words');
+  document.getElementById('langRow').classList.toggle('visible', state.mode==='programming');
+  document.getElementById('categoryRow').classList.toggle('visible', state.mode!=='programming' && state.mode!=='quote' && state.mode!=='custom' && state.mode!=='adaptive');
+  document.getElementById('customRow').classList.toggle('visible', state.mode==='custom');
+}
+
+/* ================= INIT ================= */
+updateSubRows();
+buildSession();
+renderHistoryTable();
+})();
+</script>
+</body>
+</html>
