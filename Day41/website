@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Responsive Web Design · Interactive Learning Studio</title>
+<style>
+  :root{
+    --bg:#0c1016;
+    --bg-panel:#131923;
+    --bg-panel-2:#171f2c;
+    --grid-line: rgba(94,196,209,0.10);
+    --ink:#eef2f7;
+    --ink-soft:#95a3b8;
+    --ink-faint:#5c6a80;
+    --teal:#5ec4d1;
+    --teal-dim:#2d5b63;
+    --amber:#f0a83c;
+    --amber-dim:#7a5a26;
+    --success:#5cc98a;
+    --danger:#e2685a;
+    --rule: rgba(255,255,255,0.08);
+    --radius:14px;
+    --radius-sm:8px;
+    --shadow: 0 20px 50px -20px rgba(0,0,0,0.55);
+    --font-display: 'Century Gothic','Avenir Next','Segoe UI',-apple-system,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,'SF Mono','Cascadia Code','Roboto Mono','Courier New',monospace;
+  }
+  html[data-theme="light"]{
+    --bg:#f3f5f8;
+    --bg-panel:#ffffff;
+    --bg-panel-2:#eef1f5;
+    --grid-line: rgba(20,26,35,0.05);
+    --ink:#161c26;
+    --ink-soft:#4d5768;
+    --ink-faint:#8892a0;
+    --teal:#1c8a97;
+    --teal-dim:#bfe6ea;
+    --amber:#b9741c;
+    --amber-dim:#f4dcb3;
+    --rule: rgba(20,26,35,0.10);
+    --shadow: 0 20px 45px -22px rgba(20,26,35,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/38px 38px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/38px 38px,
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:var(--teal);}
+  ::selection{ background:var(--amber); color:#1a1206; }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; border-radius:4px; }
+  h1,h2,h3,h4{ font-family:var(--font-display); margin:0; letter-spacing:0.01em; }
+  code, .mono{ font-family:var(--font-mono); }
+  button{ font-family:inherit; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+  html{ scroll-behavior:smooth; }
+
+  /* ---------- Shell ---------- */
+  .app-shell{
+    display:grid;
+    grid-template-columns: 268px 1fr;
+    grid-template-rows: 64px 1fr;
+    min-height:100vh;
+  }
+  .topbar{
+    grid-column:1/-1;
+    display:flex; align-items:center; gap:22px;
+    padding:0 22px;
+    background:var(--bg-panel);
+    border-bottom:1px solid var(--rule);
+    position:sticky; top:0; z-index:40;
+  }
+  .topbar-left{ display:flex; flex-direction:column; justify-content:center; gap:1px; min-width:0; }
+  .logo{ font-family:var(--font-display); font-weight:700; font-size:1.02rem; letter-spacing:0.02em; display:flex; align-items:center; gap:8px;}
+  .logo .mark{ color:var(--amber); }
+  .crumbs{ font-size:0.72rem; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .topbar-progress{ flex:1; display:flex; align-items:center; gap:12px; max-width:420px; }
+  .progress-track{ flex:1; height:8px; border-radius:100px; background:var(--bg-panel-2); overflow:hidden; border:1px solid var(--rule); }
+  .progress-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--teal), var(--amber)); transition:width .5s cubic-bezier(.2,.8,.2,1); }
+  #progressLabel{ font-size:0.72rem; color:var(--ink-soft); white-space:nowrap; font-family:var(--font-mono); }
+  .topbar-right{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .xp-pill{
+    font-family:var(--font-mono); font-size:0.78rem; background:var(--bg-panel-2); border:1px solid var(--rule);
+    padding:6px 12px; border-radius:100px; color:var(--amber); display:flex; align-items:center; gap:6px;
+  }
+  .icon-btn{
+    width:34px; height:34px; border-radius:50%; border:1px solid var(--rule); background:var(--bg-panel-2);
+    color:var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.95rem;
+    transition: background .15s, transform .15s;
+  }
+  .icon-btn:hover{ background:var(--bg-panel); transform:translateY(-1px); }
+  .sidebar-toggle{
+    display:none; position:fixed; top:14px; right:14px; z-index:60; width:40px; height:40px; border-radius:10px;
+    border:1px solid var(--rule); background:var(--bg-panel); color:var(--ink); font-size:1.1rem; cursor:pointer;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background:var(--bg-panel); border-right:1px solid var(--rule);
+    padding:20px 14px; display:flex; flex-direction:column; gap:22px;
+    position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto;
+  }
+  .module-nav{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
+    font-size:0.86rem; color:var(--ink-soft); cursor:pointer; transition: background .15s, color .15s;
+    border:1px solid transparent;
+  }
+  .nav-item:hover{ background:var(--bg-panel-2); }
+  .nav-item.active{ background:var(--bg-panel-2); color:var(--ink); border-color:var(--rule); }
+  .nav-item .nav-num{
+    width:22px; height:22px; border-radius:50%; background:var(--bg-panel-2); border:1px solid var(--rule);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:0.68rem; flex:none;
+    color:var(--ink-faint);
+  }
+  .nav-item.unlocked .nav-num{ border-color:var(--teal); color:var(--teal); }
+  .nav-item.complete .nav-num{ background:var(--teal); border-color:var(--teal); color:#04262a; }
+  .nav-item.locked{ opacity:0.55; cursor:not-allowed; }
+  .nav-item.locked .nav-num{ color:var(--ink-faint); }
+  .nav-item .nav-dot{ width:22px; text-align:center; color:var(--amber); flex:none; }
+  .badge-shelf{ margin-top:auto; padding-top:16px; border-top:1px solid var(--rule); }
+  .badge-shelf-label{ font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-faint); margin:0 0 10px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; min-height:34px; }
+  .badge-chip{
+    font-size:0.7rem; padding:6px 10px; border-radius:100px; background:var(--bg-panel-2); border:1px solid var(--amber-dim);
+    color:var(--amber); display:flex; align-items:center; gap:5px; animation:badgeIn .4s ease both;
+  }
+  @keyframes badgeIn{ from{ opacity:0; transform:scale(0.8);} to{ opacity:1; transform:none;} }
+  .badge-empty{ font-size:0.72rem; color:var(--ink-faint); font-style:italic; }
+
+  /* ---------- Content shell ---------- */
+  .content{ padding:34px clamp(18px, 4vw, 56px) 90px; max-width:980px; }
+  .section{ margin-bottom:56px; scroll-margin-top:80px; }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.14em;
+    color:var(--teal); margin:0 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .section h2.section-title{ font-size:1.7rem; margin-bottom:10px; }
+  .lede{ color:var(--ink-soft); line-height:1.65; font-size:0.98rem; max-width:64ch; }
+
+  /* ---------- Ruler simulator (signature component) ---------- */
+  .ruler-widget{
+    background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius);
+    padding:18px 20px 20px; box-shadow:var(--shadow); margin:18px 0 8px;
+  }
+  .ruler-widget .ruler-label{ font-size:0.78rem; color:var(--ink-soft); margin-bottom:10px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+  .ruler-scale{ position:relative; height:22px; margin-bottom:2px; }
+  .ruler-scale .tick{ position:absolute; top:0; font-family:var(--font-mono); font-size:0.62rem; color:var(--ink-faint); transform:translateX(-50%); }
+  .ruler-scale .tick::after{ content:''; display:block; width:1px; height:6px; background:var(--rule); margin:2px auto 0; }
+  .ruler-range{
+    -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:100px;
+    background:linear-gradient(90deg, var(--teal), var(--amber)); cursor:pointer; margin:6px 0 2px;
+  }
+  .ruler-range::-webkit-slider-thumb{
+    -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--ink);
+    border:3px solid var(--amber); cursor:grab; margin-top:-6px;
+  }
+  .ruler-range::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:var(--ink); border:3px solid var(--amber); cursor:grab; }
+  .ruler-readout{ display:flex; align-items:baseline; gap:8px; margin-top:8px; font-family:var(--font-mono); }
+  .ruler-readout .rr-value{ font-size:1.15rem; font-weight:700; color:var(--ink); }
+  .ruler-readout .rr-unit{ font-size:0.78rem; color:var(--ink-faint); }
+  .ruler-readout .rr-zone{ margin-left:auto; font-size:0.76rem; padding:3px 10px; border-radius:100px; background:var(--bg-panel-2); border:1px solid var(--rule); }
+  .ruler-readout .rr-rule{ width:100%; font-size:0.72rem; color:var(--ink-faint); margin-top:4px; }
+  .ruler-stage{
+    margin-top:14px; background:var(--bg); border:1px dashed var(--rule); border-radius:var(--radius-sm);
+    padding:14px; overflow-x:auto;
+  }
+  .ruler-frame{
+    margin:0 auto; min-width:140px; border:1px solid var(--rule); border-radius:8px; background:var(--bg-panel-2);
+    padding:12px; transition:width .08s linear; container-type:inline-size;
+  }
+
+  /* ---------- Demo widgets living inside a ruler-frame ---------- */
+  .demo-fixed-fluid{ display:flex; flex-direction:column; gap:8px; }
+  .demo-box{ padding:10px; border-radius:6px; font-family:var(--font-mono); font-size:0.72rem; color:#0c1016; white-space:nowrap; overflow:hidden; }
+  .demo-box.fixed{ width:230px; background:var(--danger); max-width:none; }
+  .demo-box.fluid{ width:100%; background:var(--success); }
+
+  .demo-mq{ text-align:center; padding:22px 8px; border-radius:6px; font-family:var(--font-mono); font-size:0.8rem; background:var(--bg-panel-2); color:var(--ink-soft); transition:background .1s, color .1s; }
+  @container (max-width: 575px){ .demo-mq{ background:rgba(226,104,90,0.18); color:var(--danger); } }
+  @container (min-width: 576px) and (max-width: 991px){ .demo-mq{ background:rgba(240,168,60,0.18); color:var(--amber); } }
+  @container (min-width: 992px){ .demo-mq{ background:rgba(94,196,209,0.18); color:var(--teal); } }
+
+  .demo-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:8px; }
+  .demo-card{ background:var(--bg-panel); border:1px solid var(--rule); border-radius:6px; padding:10px 8px; font-size:0.7rem; color:var(--ink-soft); text-align:center; }
+
+  .demo-nav{ display:flex; align-items:center; justify-content:space-between; background:var(--bg-panel); border:1px solid var(--rule); border-radius:6px; padding:8px 10px; }
+  .demo-nav .demo-logo{ font-weight:700; font-size:0.78rem; }
+  .demo-nav .demo-links{ display:flex; gap:12px; font-size:0.7rem; color:var(--ink-soft); }
+  .demo-nav .demo-burger{ display:none; font-size:0.95rem; }
+  @container (max-width: 360px){
+    .demo-nav .demo-links{ display:none; }
+    .demo-nav .demo-burger{ display:block; }
+  }
+  .demo-cardwrap{ margin-top:8px; display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; }
+
+  /* ---------- Content blocks ---------- */
+  .callout{ border-radius:var(--radius-sm); padding:16px 18px; margin:16px 0; border:1px solid var(--rule); background:var(--bg-panel); }
+  .callout.analogy{ border-left:3px solid var(--amber); }
+  .callout.analogy .callout-label{ color:var(--amber); }
+  .callout-label{ font-family:var(--font-mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; display:block; }
+  .callout p{ margin:0; line-height:1.6; color:var(--ink-soft); font-size:0.92rem; }
+
+  .diagram-wrap{ background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius); padding:18px; margin:16px 0; overflow-x:auto; }
+  .diagram-wrap svg{ display:block; margin:0 auto; max-width:100%; height:auto; }
+  .diagram-caption{ text-align:center; font-size:0.76rem; color:var(--ink-faint); margin-top:8px; }
+
+  table.compare{ width:100%; border-collapse:collapse; margin:16px 0; font-size:0.86rem; }
+  table.compare th, table.compare td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  table.compare th{ font-family:var(--font-mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-faint); }
+  table.compare td{ color:var(--ink-soft); line-height:1.5; }
+  table.compare tr td:first-child{ color:var(--ink); font-weight:600; }
+
+  .exercise-box{ background:var(--bg-panel); border:1px solid var(--teal-dim); border-left:3px solid var(--teal); border-radius:var(--radius-sm); padding:16px 18px; margin:16px 0; }
+  .exercise-box .callout-label{ color:var(--teal); }
+
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px){ .two-col{ grid-template-columns:1fr; } }
+
+  ul.tidy{ margin:8px 0; padding-left:20px; color:var(--ink-soft); line-height:1.65; font-size:0.92rem; }
+  ul.tidy li{ margin-bottom:6px; }
+  ul.tidy.misconceptions li b{ color:var(--danger); }
+  ul.tidy.takeaways li::marker{ color:var(--teal); }
+
+  pre.code-block{
+    background:#0a0d12; border:1px solid var(--rule); border-radius:var(--radius-sm); padding:14px 16px;
+    overflow-x:auto; font-family:var(--font-mono); font-size:0.8rem; color:#c9e8ec; line-height:1.55; position:relative;
+  }
+  html[data-theme="light"] pre.code-block{ background:#111722; }
+  .copy-btn{
+    position:absolute; top:8px; right:8px; font-size:0.68rem; padding:4px 9px; border-radius:6px;
+    background:var(--bg-panel-2); color:var(--ink-soft); border:1px solid var(--rule); cursor:pointer;
+  }
+  .copy-btn:hover{ color:var(--ink); }
+
+  /* ---------- Module chrome ---------- */
+  .module-header{ display:flex; align-items:center; gap:12px; margin-bottom:6px; flex-wrap:wrap; }
+  .diff-badge{ font-family:var(--font-mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; padding:4px 10px; border-radius:100px; border:1px solid var(--rule); color:var(--ink-soft); }
+  .module-num{ font-family:var(--font-display); font-size:2.2rem; color:var(--teal-dim); }
+  html[data-theme="light"] .module-num{ color:var(--teal); opacity:0.35; }
+  .module-block{ position:relative; }
+  .module-body{ transition:filter .3s ease; }
+  .lock-overlay{
+    position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; text-align:center; padding:20px;
+    background:rgba(12,16,22,0.72); backdrop-filter:blur(6px); border-radius:var(--radius);
+  }
+  html[data-theme="light"] .lock-overlay{ background:rgba(243,245,248,0.82); }
+  .lock-overlay .lock-icon{ font-size:1.6rem; }
+  .lock-overlay p{ color:var(--ink-soft); font-size:0.88rem; max-width:34ch; margin:0; }
+  [data-locked="true"] .module-body{ filter:blur(2px); pointer-events:none; user-select:none; }
+  [data-locked="true"] .lock-overlay{ display:flex; }
+  [data-locked="false"] .lock-overlay{ display:none; }
+
+  /* ---------- Quiz ---------- */
+  .quiz{ margin-top:34px; background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius); padding:22px 24px; }
+  .quiz h3{ font-size:1.05rem; margin-bottom:4px; }
+  .quiz .quiz-sub{ color:var(--ink-faint); font-size:0.8rem; margin-bottom:18px; }
+  .quiz-question{ margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--rule); }
+  .quiz-question:last-of-type{ border-bottom:none; }
+  .quiz-q-text{ font-size:0.92rem; margin-bottom:10px; font-weight:600; }
+  .quiz-options{ display:flex; flex-direction:column; gap:8px; }
+  .quiz-option{
+    display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
+    border:1px solid var(--rule); cursor:pointer; font-size:0.87rem; color:var(--ink-soft); transition:background .15s, border-color .15s;
+  }
+  .quiz-option:hover{ background:var(--bg-panel-2); }
+  .quiz-option input{ margin-top:2px; accent-color:var(--teal); }
+  .quiz-option.chosen{ border-color:var(--teal); background:var(--bg-panel-2); color:var(--ink); }
+  .quiz-option.correct-answer{ border-color:var(--success); background:rgba(92,201,138,0.08); }
+  .quiz-option.wrong-answer{ border-color:var(--danger); background:rgba(226,104,90,0.08); }
+  .quiz-feedback{ display:none; margin-top:10px; padding:10px 12px; border-radius:var(--radius-sm); font-size:0.83rem; line-height:1.5; background:var(--bg-panel-2); color:var(--ink-soft); }
+  .quiz-feedback.show{ display:block; }
+  .quiz-feedback b{ color:var(--ink); }
+  .quiz-actions{ display:flex; align-items:center; gap:14px; margin-top:6px; flex-wrap:wrap; }
+  .quiz-summary{ display:none; margin-top:18px; padding:18px; border-radius:var(--radius-sm); background:var(--bg-panel-2); border:1px solid var(--rule); text-align:center; }
+  .quiz-summary.show{ display:block; animation:screenIn .4s ease both; }
+  @keyframes screenIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .quiz-summary .score-big{ font-family:var(--font-display); font-size:2rem; color:var(--teal); }
+  .quiz-summary p{ color:var(--ink-soft); font-size:0.86rem; margin:6px 0 14px; }
+
+  button.primary{
+    font-family:inherit; background:linear-gradient(135deg, var(--amber), #c97f1f); color:#1c1206; border:none;
+    padding:12px 22px; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer;
+    box-shadow:0 10px 26px -12px rgba(240,168,60,0.55); transition:transform .15s, box-shadow .15s;
+  }
+  button.primary:hover{ transform:translateY(-1px); }
+  button.primary:disabled{ background:var(--bg-panel-2); color:var(--ink-faint); box-shadow:none; cursor:not-allowed; transform:none; }
+  button.ghost{
+    font-family:inherit; background:var(--bg-panel-2); color:var(--ink); border:1px solid var(--rule);
+    padding:11px 20px; border-radius:8px; font-size:0.87rem; cursor:pointer; transition:border-color .15s, transform .15s;
+  }
+  button.ghost:hover{ border-color:var(--teal); transform:translateY(-1px); }
+
+  /* ---------- Final section ---------- */
+  .playground{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0; }
+  @media (max-width:800px){ .playground{ grid-template-columns:1fr; } }
+  .playground textarea{
+    width:100%; height:280px; background:#0a0d12; color:#c9e8ec; border:1px solid var(--rule); border-radius:var(--radius-sm);
+    font-family:var(--font-mono); font-size:0.8rem; padding:14px; resize:vertical; line-height:1.5;
+  }
+  html[data-theme="light"] .playground textarea{ background:#111722; }
+  .playground iframe{ width:100%; height:280px; border:1px solid var(--rule); border-radius:var(--radius-sm); background:#fff; }
+  .checklist{ display:flex; flex-direction:column; gap:8px; margin:14px 0; }
+  .checklist label{ display:flex; gap:10px; align-items:flex-start; font-size:0.88rem; color:var(--ink-soft); }
+  .checklist input{ margin-top:3px; accent-color:var(--teal); }
+
+  .cheat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px){ .cheat-grid{ grid-template-columns:1fr; } }
+  .cheat-card{ background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius-sm); padding:16px; }
+  .cheat-card h4{ font-size:0.82rem; margin-bottom:8px; color:var(--teal); }
+
+  .resource-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:14px 0; }
+  .resource-card{ background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius-sm); padding:16px; }
+  .resource-card h4{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--amber); margin-bottom:10px; }
+  .resource-card ul{ margin:0; padding-left:18px; font-size:0.85rem; color:var(--ink-soft); line-height:1.7; }
+
+  .keyword-pills{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .keyword-pill{ font-family:var(--font-mono); font-size:0.76rem; background:var(--bg-panel); border:1px solid var(--rule); padding:6px 12px; border-radius:100px; color:var(--ink-soft); }
+
+  .certificate{
+    margin-top:26px; padding:34px; border-radius:var(--radius); text-align:center;
+    background:linear-gradient(160deg, var(--bg-panel), var(--bg-panel-2)); border:1px solid var(--amber-dim);
+    display:none;
+  }
+  .certificate.show{ display:block; animation:screenIn .5s ease both; }
+  .certificate .cert-eyebrow{ color:var(--amber); font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; }
+  .certificate h3{ font-size:1.6rem; margin:10px 0 4px; }
+  .certificate p{ color:var(--ink-soft); font-size:0.88rem; }
+
+  /* ---------- Intro meta grid ---------- */
+  .meta-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0; }
+  @media (max-width:760px){ .meta-grid{ grid-template-columns:repeat(2,1fr); } }
+  .meta-card{ background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius-sm); padding:14px 16px; }
+  .meta-card .mc-label{ font-family:var(--font-mono); font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faint); margin-bottom:6px; }
+  .meta-card .mc-value{ font-size:0.92rem; color:var(--ink); font-weight:600; }
+  .reward-box{ display:flex; gap:16px; flex-wrap:wrap; margin:18px 0; }
+  .reward-item{ flex:1; min-width:180px; background:var(--bg-panel); border:1px solid var(--rule); border-radius:var(--radius-sm); padding:14px 16px; }
+  .reward-item .ri-icon{ font-size:1.2rem; }
+  .reward-item h4{ font-size:0.84rem; margin:8px 0 4px; }
+  .reward-item p{ font-size:0.78rem; color:var(--ink-faint); margin:0; line-height:1.5; }
+
+  footer.app-footer{ text-align:center; color:var(--ink-faint); font-size:0.76rem; padding:30px 0 10px; }
+
+  @media (max-width:860px){
+    .app-shell{ grid-template-columns:1fr; }
+    .sidebar-toggle{ display:flex; align-items:center; justify-content:center; }
+    .sidebar{
+      position:fixed; left:0; top:64px; width:250px; z-index:50; height:calc(100vh - 64px);
+      transform:translateX(-100%); transition:transform .25s ease; box-shadow:var(--shadow);
+    }
+    .sidebar.open{ transform:translateX(0); }
+    .topbar-progress{ display:none; }
+  }
+
+  @media print{
+    .sidebar, .topbar, .sidebar-toggle, .lock-overlay, .ruler-widget, .quiz, .icon-btn, .playground, .quiz-actions{ display:none !important; }
+    body{ background:#fff; color:#000; }
+    .content{ max-width:100%; padding:0; }
+    #final .print-only-heading{ display:block; }
+  }
+</style>
+</head>
+<body>
+
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">☰</button>
+
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo"><span class="mark">◱</span> Interactive Learning Studio</span>
+      <span class="crumbs">Web Development / Responsive Web Design</span>
+    </div>
+    <div class="topbar-progress">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <span id="progressLabel" class="mono">0% complete</span>
+    </div>
+    <div class="topbar-right">
+      <div class="xp-pill">⚡ <span id="xpValue">0</span> XP</div>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle dark/light mode">🌙</button>
+      <button class="icon-btn" id="printBtn" aria-label="Print summary notes" title="Print summary notes">🖨</button>
+    </div>
+  </header>
+
+  <nav class="sidebar" id="sidebar">
+    <ol class="module-nav" id="moduleNav">
+      <li class="nav-item active" data-target="intro"><span class="nav-dot">·</span>Introduction</li>
+      <li class="nav-item unlocked" data-target="module-1"><span class="nav-num">1</span>Foundations</li>
+      <li class="nav-item locked" data-target="module-2"><span class="nav-num">2</span>Media Queries</li>
+      <li class="nav-item locked" data-target="module-3"><span class="nav-num">3</span>Layout Systems</li>
+      <li class="nav-item locked" data-target="module-4"><span class="nav-num">4</span>Real-World Mastery</li>
+      <li class="nav-item locked" data-target="final"><span class="nav-num">★</span>Challenge &amp; Resources</li>
+    </ol>
+    <div class="badge-shelf">
+      <p class="badge-shelf-label">Badges earned</p>
+      <div class="badges" id="badgesRow"><span class="badge-empty">None yet — finish Module 1</span></div>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+
+    <!-- ============ INTRO ============ -->
+    <section id="intro" class="section">
+      <p class="eyebrow">Before you begin</p>
+      <h2 class="section-title">Responsive Web Design</h2>
+      <p class="lede">Build one interface that genuinely works on a 320px phone and a 2560px monitor — not by accident, but by design. This studio teaches the four ideas that make that possible: fluid foundations, media queries, modern layout systems, and the judgment to apply them in real projects.</p>
+
+      <div class="ruler-widget" id="heroRuler">
+        <div class="ruler-label"><span>Drag the handle — this is the tool you'll use throughout the tutorial</span><span class="mono">Viewport width simulator</span></div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-card"><div class="mc-label">Estimated time</div><div class="mc-value">≈ 2.5–3 hours</div></div>
+        <div class="meta-card"><div class="mc-label">Modules</div><div class="mc-value">4 + final challenge</div></div>
+        <div class="meta-card"><div class="mc-label">Prerequisites</div><div class="mc-value">Basic HTML &amp; CSS</div></div>
+        <div class="meta-card"><div class="mc-label">Format</div><div class="mc-value">Read · try · quiz</div></div>
+      </div>
+
+      <div class="two-col">
+        <div class="callout">
+          <span class="callout-label">Learning objectives</span>
+          <ul class="tidy">
+            <li>Explain why fixed-pixel layouts break across devices, and what "fluid" actually means in CSS</li>
+            <li>Write mobile-first media queries with confidence, and choose breakpoints from content, not devices</li>
+            <li>Build reflowing layouts with Flexbox and CSS Grid, plus fluid type and responsive images</li>
+            <li>Apply all of it to a real page: a responsive nav, card grid, and hero section</li>
+          </ul>
+        </div>
+        <div class="callout">
+          <span class="callout-label">Expected outcomes</span>
+          <p>By the end, you'll read any layout brief and know whether it needs a fluid grid, a breakpoint, a <code>clamp()</code>, or a container query — and you'll have shipped a small responsive page to prove it in the final challenge.</p>
+        </div>
+      </div>
+
+      <span class="callout-label" style="margin-top:22px;display:block;">Reward system</span>
+      <div class="reward-box">
+        <div class="reward-item"><span class="ri-icon">⚡</span><h4>XP per module</h4><p>Earn XP for every quiz question you answer, right or wrong — attempting is what builds the skill.</p></div>
+        <div class="reward-item"><span class="ri-icon">🏅</span><h4>Badges</h4><p>Each module quiz unlocks a named badge, shown in the sidebar as you progress.</p></div>
+        <div class="reward-item"><span class="ri-icon">🔓</span><h4>Unlocked modules</h4><p>Finishing a module's quiz unlocks the next one — the sidebar always shows exactly where you stand.</p></div>
+        <div class="reward-item"><span class="ri-icon">🎓</span><h4>Certificate</h4><p>Complete the final challenge to reveal a completion certificate at the bottom of the page.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 1 ============ -->
+    <section id="module-1" class="section module-block" data-locked="false">
+      <div class="module-header">
+        <span class="module-num">01</span>
+        <div><h2 class="section-title" style="margin-bottom:2px;">Foundations of Responsive Design</h2><span class="diff-badge">Foundational</span></div>
+      </div>
+      <div class="module-body">
+        <p class="lede">Before media queries, before Grid — responsive design starts with a mindset shift: stop designing for a screen size, and start designing for a range.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Why fixed layouts break</h3>
+        <p style="color:var(--ink-soft);line-height:1.7;font-size:0.92rem;">In the early 2000s, most sites were built at a fixed width — usually 960px — because most monitors were roughly the same size. That assumption collapsed with the iPhone in 2007 and the explosion of tablets, phablets, and now foldables. A 960px-wide layout on a 375px phone doesn't "shrink to fit" — it gets clipped, forcing horizontal scrolling, or the browser scales the whole page down until the text is unreadable. Responsive design, a term coined by Ethan Marcotte in 2010, replaced "design for a screen" with "design for a system" — one layout, built from flexible parts, that reorganizes itself across the full range of possible viewports.</p>
+
+        <div class="callout analogy">
+          <span class="callout-label">Analogy</span>
+          <p>A fixed layout is an ice cube: a rigid shape that only fits the one glass it was frozen in. A responsive layout is water: it's still fundamentally the same substance, but it takes the shape of whatever container it's poured into — a cup, a bowl, a bottle — without you having to sculpt a new one each time.</p>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">The three pillars</h3>
+        <p style="color:var(--ink-soft);line-height:1.7;font-size:0.92rem;">Marcotte's original definition still holds up, and everything in this tutorial is one of these three things:</p>
+        <ul class="tidy">
+          <li><b style="color:var(--ink);">Fluid grids</b> — layout widths defined in relative units (%, fr) instead of fixed pixels, so containers resize with their parent.</li>
+          <li><b style="color:var(--ink);">Flexible media</b> — images and video that scale down with their container (<code>max-width:100%</code>) instead of overflowing it.</li>
+          <li><b style="color:var(--ink);">Media queries</b> — CSS rules that apply only within certain viewport conditions, for the moments fluidity alone isn't enough (covered fully in Module 2).</li>
+        </ul>
+
+        <div class="diagram-wrap">
+          <svg viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The same content reflowing across desktop, tablet and mobile widths">
+            <text x="60" y="20" text-anchor="middle" fill="var(--ink-faint)" font-size="10" font-family="ui-monospace,monospace">DESKTOP</text>
+            <rect x="10" y="30" width="180" height="150" rx="6" fill="none" stroke="var(--rule)"/>
+            <rect x="18" y="38" width="164" height="16" rx="3" fill="var(--teal)" opacity="0.7"/>
+            <rect x="18" y="62" width="50" height="110" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="74" y="62" width="50" height="110" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="130" y="62" width="52" height="110" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+
+            <text x="320" y="20" text-anchor="middle" fill="var(--ink-faint)" font-size="10" font-family="ui-monospace,monospace">TABLET</text>
+            <rect x="250" y="30" width="140" height="150" rx="6" fill="none" stroke="var(--rule)"/>
+            <rect x="258" y="38" width="124" height="16" rx="3" fill="var(--teal)" opacity="0.7"/>
+            <rect x="258" y="62" width="59" height="52" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="323" y="62" width="59" height="52" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="258" y="120" width="124" height="52" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+
+            <text x="540" y="20" text-anchor="middle" fill="var(--ink-faint)" font-size="10" font-family="ui-monospace,monospace">MOBILE</text>
+            <rect x="500" y="30" width="80" height="150" rx="6" fill="none" stroke="var(--rule)"/>
+            <rect x="507" y="38" width="66" height="14" rx="3" fill="var(--amber)" opacity="0.8"/>
+            <rect x="507" y="58" width="66" height="34" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="507" y="96" width="66" height="34" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+            <rect x="507" y="134" width="66" height="34" rx="3" fill="var(--bg-panel-2)" stroke="var(--rule)"/>
+          </svg>
+          <p class="diagram-caption">Same three content blocks, same HTML — the layout reorganizes as space shrinks: 3 columns → 2 columns → stacked.</p>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">The units that make fluidity possible</h3>
+        <table class="compare">
+          <thead><tr><th>Unit</th><th>Relative to</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td>px</td><td>Nothing — absolute</td><td>Borders, shadows, fine details that shouldn't scale</td></tr>
+            <tr><td>%</td><td>The parent element's size</td><td>Fluid widths for grids, images, containers</td></tr>
+            <tr><td>em</td><td>The current element's own font size</td><td>Padding/spacing that should scale with local text size</td></tr>
+            <tr><td>rem</td><td>The root (<code>&lt;html&gt;</code>) font size</td><td>Consistent, predictable global spacing and type scales</td></tr>
+            <tr><td>vw / vh</td><td>1% of the viewport width / height</td><td>Full-bleed sections, fluid type, hero heights</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Fixed vs. fluid, live</h3>
+        <p style="color:var(--ink-soft);font-size:0.9rem;">Drag the ruler below. The red box has a hard-coded <code>width:230px</code>. The green box uses <code>width:100%</code>. Watch what happens as the frame gets narrower than 230px.</p>
+        <div class="ruler-widget" id="m1Ruler"></div>
+
+        <div class="exercise-box">
+          <span class="callout-label">Practical exercise</span>
+          <p style="color:var(--ink-soft);font-size:0.88rem;line-height:1.6;margin:0 0 8px;">Open any project you have (or a blank file) and find a hard-coded pixel width on a container or image. Replace it with a percentage or <code>max-width</code>, then resize your actual browser window. Notice the exact width where it starts to look awkward — you'll use that number as a real breakpoint in Module 2.</p>
+        </div>
+
+        <ul class="tidy misconceptions">
+          <li><b>"Responsive" means "mobile-friendly."</b> Mobile-friendliness is one outcome. Responsive design is the general technique of adapting to <em>any</em> size, including ultra-wide monitors and split-screen windows.</li>
+          <li><b>Percentages alone solve everything.</b> Fluid units handle graceful shrinking, but at extreme widths (very narrow or very wide) you usually still need media queries to change the actual layout structure, not just resize it.</li>
+          <li><b>Fluid and responsive are the same thing.</b> Fluid is one ingredient (flexible units). Responsive is the whole recipe — fluid grids <em>plus</em> flexible media <em>plus</em> media queries, working together.</li>
+        </ul>
+
+        <span class="callout-label" style="margin-top:18px;display:block;">Key takeaways</span>
+        <ul class="tidy takeaways">
+          <li>Fixed pixel layouts assume one screen size and break outside it — responsive design assumes a range.</li>
+          <li>The three pillars are fluid grids, flexible media, and media queries.</li>
+          <li>Use <code>%</code> and <code>max-width</code> for fluid sizing; reserve <code>px</code> for details that genuinely shouldn't scale.</li>
+          <li><code>rem</code> gives predictable spacing; <code>vw</code>/<code>vh</code> tie sizing directly to the viewport.</li>
+        </ul>
+      </div>
+      <div class="lock-overlay"><span class="lock-icon">🔒</span><p>Locked</p></div>
+
+      <div class="quiz" id="quiz-1">
+        <h3>Module 1 check</h3>
+        <p class="quiz-sub">4 questions · answer all, then check your results</p>
+        <div class="quiz-body"></div>
+        <div class="quiz-actions"><button class="primary quiz-check-btn" disabled>Check answers</button></div>
+        <div class="quiz-summary"></div>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 2 ============ -->
+    <section id="module-2" class="section module-block" data-locked="true">
+      <div class="module-header">
+        <span class="module-num">02</span>
+        <div><h2 class="section-title" style="margin-bottom:2px;">Media Queries &amp; Breakpoints</h2><span class="diff-badge">Building</span></div>
+      </div>
+      <div class="module-body">
+        <p class="lede">Fluid units get you most of the way, but at some point a layout needs to fundamentally restructure — a 3-column grid can't gracefully shrink into a usable single column just by resizing. That's what media queries are for.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">The anatomy of a media query</h3>
+        <pre class="code-block"><button class="copy-btn" data-copy="mq1">Copy</button><code id="mq1">@media (min-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr 1fr;
+  }
+}</code></pre>
+        <p style="color:var(--ink-soft);font-size:0.92rem;line-height:1.7;">This rule means: "apply these styles only when the viewport is at least 768px wide." Below 768px, the browser ignores the block entirely and falls back to whatever CSS is defined outside it. That fallback is the key to mobile-first design.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Mobile-first: min-width vs. max-width</h3>
+        <div class="two-col">
+          <div>
+            <span class="callout-label" style="color:var(--teal);">Mobile-first (recommended)</span>
+            <pre class="code-block"><code>/* base styles = small screens */
+.card { width: 100%; }
+
+@media (min-width: 768px) {
+  .card { width: 50%; }
+}
+@media (min-width: 1200px) {
+  .card { width: 33.33%; }
+}</code></pre>
+          </div>
+          <div>
+            <span class="callout-label" style="color:var(--amber);">Desktop-first (legacy)</span>
+            <pre class="code-block"><code>/* base styles = large screens */
+.card { width: 33.33%; }
+
+@media (max-width: 1199px) {
+  .card { width: 50%; }
+}
+@media (max-width: 767px) {
+  .card { width: 100%; }
+}</code></pre>
+          </div>
+        </div>
+        <p style="color:var(--ink-soft);font-size:0.9rem;">Both produce the same visual result. Mobile-first is preferred because your base (unqueried) CSS ships to every device, and small-screen devices — historically the most bandwidth- and CPU-constrained — never have to download or override desktop rules they don't need.</p>
+
+        <div class="callout analogy">
+          <span class="callout-label">Analogy</span>
+          <p>Breakpoints are like clothing sizes, not tailored suits. "Medium" doesn't mean exactly 40 inches — it means a comfortable range. Good breakpoints work the same way: they're not chosen to match one specific phone model, they're chosen so the layout looks good across a <em>range</em> of widths until it needs the next size up.</p>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Try it: the breakpoint matcher</h3>
+        <p style="color:var(--ink-soft);font-size:0.9rem;">This frame uses real CSS container queries, so it's genuinely responding to width — not a JS simulation. Drag and watch the active rule change.</p>
+        <div class="ruler-widget" id="m2Ruler"></div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Beyond width: other useful media features</h3>
+        <table class="compare">
+          <thead><tr><th>Feature</th><th>Detects</th><th>Example use</th></tr></thead>
+          <tbody>
+            <tr><td>orientation</td><td>Portrait vs. landscape</td><td>Reflow a video player when a phone rotates</td></tr>
+            <tr><td>prefers-color-scheme</td><td>OS-level dark/light preference</td><td>Auto dark mode without a manual toggle</td></tr>
+            <tr><td>prefers-reduced-motion</td><td>User requested less animation</td><td>Disable parallax/auto-play for accessibility</td></tr>
+            <tr><td>hover / pointer</td><td>Whether the input can hover, and its precision</td><td>Skip hover-only menus on touchscreens</td></tr>
+          </tbody>
+        </table>
+
+        <div class="exercise-box">
+          <span class="callout-label">Practical exercise</span>
+          <p style="color:var(--ink-soft);font-size:0.88rem;line-height:1.6;margin:0;">Take the fixed-width box from Module 1's exercise and wrap its container in a mobile-first media query: base styles stack it full-width, then at <code>min-width: 700px</code> place it beside a sibling using Flexbox. Resize your real browser window across that boundary to confirm the switch.</p>
+        </div>
+
+        <ul class="tidy misconceptions">
+          <li><b>Breakpoints must match real device widths.</b> Devices number in the thousands and change yearly. Choose breakpoints where <em>your content</em> breaks, not where a specific phone's screen ends.</li>
+          <li><b>You need max-width to build mobile-first.</b> Mobile-first uses <code>min-width</code> almost exclusively — your unqueried base styles already are the "mobile" version.</li>
+          <li><b>More breakpoints = better design.</b> Every extra breakpoint is more CSS to maintain. Most real layouts need 2–4 well-chosen ones, not a dozen.</li>
+        </ul>
+
+        <span class="callout-label" style="margin-top:18px;display:block;">Key takeaways</span>
+        <ul class="tidy takeaways">
+          <li>A media query's declarations only apply when its condition is true; otherwise your base CSS stands.</li>
+          <li>Mobile-first uses <code>min-width</code> and layers complexity upward as space increases.</li>
+          <li>Choose breakpoints from where your actual content breaks, not from a list of device widths.</li>
+          <li>Media queries can detect more than width — orientation, color scheme, motion preference, and pointer type all matter for real users.</li>
+        </ul>
+      </div>
+      <div class="lock-overlay"><span class="lock-icon">🔒</span><p>Complete Module 1's quiz to unlock this module.</p></div>
+
+      <div class="quiz" id="quiz-2">
+        <h3>Module 2 check</h3>
+        <p class="quiz-sub">4 questions · answer all, then check your results</p>
+        <div class="quiz-body"></div>
+        <div class="quiz-actions"><button class="primary quiz-check-btn" disabled>Check answers</button></div>
+        <div class="quiz-summary"></div>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 3 ============ -->
+    <section id="module-3" class="section module-block" data-locked="true">
+      <div class="module-header">
+        <span class="module-num">03</span>
+        <div><h2 class="section-title" style="margin-bottom:2px;">Responsive Layout Systems</h2><span class="diff-badge">Applying</span></div>
+      </div>
+      <div class="module-body">
+        <p class="lede">Flexbox and Grid do most of the reflow work for you — often without a single media query — because they respond to the space they're actually given, not just the viewport.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Flexbox: one dimension, flexible</h3>
+        <pre class="code-block"><button class="copy-btn" data-copy="fx1">Copy</button><code id="fx1">.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.row > * {
+  flex: 1 1 220px; /* grow, shrink, base width */
+}</code></pre>
+        <p style="color:var(--ink-soft);font-size:0.92rem;line-height:1.7;"><code>flex-wrap: wrap</code> lets items drop to a new line instead of squeezing forever. <code>flex: 1 1 220px</code> tells each item "try to be 220px, but grow to fill extra space, and shrink if the row gets tight." No media query needed — the row reflows purely from available space.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Grid: two dimensions, self-adjusting</h3>
+        <pre class="code-block"><button class="copy-btn" data-copy="gr1">Copy</button><code id="gr1">.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}</code></pre>
+        <p style="color:var(--ink-soft);font-size:0.92rem;line-height:1.7;"><code>auto-fit</code> tells the grid to fit as many <code>minmax(180px, 1fr)</code> columns as will comfortably reach at least 180px, then stretch them evenly to fill the rest. Shrink the container and columns drop away automatically — this single line often replaces three separate media queries.</p>
+
+        <div class="callout analogy">
+          <span class="callout-label">Analogy</span>
+          <p>Flexbox is a line of people linking arms in a hallway — they squeeze or spread along one direction to fit the space. Grid is a city planner laying out blocks on a map — it thinks in rows <em>and</em> columns at once, deciding how many blocks fit before drawing a single street.</p>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Try it: auto-fit grid, live</h3>
+        <p style="color:var(--ink-soft);font-size:0.9rem;">This grid uses the exact CSS above. No JavaScript decides the column count — the browser's layout engine does, based on the frame's actual width.</p>
+        <div class="ruler-widget" id="m3Ruler"></div>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Fluid type and responsive images</h3>
+        <div class="two-col">
+          <div>
+            <span class="callout-label">Fluid typography</span>
+            <pre class="code-block"><code>h1 {
+  font-size: clamp(1.75rem, 4vw + 1rem, 3.5rem);
+}</code></pre>
+            <p style="color:var(--ink-soft);font-size:0.87rem;">Reads as: never smaller than 1.75rem, never larger than 3.5rem, and scales smoothly with viewport width in between. One line replaces several font-size media queries.</p>
+          </div>
+          <div>
+            <span class="callout-label">Responsive images</span>
+            <pre class="code-block"><code>&lt;img
+  src="photo-800.jpg"
+  srcset="photo-400.jpg 400w,
+          photo-800.jpg 800w,
+          photo-1600.jpg 1600w"
+  sizes="(min-width: 768px) 50vw, 100vw"
+  alt="..."&gt;</code></pre>
+            <p style="color:var(--ink-soft);font-size:0.87rem;"><code>sizes</code> tells the browser how much viewport space the image will occupy, so it can pick the smallest file from <code>srcset</code> that still looks sharp — saving real bandwidth on phones.</p>
+          </div>
+        </div>
+
+        <table class="compare">
+          <thead><tr><th></th><th>Flexbox</th><th>Grid</th></tr></thead>
+          <tbody>
+            <tr><td>Dimensions</td><td>One at a time (row or column)</td><td>Rows and columns together</td></tr>
+            <tr><td>Best for</td><td>Nav bars, button groups, form rows, content that flows</td><td>Page layout, card grids, anything with real rows/columns</td></tr>
+            <tr><td>Sizing driven by</td><td>Content size, unless you constrain it</td><td>Explicit tracks you define upfront</td></tr>
+          </tbody>
+        </table>
+
+        <div class="exercise-box">
+          <span class="callout-label">Practical exercise</span>
+          <p style="color:var(--ink-soft);font-size:0.88rem;line-height:1.6;margin:0;">Take a list of 6 cards in your own project. Give the parent <code>display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1rem;</code> and delete any width media queries you had for that grid. Resize the window — confirm it reflows from one column to several with zero <code>@media</code> rules.</p>
+        </div>
+
+        <ul class="tidy misconceptions">
+          <li><b>Grid replaces Flexbox.</b> They solve different problems and are commonly used together — Grid for the page skeleton, Flexbox inside individual components.</li>
+          <li><b><code>auto-fit</code> and <code>auto-fill</code> are the same.</b> <code>auto-fit</code> collapses empty tracks to zero width, letting existing items stretch to fill the row; <code>auto-fill</code> keeps empty tracks reserved, which can leave visible gaps.</li>
+          <li><b><code>clamp()</code> is just for font-size.</b> It works on any length value — padding, width, gaps — anywhere you want a fluid value with safe min/max bounds.</li>
+        </ul>
+
+        <span class="callout-label" style="margin-top:18px;display:block;">Key takeaways</span>
+        <ul class="tidy takeaways">
+          <li>Flexbox handles one-dimensional flow; Grid handles two-dimensional layout — use both, for different jobs.</li>
+          <li><code>repeat(auto-fit, minmax(...))</code> creates self-adjusting column counts without media queries.</li>
+          <li><code>clamp(min, preferred, max)</code> gives fluid sizing with guardrails, for type, spacing, and more.</li>
+          <li><code>srcset</code>/<code>sizes</code> let the browser — not your CSS — choose the right image file per device.</li>
+        </ul>
+      </div>
+      <div class="lock-overlay"><span class="lock-icon">🔒</span><p>Complete Module 2's quiz to unlock this module.</p></div>
+
+      <div class="quiz" id="quiz-3">
+        <h3>Module 3 check</h3>
+        <p class="quiz-sub">4 questions · answer all, then check your results</p>
+        <div class="quiz-body"></div>
+        <div class="quiz-actions"><button class="primary quiz-check-btn" disabled>Check answers</button></div>
+        <div class="quiz-summary"></div>
+      </div>
+    </section>
+
+    <!-- ============ MODULE 4 ============ -->
+    <section id="module-4" class="section module-block" data-locked="true">
+      <div class="module-header">
+        <span class="module-num">04</span>
+        <div><h2 class="section-title" style="margin-bottom:2px;">Real-World Mastery</h2><span class="diff-badge">Mastery</span></div>
+      </div>
+      <div class="module-body">
+        <p class="lede">Technique means little without judgment: knowing how to test it, who it needs to work for, and which patterns are already battle-tested.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">A mobile-first workflow, start to finish</h3>
+        <ul class="tidy">
+          <li>Sketch or design the smallest viewport first — what's the one thing this screen must communicate with the least space?</li>
+          <li>Write base CSS with fluid units and no media queries — this is the foundation every other size builds on.</li>
+          <li>Resize your real browser window slowly until the layout looks awkward — that width is a candidate breakpoint.</li>
+          <li>Add a <code>min-width</code> media query there, adjust only what's broken, and repeat until you reach your largest target width.</li>
+          <li>Sanity-check on at least one real phone and one real desktop — emulators are close, but not identical to real rendering and touch behavior.</li>
+        </ul>
+
+        <p style="color:var(--ink-soft);font-size:0.88rem;background:var(--bg-panel);border:1px solid var(--rule);border-radius:var(--radius-sm);padding:12px 14px;">💡 Notice this very page: below about 860px wide, the sidebar you've been using becomes a hamburger menu in the top-right corner. That's the exact pattern below, applied to this app's own navigation.</p>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Accessibility, not an afterthought</h3>
+        <table class="compare">
+          <thead><tr><th>Concern</th><th>Guidance</th></tr></thead>
+          <tbody>
+            <tr><td>Touch targets</td><td>Keep interactive elements at least ~44×44px on touch devices — shrinking them to fit a tight layout makes them hard to tap.</td></tr>
+            <tr><td>Zoom &amp; reflow</td><td>Never disable pinch-zoom (<code>user-scalable=no</code>) — some users depend on zoom to read text at all.</td></tr>
+            <tr><td>Text over hard-coded containers</td><td>Test with longer translated text and larger user font-size settings; fixed-height boxes clip content fluid ones don't.</td></tr>
+            <tr><td>Motion</td><td>Respect <code>prefers-reduced-motion</code> for parallax, autoplay, and large transitions.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Common responsive patterns</h3>
+        <table class="compare">
+          <thead><tr><th>Pattern</th><th>What it does</th><th>Good for</th></tr></thead>
+          <tbody>
+            <tr><td>Hamburger nav</td><td>Collapses links behind a toggle icon on small screens</td><td>Sites with many nav items and limited mobile width</td></tr>
+            <tr><td>Priority+ nav</td><td>Shows top links, tucks overflow into a "More" menu as space shrinks</td><td>Apps where a few nav items must always stay visible</td></tr>
+            <tr><td>Bottom tab bar</td><td>Fixed row of icons at the screen's bottom edge</td><td>Mobile-first apps with 3–5 core destinations</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size:1.05rem;margin:22px 0 8px;">Try it: a full responsive component</h3>
+        <p style="color:var(--ink-soft);font-size:0.9rem;">This combines everything: a container-query nav that collapses to a hamburger, plus an auto-fit card grid beneath it.</p>
+        <div class="ruler-widget" id="m4Ruler"></div>
+
+        <div class="exercise-box">
+          <span class="callout-label">Practical exercise</span>
+          <p style="color:var(--ink-soft);font-size:0.88rem;line-height:1.6;margin:0;">Open your browser's DevTools device toolbar (or resize the real window) on any site you use daily. Find one thing that breaks — overlapping text, a tap target that's too small, a horizontal scrollbar — and write down what CSS change would fix it. You'll apply this exact instinct in the final challenge below.</p>
+        </div>
+
+        <ul class="tidy misconceptions">
+          <li><b>"It works on my phone" is enough testing.</b> One device is one data point. Test a range: a small phone, a large phone, a tablet, and a real desktop window resize.</li>
+          <li><b>Responsive design is finished once it "looks right."</b> Also check tap target sizes, zoom behavior, and load performance on throttled/mobile connections.</li>
+          <li><b>Serving the largest image everywhere is "safer."</b> It's slower and wastes mobile data for no visual benefit — use <code>srcset</code>/<code>sizes</code> or <code>&lt;picture&gt;</code> instead.</li>
+        </ul>
+
+        <span class="callout-label" style="margin-top:18px;display:block;">Key takeaways</span>
+        <ul class="tidy takeaways">
+          <li>Design and build mobile-first, then layer in complexity as space allows.</li>
+          <li>Accessibility (touch targets, zoom, motion, text reflow) is part of "responsive," not a separate task.</li>
+          <li>Reach for proven patterns — hamburger nav, priority+ nav, bottom tabs — instead of inventing new navigation each time.</li>
+          <li>Test across real devices and real browser resizing, not just one emulator view.</li>
+        </ul>
+      </div>
+      <div class="lock-overlay"><span class="lock-icon">🔒</span><p>Complete Module 3's quiz to unlock this module.</p></div>
+
+      <div class="quiz" id="quiz-4">
+        <h3>Module 4 check</h3>
+        <p class="quiz-sub">4 questions · answer all, then check your results</p>
+        <div class="quiz-body"></div>
+        <div class="quiz-actions"><button class="primary quiz-check-btn" disabled>Check answers</button></div>
+        <div class="quiz-summary"></div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL ============ -->
+    <section id="final" class="section module-block" data-locked="true">
+      <div class="module-header">
+        <span class="module-num">★</span>
+        <div><h2 class="section-title" style="margin-bottom:2px;">Final Challenge &amp; Continued Learning</h2></div>
+      </div>
+      <div class="module-body">
+
+        <h3 style="font-size:1.05rem;margin:6px 0 8px;">Final practical challenge</h3>
+        <p style="color:var(--ink-soft);font-size:0.92rem;line-height:1.7;">Using the mini code playground below, build a responsive card section that satisfies every item in the checklist. Edit the HTML/CSS on the left; the preview updates live on the right.</p>
+        <div class="checklist" id="challengeChecklist">
+          <label><input type="checkbox"><span>Uses <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</code></span></label>
+          <label><input type="checkbox"><span>Card grid uses <code>display:grid</code> with <code>repeat(auto-fit, minmax(...))</code> — no fixed column count</span></label>
+          <label><input type="checkbox"><span>At least one heading uses <code>clamp()</code> for fluid font-size</span></label>
+          <label><input type="checkbox"><span>No hard-coded pixel widths on the main containers</span></label>
+          <label><input type="checkbox"><span>Layout has been checked at both a narrow and a wide frame width</span></label>
+        </div>
+        <div class="playground">
+          <textarea id="playgroundCode" spellcheck="false">&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+&lt;style&gt;
+  body{ font-family:sans-serif; margin:0; padding:20px; background:#0c1016; color:#eef2f7; }
+  h1{ font-size:clamp(1.4rem, 4vw, 2.4rem); margin:0 0 16px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; }
+  .card{ background:#171f2c; border:1px solid #2a3342; border-radius:10px; padding:16px; }
+&lt;/style&gt;
+&lt;h1&gt;Your Responsive Section&lt;/h1&gt;
+&lt;div class="grid"&gt;
+  &lt;div class="card"&gt;Card one&lt;/div&gt;
+  &lt;div class="card"&gt;Card two&lt;/div&gt;
+  &lt;div class="card"&gt;Card three&lt;/div&gt;
+  &lt;div class="card"&gt;Card four&lt;/div&gt;
+&lt;/div&gt;</textarea>
+          <iframe id="playgroundPreview" title="Live preview" sandbox="allow-scripts"></iframe>
+        </div>
+        <div class="quiz-actions">
+          <button class="primary" id="runCodeBtn">Run preview</button>
+          <button class="ghost" id="challengeCompleteBtn" disabled>Mark challenge complete</button>
+        </div>
+
+        <div class="certificate" id="certificate">
+          <span class="cert-eyebrow">Certificate of completion</span>
+          <h3>Responsive Web Design</h3>
+          <p>Awarded to a learner who completed all 4 modules and the final challenge in the Interactive Learning Studio.</p>
+          <p class="mono" id="certDate" style="color:var(--ink-faint);"></p>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:34px 0 8px;">Cheat sheet</h3>
+        <div class="cheat-grid">
+          <div class="cheat-card">
+            <h4>Viewport meta tag</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs1">Copy</button><code id="cs1">&lt;meta name="viewport"
+  content="width=device-width, initial-scale=1"&gt;</code></pre>
+          </div>
+          <div class="cheat-card">
+            <h4>Mobile-first breakpoint</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs2">Copy</button><code id="cs2">@media (min-width: 768px) { }</code></pre>
+          </div>
+          <div class="cheat-card">
+            <h4>Self-adjusting grid</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs3">Copy</button><code id="cs3">grid-template-columns:
+  repeat(auto-fit, minmax(180px,1fr));</code></pre>
+          </div>
+          <div class="cheat-card">
+            <h4>Fluid type</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs4">Copy</button><code id="cs4">font-size: clamp(1rem, 2vw + .5rem, 2rem);</code></pre>
+          </div>
+          <div class="cheat-card">
+            <h4>Flex row that wraps</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs5">Copy</button><code id="cs5">display:flex; flex-wrap:wrap;
+&gt; * { flex: 1 1 220px; }</code></pre>
+          </div>
+          <div class="cheat-card">
+            <h4>Common breakpoint zones</h4>
+            <pre class="code-block"><button class="copy-btn" data-copy="cs6">Copy</button><code id="cs6">&lt;576px   mobile
+576–991px  tablet
+≥992px   desktop</code></pre>
+          </div>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:30px 0 8px;">Summary notes</h3>
+        <p class="print-only-heading" style="display:none;">Responsive Web Design — Summary Notes</p>
+        <ul class="tidy">
+          <li><b style="color:var(--ink);">Module 1:</b> fixed layouts break outside their one target size; fluid grids, flexible media, and media queries are the three pillars that fix this.</li>
+          <li><b style="color:var(--ink);">Module 2:</b> media queries apply CSS conditionally; mobile-first uses <code>min-width</code>; good breakpoints come from content, not device lists.</li>
+          <li><b style="color:var(--ink);">Module 3:</b> Flexbox and Grid reflow content based on available space with little or no media query code; <code>clamp()</code> and <code>srcset</code> handle fluid type and images.</li>
+          <li><b style="color:var(--ink);">Module 4:</b> real mastery is a mobile-first workflow, accessibility awareness, proven navigation patterns, and testing across real devices.</li>
+        </ul>
+
+        <h3 style="font-size:1.05rem;margin:30px 0 8px;">Continue learning</h3>
+        <div class="resource-grid">
+          <div class="resource-card"><h4>Books</h4><ul>
+            <li>"Responsive Web Design" — Ethan Marcotte (A Book Apart)</li>
+            <li>"Every Layout" — Andy Bell &amp; Heydon Pickering</li>
+            <li>"CSS Secrets" — Lea Verou</li>
+          </ul></div>
+          <div class="resource-card"><h4>Documentation</h4><ul>
+            <li>MDN: Responsive Design basics</li>
+            <li>MDN: Using media queries</li>
+            <li>web.dev: Responsive Web Design</li>
+            <li>CSS-Tricks: Complete Guide to Grid / Flexbox</li>
+          </ul></div>
+          <div class="resource-card"><h4>Foundational reading</h4><ul>
+            <li>Ethan Marcotte, "Responsive Web Design," A List Apart (2010)</li>
+            <li>W3C Media Queries Level 4/5 specification</li>
+            <li>W3C CSS Containment / Container Queries spec</li>
+          </ul></div>
+          <div class="resource-card"><h4>Communities</h4><ul>
+            <li>CSS-Tricks forums &amp; articles</li>
+            <li>r/webdev and r/css</li>
+            <li>Frontend Mentor community Slack/Discord</li>
+            <li>Stack Overflow — css, responsive-design tags</li>
+          </ul></div>
+          <div class="resource-card"><h4>Practice platforms</h4><ul>
+            <li>Frontend Mentor (real design-to-code challenges)</li>
+            <li>freeCodeCamp — Responsive Web Design certification</li>
+            <li>CodePen challenges</li>
+            <li>Scrimba's responsive design course</li>
+          </ul></div>
+          <div class="resource-card"><h4>Search keywords</h4><div class="keyword-pills">
+            <span class="keyword-pill">css clamp() calculator</span>
+            <span class="keyword-pill">auto-fit vs auto-fill</span>
+            <span class="keyword-pill">css container queries</span>
+            <span class="keyword-pill">mobile-first breakpoints</span>
+            <span class="keyword-pill">srcset sizes explained</span>
+          </div></div>
+        </div>
+
+        <h3 style="font-size:1.05rem;margin:30px 0 8px;">Prompts to keep learning with an AI assistant</h3>
+        <ul class="tidy">
+          <li>"Explain CSS container queries vs. media queries with a real code example."</li>
+          <li>"Review this CSS grid layout and suggest responsive improvements: [paste your CSS]."</li>
+          <li>"Give me 5 responsive-design coding challenges, ordered from easy to hard."</li>
+          <li>"Walk me through converting this fixed-width layout to mobile-first: [paste your CSS]."</li>
+          <li>"What accessibility issues might this responsive nav have? [paste your HTML]."</li>
+        </ul>
+      </div>
+      <div class="lock-overlay"><span class="lock-icon">🔒</span><p>Complete Module 4's quiz to unlock the final challenge.</p></div>
+    </section>
+
+    <footer class="app-footer">Interactive Learning Studio · Responsive Web Design · Built for self-paced learning</footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const state = {
+    theme: "dark",
+    xp: 0,
+    unlockedIndex: 1, // module-1 is index 1 (0 = intro), unlocked by default
+    completed: { m1:false, m2:false, m3:false, m4:false, final:false },
+    badges: []
+  };
+
+  const BADGE_NAMES = { m1:"Grid Starter", m2:"Breakpoint Navigator", m3:"Layout Architect", m4:"Responsive Master" };
+  const SECTION_ORDER = ["intro","module-1","module-2","module-3","module-4","final"];
+
+  function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)); }
+  function escapeHtml(s){ const d=document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+  /* ---------- Theme ---------- */
+  const themeBtn = $("#themeToggle");
+  themeBtn.addEventListener("click", ()=>{
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", state.theme);
+    themeBtn.textContent = state.theme === "dark" ? "🌙" : "☀️";
+  });
+
+  /* ---------- Print ---------- */
+  $("#printBtn").addEventListener("click", ()=> window.print());
+
+  /* ---------- Mobile sidebar ---------- */
+  const sidebar = $("#sidebar");
+  $("#sidebarToggle").addEventListener("click", ()=> sidebar.classList.toggle("open"));
+
+  /* ---------- Sidebar nav ---------- */
+  $all(".nav-item").forEach(item=>{
+    item.addEventListener("click", ()=>{
+      if(item.classList.contains("locked")) return;
+      const target = document.getElementById(item.dataset.target);
+      if(target) target.scrollIntoView({behavior:"smooth", block:"start"});
+      sidebar.classList.remove("open");
+    });
+  });
+  function setActiveNav(id){
+    $all(".nav-item").forEach(i=> i.classList.toggle("active", i.dataset.target === id));
+  }
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting) setActiveNav(e.target.id); });
+  }, { rootMargin: "-40% 0px -50% 0px" });
+  SECTION_ORDER.forEach(id=>{ const el = document.getElementById(id); if(el) io.observe(el); });
+
+  /* ---------- XP / progress / badges ---------- */
+  function addXp(n){
+    state.xp += n;
+    $("#xpValue").textContent = state.xp;
+  }
+  function awardBadge(key){
+    if(state.badges.includes(key)) return;
+    state.badges.push(key);
+    const row = $("#badgesRow");
+    if(state.badges.length === 1) row.innerHTML = "";
+    const chip = document.createElement("span");
+    chip.className = "badge-chip";
+    chip.innerHTML = "🏅 " + escapeHtml(BADGE_NAMES[key]);
+    row.appendChild(chip);
+  }
+  function updateProgress(){
+    const doneCount = Object.values(state.completed).filter(Boolean).length; // out of 5
+    const pct = Math.round((doneCount/5)*100);
+    $("#progressFill").style.width = pct + "%";
+    $("#progressLabel").textContent = pct + "% complete";
+  }
+
+  function unlockSection(sectionId){
+    const el = document.getElementById(sectionId);
+    if(!el) return;
+    el.dataset.locked = "false";
+    const navItem = $('.nav-item[data-target="'+sectionId+'"]');
+    if(navItem){ navItem.classList.remove("locked"); navItem.classList.add("unlocked"); }
+  }
+  function markComplete(sectionId){
+    const navItem = $('.nav-item[data-target="'+sectionId+'"]');
+    if(navItem){ navItem.classList.add("complete"); }
+  }
+
+  /* ---------- Ruler simulator (signature interactive component) ---------- */
+  function createRuler(container, opts){
+    opts = opts || {};
+    const min = opts.min || 320, max = opts.max || 1200, initial = opts.initial || 900;
+    const zones = opts.zones || [
+      {max:575, label:"Mobile", color:"var(--danger)"},
+      {max:991, label:"Tablet", color:"var(--amber)"},
+      {max:Infinity, label:"Desktop", color:"var(--teal)"}
+    ];
+    const ticks = opts.ticks || [320,576,768,992,1200];
+    const label = opts.label || "Frame width";
+    const ruleText = opts.ruleText || "";
+
+    container.innerHTML =
+      '<div class="ruler-label"><span>'+escapeHtml(label)+'</span><span class="mono">drag ↔</span></div>'+
+      '<div class="ruler-scale">'+ ticks.map(t=>{
+        const pct = ((t-min)/(max-min))*100;
+        return '<span class="tick" style="left:'+pct+'%;">'+t+'</span>';
+      }).join("") + '</div>'+
+      '<input type="range" class="ruler-range" min="'+min+'" max="'+max+'" value="'+initial+'">'+
+      '<div class="ruler-readout"><span class="rr-value">'+initial+'</span><span class="rr-unit">px</span><span class="rr-zone"></span>'+
+      (ruleText ? '<span class="rr-rule mono">'+escapeHtml(ruleText)+'</span>' : '')+
+      '</div>'+
+      '<div class="ruler-stage"><div class="ruler-frame" id="'+container.id+'-frame"></div></div>';
+
+    const frame = $('#'+container.id+'-frame');
+    if(opts.frameHTML) frame.innerHTML = opts.frameHTML;
+
+    const range = $(".ruler-range", container);
+    const valueEl = $(".rr-value", container);
+    const zoneEl = $(".rr-zone", container);
+    const ruleEl = $(".rr-rule", container);
+
+    function update(v){
+      const stageWidth = $(".ruler-stage", container).clientWidth - 30;
+      frame.style.width = Math.min(v, Math.max(stageWidth, 140)) + "px";
+      valueEl.textContent = v;
+      const zone = zones.find(z=> v <= z.max);
+      if(zone){
+        zoneEl.textContent = zone.label;
+        zoneEl.style.color = zone.color;
+        zoneEl.style.borderColor = zone.color;
+      }
+      if(ruleEl && opts.ruleFor) ruleEl.textContent = opts.ruleFor(v, zone);
+      if(opts.onChange) opts.onChange(v, zone, frame);
+    }
+    range.addEventListener("input", (e)=> update(parseInt(e.target.value,10)));
+    window.addEventListener("resize", ()=> update(parseInt(range.value,10)));
+    update(initial);
+    return { update, frame };
+  }
+
+  // Hero ruler — a simple orientation demo
+  createRuler($("#heroRuler"), {
+    min:320, max:1200, initial:1100, label:"This page's own layout, simulated",
+    frameHTML: '<div class="demo-nav"><span class="demo-logo">◱ Studio</span><span class="demo-links"><span>Home</span><span>Modules</span><span>Resources</span></span><span class="demo-burger">☰</span></div>'+
+      '<div class="demo-cardwrap"><div class="demo-card">Fluid grids</div><div class="demo-card">Media queries</div><div class="demo-card">Flexbox &amp; Grid</div></div>'
+  });
+
+  // Module 1 ruler — fixed vs fluid
+  createRuler($("#m1Ruler"), {
+    min:150, max:900, initial:700, label:"Fixed (red, 230px) vs. Fluid (green, 100%)",
+    frameHTML: '<div class="demo-fixed-fluid"><div class="demo-box fixed">width: 230px — fixed</div><div class="demo-box fluid">width: 100% — fluid</div></div>'
+  });
+
+  // Module 2 ruler — media query matcher (uses real container queries via CSS below)
+  createRuler($("#m2Ruler"), {
+    min:320, max:1200, initial:900,
+    zones:[{max:575,label:"Mobile",color:"var(--danger)"},{max:991,label:"Tablet",color:"var(--amber)"},{max:Infinity,label:"Desktop",color:"var(--teal)"}],
+    label:"Which breakpoint zone is active",
+    ruleText:"", ruleFor:(v,z)=> z ? "min-width: " + (z.label==="Mobile"?"0":z.label==="Tablet"?"576px":"992px") + " is matching (real @container query, not JS)" : "",
+    frameHTML: '<div class="demo-mq" id="mq2box">Resize me</div>',
+    onChange:(v,zone)=>{
+      const box = $("#mq2box");
+      if(!box) return;
+      box.textContent = zone.label + " layout active (" + v + "px)";
+    }
+  });
+
+  // Module 3 ruler — auto-fit grid (pure CSS, no JS column logic)
+  createRuler($("#m3Ruler"), {
+    min:200, max:900, initial:760, label:"repeat(auto-fit, minmax(120px, 1fr))",
+    frameHTML: '<div class="demo-grid">'+
+      Array.from({length:6}).map((_,i)=>'<div class="demo-card">Card '+(i+1)+'</div>').join("")+
+      '</div>'
+  });
+
+  // Module 4 ruler — nav + grid combined, using container queries
+  createRuler($("#m4Ruler"), {
+    min:280, max:1000, initial:820, label:"Nav collapses under 360px (real container query)",
+    frameHTML: '<div class="demo-nav"><span class="demo-logo">◱ Brand</span><span class="demo-links"><span>Work</span><span>About</span><span>Contact</span></span><span class="demo-burger">☰</span></div>'+
+      '<div class="demo-cardwrap"><div class="demo-card">Feature one</div><div class="demo-card">Feature two</div><div class="demo-card">Feature three</div></div>'
+  });
+
+  /* ---------- Copy buttons ---------- */
+  $all(".copy-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const target = document.getElementById(btn.dataset.copy);
+      if(!target) return;
+      const text = target.textContent;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>{
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(()=> btn.textContent = original, 1400);
+        }).catch(()=>{ btn.textContent = "Select & copy"; });
+      }
+    });
+  });
+
+  /* ---------- Quiz engine ---------- */
+  const QUIZZES = {
+    "quiz-1": {
+      section:"module-1", badgeKey:"m1", unlocks:"module-2",
+      questions:[
+        { q:"What is the primary purpose of the viewport meta tag?", options:[
+            "To set the page's background color",
+            "To tell the browser to render the page at the device's actual width instead of a scaled-down desktop layout",
+            "To enable JavaScript on mobile devices",
+            "To load a mobile-specific stylesheet"
+          ], correct:1, explain:"Without it, mobile browsers assume a ~980px desktop layout and zoom out. width=device-width tells it to use the real screen width as the layout width."
+        },
+        { q:"Which CSS unit is relative to the root element's font size?", options:["em","rem","vw","px"], correct:1,
+          explain:"rem = \"root em\" — always relative to the <html> element's font size, regardless of nesting, which makes spacing far more predictable than em."
+        },
+        { q:"In fluid grid design, widths are typically expressed in:", options:[
+            "Fixed pixels","Percentages relative to the parent container","Points","Inches"
+          ], correct:1, explain:"Percentage widths resize automatically as their parent container resizes — the core mechanism behind a fluid grid."
+        },
+        { q:"What does \"mobile-first\" mean in responsive design?", options:[
+            "Designing exclusively for mobile devices and ignoring desktop",
+            "Writing your base CSS for small screens, then adding complexity for larger screens via min-width media queries",
+            "Building a separate mobile app",
+            "Using only mobile-specific HTML tags"
+          ], correct:1, explain:"Mobile-first means your unqueried CSS is the small-screen version, and you progressively layer on min-width media queries as space increases."
+        }
+      ]
+    },
+    "quiz-2": {
+      section:"module-2", badgeKey:"m2", unlocks:"module-3",
+      questions:[
+        { q:"Which media feature would you use to write mobile-first CSS?", options:["max-width","min-width","max-device-width","orientation"], correct:1,
+          explain:"min-width media queries layer styles on top of your base (mobile) CSS as the viewport grows — the definition of mobile-first."
+        },
+        { q:"What determines a good breakpoint, according to best practice?", options:[
+            "Matching every popular phone's exact screen width",
+            "Wherever the content itself starts to look broken or awkward",
+            "Always using 480/768/1024 regardless of content",
+            "Whatever number the client picks"
+          ], correct:1, explain:"Content-based breakpoints adapt to your actual layout's needs, not an arbitrary or quickly-outdated list of device sizes."
+        },
+        { q:"@media (min-width: 768px) and (max-width: 1023px) targets:", options:[
+            "Any screen under 768px","Any screen above 1023px","A specific range between 768px and 1023px, inclusive","Only exactly 768px"
+          ], correct:2, explain:"Combining min-width and max-width with \"and\" creates a bounded range — here, anything from 768px through 1023px."
+        },
+        { q:"Which media feature lets you detect if a user prefers dark mode?", options:["prefers-color-scheme","prefers-contrast","color-gamut","forced-colors"], correct:0,
+          explain:"prefers-color-scheme: dark/light reflects the user's OS-level preference, letting you auto-theme without a manual toggle."
+        }
+      ]
+    },
+    "quiz-3": {
+      section:"module-3", badgeKey:"m3", unlocks:"module-4",
+      questions:[
+        { q:"grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); will:", options:[
+            "Always create exactly 3 columns",
+            "Create as many 200px+ columns as fit the container, stretching to fill leftover space",
+            "Break the layout on small screens",
+            "Only work with Flexbox"
+          ], correct:1, explain:"auto-fit fits as many minmax(200px,1fr) tracks as the container allows, then stretches them to use all available space — fully self-adjusting."
+        },
+        { q:"Which property makes flex items wrap onto multiple lines when space runs out?", options:["flex-direction","flex-wrap: wrap","flex-grow","align-items"], correct:1,
+          explain:"By default flex items try to fit on one line, shrinking to do so. flex-wrap: wrap lets them drop to new lines instead."
+        },
+        { q:"What does clamp(1rem, 2vw + 0.5rem, 2rem) do?", options:[
+            "Sets a font-size that's always exactly 2vw",
+            "Produces a fluid value that scales with viewport width but never goes below 1rem or above 2rem",
+            "Clamps the element's width, not font size",
+            "Is invalid CSS"
+          ], correct:1, explain:"clamp(min, preferred, max) picks the preferred value but never lets it go below the min or above the max — fluid with guardrails."
+        },
+        { q:"The srcset attribute on an <img> is used to:", options:[
+            "Add multiple alt texts",
+            "Let the browser choose the most appropriate image file for the current screen size/resolution",
+            "Preload all images at once",
+            "Replace the src attribute entirely, ignoring browser support"
+          ], correct:1, explain:"srcset (with sizes) gives the browser several image candidates and lets it pick the best fit for the actual rendered size and pixel density."
+        }
+      ]
+    },
+    "quiz-4": {
+      section:"module-4", badgeKey:"m4", unlocks:"final",
+      questions:[
+        { q:"Which is a common accessibility mistake in responsive design?", options:[
+            "Making touch targets at least 44×44px",
+            "Shrinking tap targets below ~44px on mobile, making them hard to tap",
+            "Supporting pinch-to-zoom",
+            "Using relative units for text"
+          ], correct:1, explain:"Small tap targets are a frequent, easily-avoidable accessibility failure on mobile — 44×44px is a widely used minimum guideline."
+        },
+        { q:"When testing responsive designs, what's the most reliable approach?", options:[
+            "Only checking in one browser's device toolbar",
+            "Resizing the desktop browser window and also checking a few real devices",
+            "Assuming if it looks fine at 1440px it works everywhere",
+            "Testing only on your own phone"
+          ], correct:1, explain:"Emulators are a fast first pass, but real devices reveal real rendering, input, and performance differences — use both."
+        },
+        { q:"Which technique helps avoid loading unnecessarily large images on mobile?", options:[
+            "Fixed-size images for every screen",
+            "srcset/sizes or <picture> to serve smaller images to smaller viewports",
+            "Loading the highest-resolution image everywhere",
+            "Disabling images on mobile entirely"
+          ], correct:1, explain:"Responsive images let the browser choose an appropriately-sized file per device, saving real bandwidth without sacrificing quality where it matters."
+        },
+        { q:"A common responsive navigation pattern collapses the menu into what on small screens?", options:[
+            "A second full navbar",
+            "A hamburger/toggle menu that reveals links on demand",
+            "Removing navigation entirely",
+            "An always-visible sidebar taking 50% of the screen"
+          ], correct:1, explain:"The hamburger pattern hides links behind a toggle to reclaim space on small screens, while keeping every destination reachable."
+        }
+      ]
+    }
+  };
+
+  function renderQuiz(quizId){
+    const cfg = QUIZZES[quizId];
+    const root = document.getElementById(quizId);
+    const body = $(".quiz-body", root);
+    const checkBtn = $(".quiz-check-btn", root);
+    const summary = $(".quiz-summary", root);
+    const answers = new Array(cfg.questions.length).fill(null);
+
+    body.innerHTML = cfg.questions.map((item, qi)=>{
+      const opts = item.options.map((opt, oi)=>
+        '<label class="quiz-option" data-qi="'+qi+'" data-oi="'+oi+'">'+
+          '<input type="radio" name="'+quizId+'-q'+qi+'" value="'+oi+'">'+
+          '<span>'+escapeHtml(opt)+'</span>'+
+        '</label>'
+      ).join("");
+      return '<div class="quiz-question" data-qi="'+qi+'">'+
+        '<div class="quiz-q-text">'+(qi+1)+'. '+escapeHtml(item.q)+'</div>'+
+        '<div class="quiz-options">'+opts+'</div>'+
+        '<div class="quiz-feedback"></div>'+
+      '</div>';
+    }).join("");
+
+    function checkAllAnswered(){
+      checkBtn.disabled = answers.some(a=> a===null);
+    }
+
+    $all(".quiz-option", body).forEach(opt=>{
+      opt.addEventListener("click", ()=>{
+        const qi = parseInt(opt.dataset.qi,10);
+        const oi = parseInt(opt.dataset.oi,10);
+        answers[qi] = oi;
+        $all('.quiz-option[data-qi="'+qi+'"]', body).forEach(o=> o.classList.remove("chosen"));
+        opt.classList.add("chosen");
+        checkAllAnswered();
+      });
+    });
+
+    checkBtn.addEventListener("click", ()=>{
+      let score = 0;
+      cfg.questions.forEach((item, qi)=>{
+        const chosen = answers[qi];
+        if(chosen === item.correct) score++;
+        addXp(10);
+        const qBlock = $('.quiz-question[data-qi="'+qi+'"]', body);
+        $all(".quiz-option", qBlock).forEach(o=>{
+          const oi = parseInt(o.dataset.oi,10);
+          o.style.pointerEvents = "none";
+          if(oi === item.correct) o.classList.add("correct-answer");
+          else if(oi === chosen) o.classList.add("wrong-answer");
+        });
+        const fb = $(".quiz-feedback", qBlock);
+        const verdict = chosen === item.correct ? "Correct. " : "Not quite. ";
+        fb.innerHTML = "<b>"+verdict+"</b>" + escapeHtml(item.explain);
+        fb.classList.add("show");
+      });
+      checkBtn.disabled = true;
+      checkBtn.textContent = "Answers checked";
+
+      const pct = Math.round((score/cfg.questions.length)*100);
+      let msg = pct === 100 ? "Perfect score — you've fully got this." :
+                pct >= 50 ? "Solid grasp — review the explanations above for the rest." :
+                "Worth a re-read of the module above before moving on.";
+      summary.innerHTML =
+        '<div class="score-big">'+score+' / '+cfg.questions.length+'</div>'+
+        '<p>'+msg+' +'+(cfg.questions.length*10)+' XP earned.</p>'+
+        '<button class="primary" id="'+quizId+'-unlock">Unlock next section →</button>';
+      summary.classList.add("show");
+
+      $("#"+quizId+"-unlock").addEventListener("click", ()=>{
+        state.completed[cfg.badgeKey] = true;
+        awardBadge(cfg.badgeKey);
+        markComplete(cfg.section);
+        unlockSection(cfg.unlocks);
+        updateProgress();
+        const nextEl = document.getElementById(cfg.unlocks);
+        if(nextEl) nextEl.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+    });
+  }
+
+  Object.keys(QUIZZES).forEach(renderQuiz);
+
+  /* ---------- Final challenge: code playground ---------- */
+  function runPlayground(){
+    const code = $("#playgroundCode").value;
+    $("#playgroundPreview").srcdoc = code;
+  }
+  $("#runCodeBtn").addEventListener("click", runPlayground);
+  runPlayground();
+
+  $all('#challengeChecklist input[type="checkbox"]').forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const allChecked = $all('#challengeChecklist input[type="checkbox"]').every(c=>c.checked);
+      $("#challengeCompleteBtn").disabled = !allChecked;
+    });
+  });
+  $("#challengeCompleteBtn").addEventListener("click", ()=>{
+    state.completed.final = true;
+    markComplete("final");
+    updateProgress();
+    addXp(50);
+    const cert = $("#certificate");
+    $("#certDate").textContent = new Date().toLocaleDateString(undefined, { year:"numeric", month:"long", day:"numeric" });
+    cert.classList.add("show");
+    cert.scrollIntoView({behavior:"smooth", block:"center"});
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>
