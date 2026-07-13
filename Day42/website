@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — Personal Financial Command Center</title>
+<style>
+/* ============================================================
+   THE LEDGER — design tokens
+   A freelancer's cash-flow register: paper, brass, ink, teal.
+   ============================================================ */
+:root{
+  --ink-950:#0D1315;
+  --ink-900:#141C1F;
+  --ink-850:#182124;
+  --ink-800:#1E292C;
+  --ink-700:#2A373A;
+  --ink-line: rgba(230,225,210,0.09);
+  --paper-text:#EDE8DC;
+  --paper-text-dim:#9FAEB0;
+  --paper-text-dimmer:#6D7A7C;
+
+  --brass-300:#E4C878;
+  --brass-500:#C79A3E;
+  --brass-700:#8C6A26;
+
+  --teal-300:#7FCBBB;
+  --teal-500:#379C86;
+  --teal-700:#215F51;
+
+  --rust-300:#E39A7C;
+  --rust-500:#B85732;
+  --rust-700:#7C3A20;
+
+  --bg:var(--ink-950);
+  --surface:var(--ink-900);
+  --surface-raised:var(--ink-850);
+  --surface-hover:var(--ink-800);
+  --border:var(--ink-line);
+  --text:var(--paper-text);
+  --text-dim:var(--paper-text-dim);
+  --text-dimmer:var(--paper-text-dimmer);
+  --accent:var(--brass-500);
+  --accent-bright:var(--brass-300);
+  --positive:var(--teal-500);
+  --positive-bright:var(--teal-300);
+  --negative:var(--rust-500);
+  --negative-bright:var(--rust-300);
+
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  --radius-sm:6px;
+  --radius:10px;
+  --radius-lg:16px;
+  --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  --shadow-sm: 0 2px 10px rgba(0,0,0,0.25);
+  --transition: 180ms cubic-bezier(.4,0,.2,1);
+}
+
+[data-theme="light"]{
+  --bg:#F5F1E7;
+  --surface:#FBF8F1;
+  --surface-raised:#FFFFFF;
+  --surface-hover:#EFE9DA;
+  --border: rgba(30,25,10,0.10);
+  --text:#241D12;
+  --text-dim:#5B5340;
+  --text-dimmer:#8A806A;
+  --accent:var(--brass-700);
+  --accent-bright:#A87B26;
+  --positive:var(--teal-700);
+  --positive-bright:#1F6A57;
+  --negative:var(--rust-700);
+  --negative-bright:#8C4322;
+  --shadow: 0 8px 24px rgba(60,45,10,0.12);
+  --shadow-sm: 0 2px 8px rgba(60,45,10,0.08);
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  transition:background var(--transition), color var(--transition);
+  line-height:1.5;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+}
+::selection{ background:var(--accent); color:var(--ink-950); }
+
+a{color:inherit;}
+button{font-family:inherit; cursor:pointer;}
+input, select, textarea{
+  font-family:var(--font-body);
+  background:var(--surface-hover);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--radius-sm);
+  padding:9px 11px;
+  font-size:14px;
+  width:100%;
+  transition:border-color var(--transition), box-shadow var(--transition);
+}
+input:focus, select:focus, textarea:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(199,154,62,0.18);
+}
+input[type="number"]{font-family:var(--font-mono);}
+label{ font-size:12px; color:var(--text-dim); display:block; margin-bottom:5px; letter-spacing:.02em; }
+:focus-visible{ outline:2px solid var(--accent-bright); outline-offset:2px; }
+
+/* Ledger-line background texture on paper surfaces */
+.ledger-lines{
+  background-image: repeating-linear-gradient(
+    to bottom, transparent 0, transparent 27px, var(--border) 28px
+  );
+}
+
+/* ============================= LAYOUT ============================= */
+.app{ display:grid; grid-template-columns:248px 1fr; min-height:100vh; }
+@media (max-width: 900px){ .app{ grid-template-columns:1fr; } }
+
+/* ---- Sidebar ---- */
+.sidebar{
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:22px 14px 18px;
+  display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+}
+@media (max-width:900px){
+  .sidebar{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--border); }
+}
+.brand{ display:flex; align-items:center; gap:10px; padding:4px 8px 20px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:8px;
+  background:linear-gradient(155deg, var(--brass-500), var(--brass-700));
+  display:flex; align-items:center; justify-content:center;
+  color:var(--ink-950); font-family:var(--font-display); font-weight:700; font-size:17px;
+  flex-shrink:0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.brand-word{ font-family:var(--font-display); font-size:18px; letter-spacing:.01em; }
+.brand-sub{ font-size:10.5px; color:var(--text-dimmer); letter-spacing:.12em; text-transform:uppercase; margin-top:1px;}
+
+.nav-group-label{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.12em;
+  color:var(--text-dimmer); padding:16px 10px 6px;
+}
+.nav{ list-style:none; display:flex; flex-direction:column; gap:1px; }
+.nav-btn{
+  display:flex; align-items:center; gap:10px;
+  width:100%; text-align:left; background:transparent; border:none;
+  color:var(--text-dim); padding:9px 10px; border-radius:var(--radius-sm);
+  font-size:13.5px; transition:background var(--transition), color var(--transition);
+}
+.nav-btn:hover{ background:var(--surface-hover); color:var(--text); }
+.nav-btn.active{ background:var(--surface-hover); color:var(--accent-bright); font-weight:600; }
+.nav-btn .ico{ width:16px; text-align:center; font-family:var(--font-mono); font-size:12px; opacity:.85;}
+
+.sidebar-foot{ margin-top:auto; padding-top:14px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px;}
+.theme-toggle{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--surface-hover); border:1px solid var(--border); border-radius:999px;
+  padding:5px 6px; font-size:12px; color:var(--text-dim);
+}
+.theme-toggle button{
+  border:none; background:transparent; padding:5px 10px; border-radius:999px; color:var(--text-dim); font-size:12px;
+}
+.theme-toggle button.active{ background:var(--accent); color:var(--ink-950); font-weight:600; }
+.data-note{ font-size:10.5px; color:var(--text-dimmer); padding:2px 6px; line-height:1.5;}
+
+/* ---- Main ---- */
+.main{ padding:26px 32px 60px; max-width:1180px; width:100%; margin:0 auto; }
+@media (max-width:700px){ .main{ padding:18px 16px 50px; } }
+
+.page-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
+.page-eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--accent-bright); margin-bottom:6px; font-weight:600;}
+.page-title{ font-family:var(--font-display); font-size:30px; letter-spacing:-.01em; }
+.page-desc{ color:var(--text-dim); font-size:13.5px; margin-top:5px; max-width:56ch;}
+.page-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--surface-raised); color:var(--text);
+  padding:9px 14px; font-size:13px; font-weight:500;
+  transition:transform var(--transition), background var(--transition), border-color var(--transition);
+}
+.btn:hover{ background:var(--surface-hover); }
+.btn:active{ transform:scale(0.97); }
+.btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--ink-950); font-weight:700; }
+.btn-primary:hover{ background:var(--accent-bright); border-color:var(--accent-bright);}
+.btn-ghost{ background:transparent; }
+.btn-danger{ color:var(--negative-bright); }
+.btn-sm{ padding:6px 10px; font-size:12px; }
+
+.tab-page{ display:none; animation:fadeUp 420ms cubic-bezier(.16,1,.3,1); }
+.tab-page.active{ display:block; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+/* ---- Grid / Cards ---- */
+.grid{ display:grid; gap:16px; }
+.grid-4{ grid-template-columns:repeat(4,1fr); }
+.grid-3{ grid-template-columns:repeat(3,1fr); }
+.grid-2{ grid-template-columns:repeat(2,1fr); }
+@media (max-width:900px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:560px){ .grid-4,.grid-3,.grid-2{grid-template-columns:1fr;} }
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:18px 18px; box-shadow:var(--shadow-sm);
+}
+.card-title{ font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-dimmer); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+.section-title{ font-family:var(--font-display); font-size:20px; margin:34px 0 14px; padding-top:6px; border-top:1px solid var(--border); }
+.section-title:first-of-type{ margin-top:0; border-top:none; padding-top:0;}
+
+/* ---- Stat / metric cards ---- */
+.stat-value{ font-family:var(--font-mono); font-size:26px; font-weight:600; letter-spacing:-.01em; }
+.stat-value.small{font-size:20px;}
+.stat-delta{ font-size:12px; margin-top:6px; display:inline-flex; align-items:center; gap:4px;}
+.stat-delta.up{ color:var(--positive-bright); }
+.stat-delta.down{ color:var(--negative-bright); }
+.stat-sub{ font-size:11.5px; color:var(--text-dimmer); margin-top:4px;}
+
+/* progress bars */
+.progress{ height:8px; border-radius:99px; background:var(--surface-hover); overflow:hidden; margin-top:10px; border:1px solid var(--border);}
+.progress > div{ height:100%; background:linear-gradient(90deg, var(--teal-700), var(--positive-bright)); border-radius:99px; transition:width 700ms cubic-bezier(.16,1,.3,1);}
+.progress.brass > div{ background:linear-gradient(90deg, var(--brass-700), var(--accent-bright)); }
+.progress.rust > div{ background:linear-gradient(90deg, var(--rust-700), var(--negative-bright)); }
+
+/* Health score ring */
+.score-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap;}
+.score-ring{ position:relative; width:132px; height:132px; flex-shrink:0;}
+.score-ring svg{ transform:rotate(-90deg); }
+.score-ring .track{ fill:none; stroke:var(--surface-hover); stroke-width:10; }
+.score-ring .fill{ fill:none; stroke:var(--accent); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 900ms cubic-bezier(.16,1,.3,1); }
+.score-num{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.score-num b{ font-family:var(--font-display); font-size:34px; line-height:1;}
+.score-num span{ font-size:10px; color:var(--text-dimmer); text-transform:uppercase; letter-spacing:.1em; margin-top:2px;}
+.score-factors{ display:flex; flex-direction:column; gap:8px; flex:1; min-width:220px;}
+.score-factor{ display:flex; align-items:center; gap:10px; font-size:12.5px;}
+.score-factor .label{ width:150px; color:var(--text-dim); flex-shrink:0;}
+.score-factor .progress{ flex:1; margin-top:0;}
+.score-factor .pts{ width:32px; text-align:right; font-family:var(--font-mono); color:var(--text-dimmer); font-size:11.5px;}
+
+/* ---- Ledger strip (signature element) ---- */
+.ledger-strip{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  overflow:hidden; box-shadow:var(--shadow-sm);
+}
+.ledger-strip-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 18px 0;}
+.ledger-scroll{ overflow-x:auto; padding:6px 18px 18px; }
+.ledger-row{
+  display:grid; grid-template-columns:88px 1fr 110px 110px 130px; gap:10px;
+  align-items:center; padding:9px 4px; font-size:12.5px; min-width:560px;
+  border-bottom:1px dashed var(--border);
+}
+.ledger-row.head{ color:var(--text-dimmer); text-transform:uppercase; letter-spacing:.06em; font-size:10.5px; border-bottom:1px solid var(--border);}
+.ledger-row:last-child{ border-bottom:none; }
+.ledger-amt{ font-family:var(--font-mono); text-align:right; }
+.ledger-amt.in{ color:var(--positive-bright); }
+.ledger-amt.out{ color:var(--negative-bright); }
+.ledger-bal{ font-family:var(--font-mono); text-align:right; font-weight:600;}
+.tag{ display:inline-block; padding:2px 8px; border-radius:99px; font-size:10.5px; border:1px solid var(--border); color:var(--text-dim);}
+.tag.paid{ color:var(--positive-bright); border-color:var(--positive); }
+.tag.pending{ color:var(--accent-bright); border-color:var(--accent);}
+.tag.overdue{ color:var(--negative-bright); border-color:var(--negative);}
+.tag.draft{ color:var(--text-dimmer); }
+
+/* ---- Tables (generic entries) ---- */
+.table-wrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
+th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-dimmer); padding:8px 10px; border-bottom:1px solid var(--border);}
+td{ padding:10px 10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+tr:last-child td{ border-bottom:none;}
+td.num{ font-family:var(--font-mono); text-align:right; }
+.row-actions{ display:flex; gap:6px; justify-content:flex-end; }
+.icon-btn{ background:transparent; border:1px solid var(--border); border-radius:6px; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:12px;}
+.icon-btn:hover{ color:var(--negative-bright); border-color:var(--negative); }
+
+/* ---- Forms / quick add ---- */
+.form-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; align-items:end;}
+.form-row-actions{ display:flex; justify-content:flex-end; margin-top:12px; gap:8px;}
+
+/* ---- Chart canvas containers ---- */
+.chart-box{ position:relative; width:100%; }
+svg.chart-svg{ width:100%; height:auto; display:block; overflow:visible;}
+.axis-label{ font-size:9.5px; fill:var(--text-dimmer); font-family:var(--font-mono); }
+.grid-line{ stroke:var(--border); stroke-width:1;}
+
+/* ---- Insight / recommendation cards ---- */
+.insight{
+  display:flex; gap:12px; padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);
+  background:var(--surface-raised); margin-bottom:10px; align-items:flex-start;
+}
+.insight .mark{ font-family:var(--font-display); font-size:15px; color:var(--accent-bright); flex-shrink:0; width:22px; text-align:center;}
+.insight .body b{ display:block; font-size:13.5px; margin-bottom:2px;}
+.insight .body p{ font-size:12.5px; color:var(--text-dim); }
+.insight.warn .mark{ color:var(--negative-bright); }
+.insight.good .mark{ color:var(--positive-bright); }
+
+/* ---- Checklist ---- */
+.checklist{ display:flex; flex-direction:column; gap:8px; }
+.check-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-raised); font-size:13px; cursor:pointer;}
+.check-item input{ width:auto; accent-color:var(--accent); }
+.check-item.done span{ text-decoration:line-through; color:var(--text-dimmer);}
+
+/* ---- Perforated invoice card (signature detail) ---- */
+.invoice-card{
+  position:relative; background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; display:flex; flex-direction:column; gap:6px;
+}
+.invoice-card::before{
+  content:""; position:absolute; left:-1px; right:-1px; top:calc(100% - 1px); height:0;
+}
+.invoice-perf{
+  height:10px; margin:0 -1px;
+  background-image: radial-gradient(circle, var(--bg) 2.6px, transparent 2.7px);
+  background-size: 14px 14px; background-position: 4px 0;
+  border-bottom:1px dashed var(--border);
+}
+
+/* ---- Tabs pill nav for sub-views ---- */
+.pill-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;}
+.pill{ padding:7px 13px; border-radius:99px; border:1px solid var(--border); font-size:12.5px; color:var(--text-dim); background:var(--surface-raised);}
+.pill.active{ background:var(--accent); color:var(--ink-950); border-color:var(--accent); font-weight:600;}
+
+/* ---- Empty state ---- */
+.empty{ text-align:center; padding:34px 16px; color:var(--text-dimmer); font-size:13px; }
+.empty b{ display:block; color:var(--text-dim); font-family:var(--font-display); font-size:16px; margin-bottom:4px;}
+
+/* ---- Toast ---- */
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink-950); color:var(--paper-text); border:1px solid var(--brass-700);
+  padding:11px 20px; border-radius:99px; font-size:13px; box-shadow:var(--shadow);
+  opacity:0; pointer-events:none; transition:all 320ms cubic-bezier(.16,1,.3,1); z-index:999;
+}
+[data-theme="light"] .toast{ background:#241D12; color:#F5F1E7; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---- Modal ---- */
+.modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.55); display:none; align-items:center; justify-content:center; z-index:900; padding:20px;}
+.modal-backdrop.show{ display:flex; }
+.modal{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  width:100%; max-width:440px; padding:22px; box-shadow:var(--shadow); max-height:88vh; overflow-y:auto;
+}
+.modal h3{ font-family:var(--font-display); font-size:19px; margin-bottom:14px;}
+.modal .form-grid{ grid-template-columns:1fr 1fr; }
+
+/* ---- Slider (what-if) ---- */
+.slider-row{ margin-bottom:18px; }
+.slider-row .top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;}
+.slider-row .top b{ font-family:var(--font-mono); color:var(--accent-bright);}
+input[type="range"]{ -webkit-appearance:none; height:5px; background:var(--surface-hover); border-radius:99px; padding:0; border:1px solid var(--border);}
+input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:17px; height:17px; border-radius:50%; background:var(--accent); border:2px solid var(--surface); cursor:pointer; margin-top:-1px;}
+input[type="range"]::-moz-range-thumb{ width:15px; height:15px; border-radius:50%; background:var(--accent); border:2px solid var(--surface); cursor:pointer;}
+
+/* ---- Utility ---- */
+.flex{ display:flex; }
+.between{ justify-content:space-between; }
+.center{ align-items:center; }
+.gap-8{gap:8px;} .gap-12{gap:12px;} .gap-16{gap:16px;}
+.mt-8{margin-top:8px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;}
+.text-dim{ color:var(--text-dim); }
+.text-pos{ color:var(--positive-bright); }
+.text-neg{ color:var(--negative-bright); }
+.mono{ font-family:var(--font-mono); }
+.w-full{width:100%;}
+
+/* ---- Print ---- */
+@media print{
+  .sidebar, .page-actions, .no-print, .modal-backdrop, .toast{ display:none !important; }
+  .app{ display:block; }
+  .main{ max-width:100%; padding:0; }
+  body{ background:#fff; color:#111; }
+  .card, .ledger-strip, .invoice-card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid; }
+  .tab-page{ display:none !important; }
+  .tab-page.print-active{ display:block !important; }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="app">
+  <!-- ============================= SIDEBAR ============================= -->
+  <nav class="sidebar no-print" aria-label="Primary">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div>
+        <div class="brand-word">The Ledger</div>
+        <div class="brand-sub">Command Center</div>
+      </div>
+    </div>
+
+    <div class="nav-group-label">Overview</div>
+    <ul class="nav">
+      <li><button class="nav-btn active" data-tab="overview"><span class="ico">◆</span> Dashboard</button></li>
+      <li><button class="nav-btn" data-tab="whatif"><span class="ico">≈</span> What‑If Simulator</button></li>
+    </ul>
+
+    <div class="nav-group-label">Cash Flow</div>
+    <ul class="nav">
+      <li><button class="nav-btn" data-tab="income"><span class="ico">↑</span> Income</button></li>
+      <li><button class="nav-btn" data-tab="expenses"><span class="ico">↓</span> Expenses</button></li>
+      <li><button class="nav-btn" data-tab="calendar"><span class="ico">▦</span> Cash Flow Forecast</button></li>
+      <li><button class="nav-btn" data-tab="invoices"><span class="ico">✎</span> Invoices &amp; Clients</button></li>
+      <li><button class="nav-btn" data-tab="subs"><span class="ico">↻</span> Subscriptions</button></li>
+    </ul>
+
+    <div class="nav-group-label">Planning</div>
+    <ul class="nav">
+      <li><button class="nav-btn" data-tab="budget"><span class="ico">▤</span> Budget</button></li>
+      <li><button class="nav-btn" data-tab="tax"><span class="ico">%</span> Tax Set‑Aside</button></li>
+      <li><button class="nav-btn" data-tab="emergency"><span class="ico">⛨</span> Emergency Fund</button></li>
+      <li><button class="nav-btn" data-tab="goals"><span class="ico">★</span> Savings Goals</button></li>
+    </ul>
+
+    <div class="nav-group-label">Learn &amp; Export</div>
+    <ul class="nav">
+      <li><button class="nav-btn" data-tab="reports"><span class="ico">▥</span> Reports</button></li>
+      <li><button class="nav-btn" data-tab="learn"><span class="ico">✺</span> Tips &amp; Literacy</button></li>
+    </ul>
+
+    <div class="sidebar-foot">
+      <div class="theme-toggle">
+        <button data-theme-btn="dark" class="active">Dark</button>
+        <button data-theme-btn="light">Light</button>
+      </div>
+      <div class="data-note">Everything is stored only in this browser (localStorage). Nothing leaves your device.</div>
+    </div>
+  </nav>
+
+  <!-- ============================= MAIN ============================= -->
+  <main class="main">
+
+    <!-- ===================== OVERVIEW ===================== -->
+    <section class="tab-page active" id="tab-overview">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Overview</div>
+          <h1 class="page-title">Good to see you, freelancer.</h1>
+          <p class="page-desc">A single register for retainers, invoices, taxes and runway — built for income that doesn't arrive on a neat monthly schedule.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" data-open-modal="income">+ Log income</button>
+          <button class="btn" data-open-modal="expense">+ Log expense</button>
+        </div>
+      </div>
+
+      <div class="grid grid-4" id="overview-stats"></div>
+
+      <h2 class="section-title">Financial Health Score</h2>
+      <div class="card">
+        <div class="score-wrap">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120" width="132" height="132">
+              <circle class="track" cx="60" cy="60" r="52"></circle>
+              <circle class="fill" id="score-ring-fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+            </svg>
+            <div class="score-num"><b id="score-num">–</b><span>out of 100</span></div>
+          </div>
+          <div class="score-factors" id="score-factors"></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Cash Register — last 8 weeks</h2>
+      <div class="ledger-strip">
+        <div class="ledger-strip-head">
+          <div class="page-eyebrow" style="margin:0;">Running balance</div>
+          <span class="mono text-dim" id="ledger-current-balance" style="font-size:13px;"></span>
+        </div>
+        <div class="chart-box" style="padding:14px 18px 6px;">
+          <svg class="chart-svg" id="overview-chart" viewBox="0 0 760 200"></svg>
+        </div>
+        <div class="ledger-scroll">
+          <div class="ledger-row head"><div>Date</div><div>Entry</div><div style="text-align:right">In</div><div style="text-align:right">Out</div><div style="text-align:right">Balance</div></div>
+          <div id="overview-ledger-rows"></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">AI Insights</h2>
+      <div id="overview-insights"></div>
+    </section>
+
+    <!-- ===================== INCOME ===================== -->
+    <section class="tab-page" id="tab-income">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Cash Flow</div>
+          <h1 class="page-title">Income</h1>
+          <p class="page-desc">Track retainers and one‑off project income by client. Mark entries recurring to feed the forecast.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" data-open-modal="income">+ Add income</button></div>
+      </div>
+      <div class="grid grid-3" id="income-stats"></div>
+      <h2 class="section-title">All income entries</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Client</th><th>Type</th><th>Recurring</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+            <tbody id="income-table"></tbody>
+          </table>
+        </div>
+        <div id="income-empty"></div>
+      </div>
+    </section>
+
+    <!-- ===================== EXPENSES ===================== -->
+    <section class="tab-page" id="tab-expenses">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Cash Flow</div>
+          <h1 class="page-title">Expenses</h1>
+          <p class="page-desc">Categorize spending to understand your true monthly baseline — the number your emergency fund and taxes are built on.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" data-open-modal="expense">+ Add expense</button></div>
+      </div>
+      <div class="grid grid-2" style="align-items:stretch;">
+        <div class="card">
+          <div class="card-title">By category, this month</div>
+          <div class="chart-box"><svg class="chart-svg" id="expense-pie" viewBox="0 0 220 220"></svg></div>
+          <div id="expense-legend" class="mt-16"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Monthly total, last 6 months</div>
+          <div class="chart-box"><svg class="chart-svg" id="expense-bar" viewBox="0 0 400 220"></svg></div>
+        </div>
+      </div>
+      <h2 class="section-title">All expense entries</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Category</th><th>Notes</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+            <tbody id="expense-table"></tbody>
+          </table>
+        </div>
+        <div id="expense-empty"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CASH FLOW FORECAST ===================== -->
+    <section class="tab-page" id="tab-calendar">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Cash Flow</div>
+          <h1 class="page-title">90‑Day Forecast</h1>
+          <p class="page-desc">Projects your running balance forward using recurring retainers, subscriptions, and open invoice due dates — so you can see a dip before it happens.</p>
+        </div>
+      </div>
+      <div class="grid grid-3" id="forecast-stats"></div>
+      <h2 class="section-title">Projected balance</h2>
+      <div class="card">
+        <div class="chart-box"><svg class="chart-svg" id="forecast-chart" viewBox="0 0 760 240"></svg></div>
+      </div>
+      <h2 class="section-title">Upcoming events</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Event</th><th>Type</th><th style="text-align:right">Amount</th></tr></thead>
+            <tbody id="forecast-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== INVOICES ===================== -->
+    <section class="tab-page" id="tab-invoices">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Cash Flow</div>
+          <h1 class="page-title">Invoices &amp; Clients</h1>
+          <p class="page-desc">Every invoice, its status, and how long payment is taking — the earliest warning system for cash flow trouble.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" data-open-modal="invoice">+ New invoice</button></div>
+      </div>
+      <div class="grid grid-4" id="invoice-stats"></div>
+      <h2 class="section-title">Invoice register</h2>
+      <div class="pill-tabs" id="invoice-filters"></div>
+      <div class="grid grid-2" id="invoice-cards"></div>
+      <div id="invoice-empty"></div>
+    </section>
+
+    <!-- ===================== SUBSCRIPTIONS ===================== -->
+    <section class="tab-page" id="tab-subs">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Cash Flow</div>
+          <h1 class="page-title">Subscriptions &amp; Recurring Bills</h1>
+          <p class="page-desc">Every recurring charge in one place — software, tools, memberships. Small line items add up fastest when income is irregular.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" data-open-modal="subscription">+ Add subscription</button></div>
+      </div>
+      <div class="grid grid-3" id="sub-stats"></div>
+      <h2 class="section-title">Active subscriptions</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Category</th><th>Cycle</th><th>Next charge</th><th style="text-align:right">Amount</th><th></th></tr></thead>
+            <tbody id="sub-table"></tbody>
+          </table>
+        </div>
+        <div id="sub-empty"></div>
+      </div>
+    </section>
+
+    <!-- ===================== BUDGET ===================== -->
+    <section class="tab-page" id="tab-budget">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Planning</div>
+          <h1 class="page-title">Budget</h1>
+          <p class="page-desc">A rolling, percentage‑based budget — built for variable income instead of one fixed monthly paycheck. Set your target split; we track it against this month's actual income.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Target allocation of this month's income</div>
+        <div id="budget-sliders"></div>
+        <div class="flex between center mt-16" style="font-size:12px;color:var(--text-dimmer);">
+          <span>Presets</span>
+          <span class="flex gap-8">
+            <button class="btn btn-sm" data-preset="503020">50 / 30 / 20</button>
+            <button class="btn btn-sm" data-preset="401030">Freelancer 40/10/30/20</button>
+          </span>
+        </div>
+      </div>
+      <h2 class="section-title">This month: target vs. actual</h2>
+      <div class="grid grid-2" id="budget-compare"></div>
+    </section>
+
+    <!-- ===================== TAX ===================== -->
+    <section class="tab-page" id="tab-tax">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Planning</div>
+          <h1 class="page-title">Tax Set‑Aside</h1>
+          <p class="page-desc">No employer withholding means you're your own payroll department. Set a rate, and every income entry earmarks its share automatically.</p>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div class="card" style="grid-column:span 1;">
+          <div class="card-title">Set‑aside rate</div>
+          <div class="slider-row" style="margin-bottom:6px;">
+            <div class="top"><span>Percent of income reserved</span><b id="tax-rate-val">25%</b></div>
+            <input type="range" id="tax-rate" min="10" max="45" step="1" value="25">
+          </div>
+          <p class="stat-sub">A common starting range for self‑employed set‑asides is 20–30%, covering income tax and self‑employment tax — adjust for your bracket and locale.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Tax jar balance</div>
+          <div class="stat-value" id="tax-jar-balance">$0</div>
+          <div class="stat-sub">Auto‑reserved from logged income at your set rate</div>
+          <div class="progress brass"><div id="tax-jar-bar" style="width:0%"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estimated next quarterly set‑aside need</div>
+          <div class="stat-value" id="tax-quarterly">$0</div>
+          <div class="stat-sub">Based on trailing 90‑day income pace</div>
+        </div>
+      </div>
+      <h2 class="section-title">Reserve log</h2>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Income source</th><th style="text-align:right">Income</th><th style="text-align:right">Reserved</th></tr></thead>
+            <tbody id="tax-table"></tbody>
+          </table>
+        </div>
+        <div id="tax-empty"></div>
+      </div>
+    </section>
+
+    <!-- ===================== EMERGENCY FUND ===================== -->
+    <section class="tab-page" id="tab-emergency">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Planning</div>
+          <h1 class="page-title">Emergency Fund</h1>
+          <p class="page-desc">Freelance income dips happen. This is the buffer that keeps a slow month from becoming a crisis.</p>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <div class="card-title">Target (months of expenses)</div>
+          <input type="range" id="ef-months" min="1" max="12" step="1" value="4">
+          <div class="stat-sub mt-8"><b class="mono" id="ef-months-val">4</b> months × <span class="mono" id="ef-monthly-baseline">$0</span> baseline = <b class="mono" id="ef-target">$0</b></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Current saved</div>
+          <input type="number" id="ef-saved" placeholder="0" step="10">
+          <div class="stat-sub mt-8">Update anytime as your buffer grows</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Progress</div>
+          <div class="stat-value" id="ef-progress-pct">0%</div>
+          <div class="progress"><div id="ef-progress-bar" style="width:0%"></div></div>
+          <div class="stat-sub mt-8" id="ef-remaining"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== GOALS ===================== -->
+    <section class="tab-page" id="tab-goals">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Planning</div>
+          <h1 class="page-title">Savings Goals</h1>
+          <p class="page-desc">House down payment, travel, new gear — name it, fund it, watch it move.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" data-open-modal="goal">+ New goal</button></div>
+      </div>
+      <div class="grid grid-3" id="goal-cards"></div>
+      <div id="goal-empty"></div>
+    </section>
+
+    <!-- ===================== WHAT-IF ===================== -->
+    <section class="tab-page" id="tab-whatif">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Overview</div>
+          <h1 class="page-title">What‑If Simulator</h1>
+          <p class="page-desc">Stress‑test your finances before reality does. Drag the levers and watch your runway respond.</p>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-title">Scenario levers</div>
+          <div class="slider-row">
+            <div class="top"><span>Lose your largest client</span><b id="wi-lose-val">No</b></div>
+            <input type="range" id="wi-lose" min="0" max="1" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="top"><span>Raise rates</span><b id="wi-raise-val">0%</b></div>
+            <input type="range" id="wi-raise" min="0" max="30" step="1" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="top"><span>Cut discretionary expenses</span><b id="wi-cut-val">0%</b></div>
+            <input type="range" id="wi-cut" min="0" max="50" step="5" value="0">
+          </div>
+          <div class="slider-row">
+            <div class="top"><span>Add one‑off expense (e.g. new laptop)</span><b id="wi-shock-val">$0</b></div>
+            <input type="range" id="wi-shock" min="0" max="5000" step="100" value="0">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Result — projected monthly net &amp; runway</div>
+          <div class="grid grid-2" style="gap:12px;">
+            <div>
+              <div class="stat-sub">Baseline monthly net</div>
+              <div class="stat-value small" id="wi-base-net">$0</div>
+            </div>
+            <div>
+              <div class="stat-sub">Scenario monthly net</div>
+              <div class="stat-value small" id="wi-scenario-net">$0</div>
+            </div>
+          </div>
+          <div class="chart-box mt-16"><svg class="chart-svg" id="wi-chart" viewBox="0 0 400 200"></svg></div>
+          <div class="stat-sub mt-8" id="wi-runway-note"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== REPORTS ===================== -->
+    <section class="tab-page" id="tab-reports">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Learn &amp; Export</div>
+          <h1 class="page-title">Reports</h1>
+          <p class="page-desc">A printable snapshot of your financial position — useful for quarterly reviews, tax prep, or a loan application.</p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" onclick="window.print()">🖨 Print report</button></div>
+      </div>
+      <div class="card" id="report-body"></div>
+    </section>
+
+    <!-- ===================== LEARN ===================== -->
+    <section class="tab-page" id="tab-learn">
+      <div class="page-head">
+        <div>
+          <div class="page-eyebrow">Learn &amp; Export</div>
+          <h1 class="page-title">Tips &amp; Financial Literacy</h1>
+          <p class="page-desc">A working checklist and prompts for a healthier freelance financial life — check items off as you go.</p>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-title">Freelancer money checklist</div>
+          <div class="checklist" id="checklist"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tips for irregular income</div>
+          <div id="tips-list"></div>
+        </div>
+      </div>
+      <h2 class="section-title">Ask better questions</h2>
+      <div class="card">
+        <p class="stat-sub mt-8" style="margin-bottom:10px;">Prompts worth taking to an AI assistant, a spreadsheet, or a real accountant:</p>
+        <div id="prompt-list"></div>
+      </div>
+      <h2 class="section-title">Resources</h2>
+      <div class="grid grid-3" id="resource-list"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================= MODALS ============================= -->
+<div class="modal-backdrop no-print" id="modal-backdrop">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<div class="toast no-print" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORE_KEY = "ledger_fcc_v1";
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+const uid = ()=> Math.random().toString(36).slice(2,10);
+
+function defaultState(){
+  const today = new Date();
+  const mk = (daysAgo)=>{ const d=new Date(today); d.setDate(d.getDate()-daysAgo); return d.toISOString().slice(0,10); };
+  return {
+    theme: "dark",
+    startBalance: 4200,
+    taxRate: 25,
+    taxReserved: 0,
+    efMonths: 4,
+    efSaved: 1800,
+    budgetSplit: { needs:40, taxes:25, savings:20, wants:15 },
+    income: [
+      {id:uid(), date:mk(2), client:"Halcyon Studio", type:"retainer", recurring:true, amount:2200, notes:"Monthly retainer"},
+      {id:uid(), date:mk(9), client:"Marrow & Co", type:"retainer", recurring:true, amount:1400, notes:"Monthly retainer"},
+      {id:uid(), date:mk(18), client:"Bramble Goods", type:"project", recurring:false, amount:900, notes:"Brand refresh, milestone 2"},
+      {id:uid(), date:mk(33), client:"Halcyon Studio", type:"retainer", recurring:true, amount:2200, notes:"Monthly retainer"},
+      {id:uid(), date:mk(40), client:"Marrow & Co", type:"retainer", recurring:true, amount:1400, notes:"Monthly retainer"},
+    ],
+    expenses: [
+      {id:uid(), date:mk(1), category:"Software", amount:64, notes:"Design + dev tools"},
+      {id:uid(), date:mk(4), category:"Housing", amount:1450, notes:"Rent share (home office)"},
+      {id:uid(), date:mk(6), category:"Food", amount:310, notes:"Groceries + eating out"},
+      {id:uid(), date:mk(11), category:"Utilities", amount:140, notes:"Internet + power"},
+      {id:uid(), date:mk(15), category:"Transport", amount:95, notes:"Gas + transit"},
+      {id:uid(), date:mk(20), category:"Health", amount:260, notes:"Insurance premium"},
+      {id:uid(), date:mk(27), category:"Software", amount:64, notes:"Design + dev tools"},
+      {id:uid(), date:mk(31), category:"Housing", amount:1450, notes:"Rent share (home office)"},
+    ],
+    invoices: [
+      {id:uid(), client:"Halcyon Studio", amount:2200, issueDate:mk(30), dueDate:mk(2), status:"paid"},
+      {id:uid(), client:"Marrow & Co", amount:1400, issueDate:mk(23), dueDate:mk(9), status:"paid"},
+      {id:uid(), client:"Bramble Goods", amount:900, issueDate:mk(20), dueDate:mk(6), status:"pending"},
+      {id:uid(), client:"North Field Coffee", amount:650, issueDate:mk(28), dueDate:mk(-4), status:"overdue"},
+      {id:uid(), client:"Halcyon Studio", amount:2200, issueDate:mk(1), dueDate:mk(-28), status:"draft"},
+    ],
+    subscriptions: [
+      {id:uid(), name:"Adobe Creative Cloud", category:"Software", amount:56.99, cycle:"monthly", nextDate: mk(-12)},
+      {id:uid(), name:"Figma", category:"Software", amount:15, cycle:"monthly", nextDate: mk(-20)},
+      {id:uid(), name:"Notion", category:"Software", amount:10, cycle:"monthly", nextDate: mk(-6)},
+      {id:uid(), name:"Business insurance", category:"Insurance", amount:340, cycle:"yearly", nextDate: mk(-150)},
+      {id:uid(), name:"Coworking membership", category:"Workspace", amount:220, cycle:"monthly", nextDate: mk(-3)},
+    ],
+    goals: [
+      {id:uid(), name:"House down payment", target:40000, saved:9200, targetDate: addMonths(6)},
+      {id:uid(), name:"New camera + gear", target:3200, saved:1750, targetDate: addMonths(-2)},
+      {id:uid(), name:"Two‑week trip", target:2800, saved:600, targetDate: addMonths(2)},
+    ],
+    checklist: {
+      "sep-account": true, "quarterly-taxes": false, "rate-review": false,
+      "contract-review": true, "invoice-terms": false, "retirement": false
+    },
+  };
+}
+function addMonths(n){ const d=new Date(); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
+
+let state = load();
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return Object.assign(defaultState(), JSON.parse(raw));
+  }catch(e){}
+  return defaultState();
+}
+function save(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const fmt = (n)=>{
+  const sign = n<0 ? "-" : "";
+  n = Math.abs(Math.round(n));
+  return sign + "$" + n.toLocaleString("en-US");
+};
+const fmt2 = (n)=>{
+  const sign = n<0 ? "-" : "";
+  n = Math.abs(n);
+  return sign + "$" + n.toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
+};
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function fmtDate(iso){
+  const d = new Date(iso+"T00:00:00");
+  return d.toLocaleDateString("en-US",{month:"short", day:"numeric"});
+}
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function monthKey(iso){ return iso.slice(0,7); }
+function thisMonthKey(){ return todayISO().slice(0,7); }
+
+/* Derived monthly baseline expense (avg of recurring-ish categories + all expenses last 90d /3) */
+function monthlyExpenseBaseline(){
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-90);
+  const recent = state.expenses.filter(e=> new Date(e.date) >= cutoff);
+  const subMonthly = state.subscriptions.reduce((s,x)=> s + (x.cycle==="monthly" ? x.amount : x.amount/12), 0);
+  const expTotal = recent.reduce((s,e)=>s+e.amount,0);
+  const expMonthly = recent.length ? expTotal/3 : 0;
+  return Math.max(expMonthly, subMonthly) || (expMonthly+subMonthly);
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+const navButtons = document.querySelectorAll(".nav-btn");
+navButtons.forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    navButtons.forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll(".tab-page").forEach(p=>p.classList.remove("active","print-active"));
+    const el = document.getElementById("tab-"+btn.dataset.tab);
+    el.classList.add("active","print-active");
+    window.scrollTo({top:0, behavior:"smooth"});
+    if(btn.dataset.tab === "reports") renderReport();
+  });
+});
+
+/* Theme */
+function applyTheme(){
+  document.body.setAttribute("data-theme", state.theme);
+  document.querySelectorAll("[data-theme-btn]").forEach(b=>{
+    b.classList.toggle("active", b.dataset.themeBtn === state.theme);
+  });
+}
+document.querySelectorAll("[data-theme-btn]").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    state.theme = b.dataset.themeBtn; save(); applyTheme(); renderAll();
+  });
+});
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+const backdrop = document.getElementById("modal-backdrop");
+const modalContent = document.getElementById("modal-content");
+
+const modalDefs = {
+  income: {
+    title:"Log income",
+    fields:[
+      {k:"client", label:"Client", type:"text", ph:"Client or project name", required:true},
+      {k:"type", label:"Type", type:"select", opts:["retainer","project"]},
+      {k:"amount", label:"Amount (USD)", type:"number", ph:"0.00", required:true},
+      {k:"date", label:"Date received", type:"date", value:todayISO()},
+      {k:"recurring", label:"Recurs monthly?", type:"select", opts:["No","Yes"]},
+      {k:"notes", label:"Notes", type:"text", ph:"Optional", full:true},
+    ],
+    submit(data){
+      state.income.push({
+        id:uid(), client:data.client, type:data.type, amount:parseFloat(data.amount)||0,
+        date:data.date||todayISO(), recurring: data.recurring==="Yes", notes:data.notes||""
+      });
+      state.taxReserved += (parseFloat(data.amount)||0) * (state.taxRate/100);
+      save(); closeModal(); renderAll(); toast("Income logged");
+    }
+  },
+  expense: {
+    title:"Log expense",
+    fields:[
+      {k:"category", label:"Category", type:"select", opts:["Housing","Utilities","Food","Transport","Software","Insurance","Health","Marketing","Other"]},
+      {k:"amount", label:"Amount (USD)", type:"number", ph:"0.00", required:true},
+      {k:"date", label:"Date", type:"date", value:todayISO()},
+      {k:"notes", label:"Notes", type:"text", ph:"Optional", full:true},
+    ],
+    submit(data){
+      state.expenses.push({id:uid(), category:data.category, amount:parseFloat(data.amount)||0, date:data.date||todayISO(), notes:data.notes||""});
+      save(); closeModal(); renderAll(); toast("Expense logged");
+    }
+  },
+  invoice: {
+    title:"New invoice",
+    fields:[
+      {k:"client", label:"Client", type:"text", required:true},
+      {k:"amount", label:"Amount (USD)", type:"number", required:true},
+      {k:"issueDate", label:"Issue date", type:"date", value:todayISO()},
+      {k:"dueDate", label:"Due date", type:"date", value:addDaysISO(14)},
+      {k:"status", label:"Status", type:"select", opts:["draft","pending","paid","overdue"]},
+    ],
+    submit(data){
+      state.invoices.push({id:uid(), client:data.client, amount:parseFloat(data.amount)||0, issueDate:data.issueDate, dueDate:data.dueDate, status:data.status});
+      save(); closeModal(); renderAll(); toast("Invoice created");
+    }
+  },
+  subscription: {
+    title:"Add subscription",
+    fields:[
+      {k:"name", label:"Name", type:"text", required:true},
+      {k:"category", label:"Category", type:"select", opts:["Software","Insurance","Workspace","Membership","Other"]},
+      {k:"amount", label:"Amount (USD)", type:"number", required:true},
+      {k:"cycle", label:"Billing cycle", type:"select", opts:["monthly","yearly"]},
+      {k:"nextDate", label:"Next charge date", type:"date", value:addDaysISO(7)},
+    ],
+    submit(data){
+      state.subscriptions.push({id:uid(), name:data.name, category:data.category, amount:parseFloat(data.amount)||0, cycle:data.cycle, nextDate:data.nextDate});
+      save(); closeModal(); renderAll(); toast("Subscription added");
+    }
+  },
+  goal: {
+    title:"New savings goal",
+    fields:[
+      {k:"name", label:"Goal name", type:"text", required:true},
+      {k:"target", label:"Target amount (USD)", type:"number", required:true},
+      {k:"saved", label:"Already saved (USD)", type:"number", value:"0"},
+      {k:"targetDate", label:"Target date", type:"date", value:addMonths(6)},
+    ],
+    submit(data){
+      state.goals.push({id:uid(), name:data.name, target:parseFloat(data.target)||1, saved:parseFloat(data.saved)||0, targetDate:data.targetDate});
+      save(); closeModal(); renderAll(); toast("Goal created");
+    }
+  }
+};
+
+function addDaysISO(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+document.querySelectorAll("[data-open-modal]").forEach(btn=>{
+  btn.addEventListener("click", ()=> openModal(btn.dataset.openModal));
+});
+
+function openModal(key){
+  const def = modalDefs[key];
+  let html = `<h3>${def.title}</h3><div class="form-grid">`;
+  def.fields.forEach(f=>{
+    const fullStyle = f.full ? "grid-column:1/-1;" : "";
+    html += `<div style="${fullStyle}"><label>${f.label}</label>`;
+    if(f.type==="select"){
+      html += `<select data-field="${f.k}">` + f.opts.map(o=>`<option value="${o}">${o}</option>`).join("") + `</select>`;
+    }else{
+      html += `<input data-field="${f.k}" type="${f.type}" placeholder="${f.ph||""}" value="${f.value||""}">`;
+    }
+    html += `</div>`;
+  });
+  html += `</div><div class="form-row-actions">
+    <button class="btn" id="modal-cancel">Cancel</button>
+    <button class="btn btn-primary" id="modal-submit">Save</button>
+  </div>`;
+  modalContent.innerHTML = html;
+  backdrop.classList.add("show");
+  document.getElementById("modal-cancel").addEventListener("click", closeModal);
+  document.getElementById("modal-submit").addEventListener("click", ()=>{
+    const data = {};
+    let ok = true;
+    def.fields.forEach(f=>{
+      const el = modalContent.querySelector(`[data-field="${f.k}"]`);
+      data[f.k] = el.value;
+      if(f.required && !el.value){ ok=false; el.style.borderColor = "var(--negative)"; }
+    });
+    if(!ok){ toast("Please fill required fields"); return; }
+    def.submit(data);
+  });
+}
+function closeModal(){ backdrop.classList.remove("show"); modalContent.innerHTML=""; }
+backdrop.addEventListener("click", (e)=>{ if(e.target===backdrop) closeModal(); });
+
+function deleteItem(list, id){
+  state[list] = state[list].filter(x=>x.id!==id);
+  save(); renderAll(); toast("Removed");
+}
+window.__deleteItem = deleteItem;
+
+/* ============================================================
+   CHART HELPERS (pure SVG, no libs)
+   ============================================================ */
+function lineChart(svgEl, points, opts){
+  opts = opts||{};
+  const w = opts.w||760, h = opts.h||200, pad = opts.pad||{t:14,r:14,b:22,l:46};
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  const minY = Math.min(0, ...ys), maxY = Math.max(...ys, 1);
+  const x = (i)=> pad.l + (i/(points.length-1||1)) * (w-pad.l-pad.r);
+  const y = (v)=> h-pad.b - ((v-minY)/((maxY-minY)||1)) * (h-pad.t-pad.b);
+  let d = points.map((p,i)=> (i===0?"M":"L") + x(i).toFixed(1) + "," + y(p.y).toFixed(1)).join(" ");
+  let area = d + ` L${x(points.length-1).toFixed(1)},${y(minY).toFixed(1)} L${x(0).toFixed(1)},${y(minY).toFixed(1)} Z`;
+  const zeroY = y(0);
+  const gridLines = [];
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const v = minY + (maxY-minY)*i/steps;
+    gridLines.push(`<line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"></line>`);
+    gridLines.push(`<text class="axis-label" x="4" y="${(y(v)+3).toFixed(1)}">${Math.round(v/1000)}k</text>`);
+  }
+  const accentColor = opts.color || "var(--accent)";
+  const labelStep = Math.ceil(points.length/8);
+  const xLabels = points.map((p,i)=> (i%labelStep===0 || i===points.length-1) ? `<text class="axis-label" x="${x(i).toFixed(1)}" y="${h-4}" text-anchor="middle">${p.label||""}</text>` : "").join("");
+  svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svgEl.innerHTML = `
+    ${gridLines.join("")}
+    <line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke-dasharray="3,3"></line>
+    <path d="${area}" fill="${accentColor}" fill-opacity="0.12" stroke="none"></path>
+    <path d="${d}" fill="none" stroke="${accentColor}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path>
+    ${points.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="3" fill="${accentColor}"><title>${p.label}: ${fmt(p.y)}</title></circle>`).join("")}
+    ${xLabels}
+  `;
+}
+
+function barChart(svgEl, bars, opts){
+  opts = opts||{};
+  const w = opts.w||400, h = opts.h||220, pad={t:14,r:10,b:26,l:44};
+  const maxV = Math.max(...bars.map(b=>b.y), 1);
+  const bw = (w-pad.l-pad.r)/bars.length * 0.6;
+  const gap = (w-pad.l-pad.r)/bars.length;
+  const y = (v)=> h-pad.b - (v/maxV)*(h-pad.t-pad.b);
+  let bodies = bars.map((b,i)=>{
+    const bx = pad.l + gap*i + (gap-bw)/2;
+    const by = y(b.y);
+    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${(h-pad.b-by).toFixed(1)}" rx="3" fill="${b.color||'var(--accent)'}"><title>${b.label}: ${fmt(b.y)}</title></rect>
+      <text class="axis-label" x="${(bx+bw/2).toFixed(1)}" y="${h-6}" text-anchor="middle">${b.label}</text>`;
+  }).join("");
+  const gridLines=[];
+  for(let i=0;i<=3;i++){
+    const v = maxV*i/3;
+    gridLines.push(`<line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"></line>`);
+    gridLines.push(`<text class="axis-label" x="2" y="${(y(v)+3).toFixed(1)}">${Math.round(v/1000)}k</text>`);
+  }
+  svgEl.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svgEl.innerHTML = gridLines.join("") + bodies;
+}
+
+function pieChart(svgEl, slices){
+  const total = slices.reduce((s,x)=>s+x.value,0) || 1;
+  const r = 90, cx=110, cy=110;
+  let angle = -Math.PI/2;
+  let paths = "";
+  slices.forEach(s=>{
+    const frac = s.value/total;
+    const a2 = angle + frac*2*Math.PI;
+    const x1 = cx + r*Math.cos(angle), y1 = cy + r*Math.sin(angle);
+    const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
+    const large = frac > 0.5 ? 1 : 0;
+    paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}"><title>${s.label}: ${fmt(s.value)}</title></path>`;
+    angle = a2;
+  });
+  svgEl.setAttribute("viewBox","0 0 220 220");
+  svgEl.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="46" fill="var(--surface)"></circle>`;
+}
+
+const PALETTE = ["#C79A3E","#379C86","#B85732","#7C6FB0","#4E8FBF","#B0824F","#6FA88F","#B06F9E"];
+
+/* ============================================================
+   RENDER: OVERVIEW
+   ============================================================ */
+function computeLedgerEntries(){
+  const entries = [];
+  state.income.forEach(i=> entries.push({date:i.date, label:i.client+" — "+ (i.type==="retainer"?"retainer":"project"), amt:i.amount}));
+  state.expenses.forEach(e=> entries.push({date:e.date, label:e.category+(e.notes?" · "+e.notes:""), amt:-e.amount}));
+  entries.sort((a,b)=> new Date(a.date)-new Date(b.date));
+  let bal = state.startBalance;
+  return entries.map(e=>{ bal += e.amt; return {...e, balance:bal}; });
+}
+
+function renderOverview(){
+  const entries = computeLedgerEntries();
+  const currentBalance = entries.length ? entries[entries.length-1].balance : state.startBalance;
+  const cutoffMonth = thisMonthKey();
+  const incomeThisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0);
+  const expenseThisMonth = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth).reduce((s,e)=>s+e.amount,0);
+  const netThisMonth = incomeThisMonth - expenseThisMonth;
+  const overdueCount = state.invoices.filter(i=>i.status==="overdue").length;
+
+  document.getElementById("overview-stats").innerHTML = `
+    <div class="card">
+      <div class="card-title">Current balance</div>
+      <div class="stat-value">${fmt(currentBalance)}</div>
+      <div class="stat-sub">Across tracked accounts</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Income this month</div>
+      <div class="stat-value">${fmt(incomeThisMonth)}</div>
+      <div class="stat-delta ${incomeThisMonth>=expenseThisMonth?'up':'down'}">${incomeThisMonth>=expenseThisMonth?'▲':'▼'} vs ${fmt(expenseThisMonth)} spent</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Net cash flow, this month</div>
+      <div class="stat-value" style="color:${netThisMonth>=0?'var(--positive-bright)':'var(--negative-bright)'}">${fmt(netThisMonth)}</div>
+      <div class="stat-sub">Income minus expenses</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Open invoices</div>
+      <div class="stat-value">${state.invoices.filter(i=>i.status!=='paid'&&i.status!=='draft').length}</div>
+      <div class="stat-sub ${overdueCount?'':'text-dim'}" style="${overdueCount?'color:var(--negative-bright)':''}">${overdueCount} overdue</div>
+    </div>
+  `;
+
+  // health score
+  const score = computeHealthScore();
+  const ring = document.getElementById("score-ring-fill");
+  const circumference = 2*Math.PI*52;
+  ring.setAttribute("stroke-dasharray", circumference.toFixed(1));
+  ring.setAttribute("stroke-dashoffset", (circumference*(1-score.total/100)).toFixed(1));
+  ring.style.stroke = score.total>=70 ? "var(--positive)" : score.total>=45 ? "var(--accent)" : "var(--negative)";
+  document.getElementById("score-num").textContent = score.total;
+  document.getElementById("score-factors").innerHTML = score.factors.map(f=>`
+    <div class="score-factor">
+      <div class="label">${f.name}</div>
+      <div class="progress"><div style="width:${Math.min(100,f.pct)}%; background:linear-gradient(90deg,var(--brass-700),var(--accent-bright));"></div></div>
+      <div class="pts">${f.pts}/${f.max}</div>
+    </div>
+  `).join("");
+
+  // ledger strip chart + rows (last 8 weeks)
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-56);
+  const recent = entries.filter(e=> new Date(e.date) >= cutoff);
+  const chartData = (recent.length?recent:entries).slice(-16).map(e=>({x:0,y:e.balance,label:fmtDate(e.date)}));
+  if(chartData.length>1) lineChart(document.getElementById("overview-chart"), chartData, {w:760,h:200});
+  document.getElementById("ledger-current-balance").textContent = "Balance: " + fmt(currentBalance);
+
+  const rows = (recent.length?recent:entries).slice(-12).reverse();
+  document.getElementById("overview-ledger-rows").innerHTML = rows.length ? rows.map(e=>`
+    <div class="ledger-row">
+      <div class="mono text-dim">${fmtDate(e.date)}</div>
+      <div>${e.label}</div>
+      <div class="ledger-amt in">${e.amt>0?fmt(e.amt):""}</div>
+      <div class="ledger-amt out">${e.amt<0?fmt(Math.abs(e.amt)):""}</div>
+      <div class="ledger-bal">${fmt(e.balance)}</div>
+    </div>
+  `).join("") : `<div class="empty">No entries yet — log your first income or expense.</div>`;
+
+  renderInsights();
+}
+
+function computeHealthScore(){
+  const factors = [];
+  // 1. cash flow positivity (25)
+  const cutoffMonth = thisMonthKey();
+  const incomeThisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0);
+  const expenseThisMonth = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth).reduce((s,e)=>s+e.amount,0);
+  const net = incomeThisMonth-expenseThisMonth;
+  const cfPct = incomeThisMonth>0 ? Math.max(0,Math.min(1, net/Math.max(incomeThisMonth,1))) : 0;
+  factors.push({name:"Positive cash flow", pts:Math.round(cfPct*25), max:25, pct:cfPct*100});
+  // 2. emergency fund (25)
+  const baseline = monthlyExpenseBaseline();
+  const target = baseline*state.efMonths;
+  const efPct = target>0 ? Math.min(1, state.efSaved/target) : 0;
+  factors.push({name:"Emergency fund coverage", pts:Math.round(efPct*25), max:25, pct:efPct*100});
+  // 3. tax readiness (20)
+  const estTaxNeed = incomeThisMonth * (state.taxRate/100) * 3; // quarter estimate
+  const taxPct = estTaxNeed>0 ? Math.min(1, state.taxReserved/estTaxNeed) : 1;
+  factors.push({name:"Tax reserve readiness", pts:Math.round(taxPct*20), max:20, pct:taxPct*100});
+  // 4. invoice health (15)
+  const totalInv = state.invoices.filter(i=>i.status!=='draft').length || 1;
+  const badInv = state.invoices.filter(i=>i.status==='overdue').length;
+  const invPct = Math.max(0, 1-(badInv/totalInv));
+  factors.push({name:"Invoice / payment health", pts:Math.round(invPct*15), max:15, pct:invPct*100});
+  // 5. goals progress (15)
+  const goalPct = state.goals.length ? state.goals.reduce((s,g)=>s+Math.min(1,g.saved/g.target),0)/state.goals.length : 0.5;
+  factors.push({name:"Savings goal progress", pts:Math.round(goalPct*15), max:15, pct:goalPct*100});
+
+  const total = factors.reduce((s,f)=>s+f.pts,0);
+  return {total, factors};
+}
+
+function renderInsights(){
+  const insights = [];
+  const overdue = state.invoices.filter(i=>i.status==="overdue");
+  if(overdue.length){
+    const sum = overdue.reduce((s,i)=>s+i.amount,0);
+    insights.push({type:"warn", mark:"!", title:`${overdue.length} overdue invoice${overdue.length>1?'s':''} worth ${fmt(sum)}`, body:"Send a polite follow‑up now — overdue invoices are the single biggest cause of freelance cash‑flow gaps."});
+  }
+  const baseline = monthlyExpenseBaseline();
+  const efTarget = baseline*state.efMonths;
+  if(state.efSaved < efTarget*0.5){
+    insights.push({type:"warn", mark:"⛨", title:"Emergency fund is under half of target", body:`At ${fmt(baseline)}/mo baseline spending, aim for ${fmt(efTarget)}. Consider auto‑moving a fixed % of each payment.`});
+  }else if(state.efSaved >= efTarget){
+    insights.push({type:"good", mark:"✓", title:"Emergency fund goal reached", body:"Your buffer covers your target months of expenses — consider directing extra cash flow to savings goals or investing."});
+  }
+  const recurringIncome = state.income.filter(i=>i.recurring).reduce((s,i)=>s+i.amount,0);
+  const totalIncome30 = state.income.filter(i=> daysBetween(i.date, todayISO()) <= 30).reduce((s,i)=>s+i.amount,0);
+  if(recurringIncome > 0 && totalIncome30 > 0 && recurringIncome/Math.max(totalIncome30,1) > 0.75){
+    insights.push({type:"warn", mark:"◆", title:"Retainer concentration is high", body:"A large share of income comes from recurring retainers. Confirm you don't rely on just one or two clients — losing one would hit hard (see What‑If Simulator)."});
+  }
+  const estTaxNeed = (state.income.filter(i=>monthKey(i.date)===thisMonthKey()).reduce((s,i)=>s+i.amount,0)) * (state.taxRate/100) * 3;
+  if(state.taxReserved < estTaxNeed*0.6){
+    insights.push({type:"warn", mark:"%", title:"Tax reserve may be falling behind", body:"Based on this month's pace, your quarterly set‑aside need is trending ahead of what you've reserved."});
+  }else{
+    insights.push({type:"good", mark:"%", title:"Tax reserve is on pace", body:"Your set‑aside jar is tracking well against estimated quarterly need."});
+  }
+  const subsMonthly = state.subscriptions.reduce((s,x)=> s + (x.cycle==="monthly"?x.amount:x.amount/12),0);
+  if(subsMonthly > baseline*0.15){
+    insights.push({type:"warn", mark:"↻", title:"Subscriptions are a meaningful expense", body:`Recurring subscriptions run about ${fmt(subsMonthly)}/mo — worth a quick audit for anything unused.`});
+  }
+  if(!insights.length){
+    insights.push({type:"good", mark:"✓", title:"No urgent flags", body:"Your finances look steady this week. Check the What‑If Simulator to stress‑test the months ahead."});
+  }
+  document.getElementById("overview-insights").innerHTML = insights.map(i=>`
+    <div class="insight ${i.type}"><div class="mark">${i.mark}</div><div class="body"><b>${i.title}</b><p>${i.body}</p></div></div>
+  `).join("");
+}
+
+/* ============================================================
+   RENDER: INCOME
+   ============================================================ */
+function renderIncome(){
+  const sorted = [...state.income].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const cutoffMonth = thisMonthKey();
+  const thisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0);
+  const recurringTotal = state.income.filter(i=>i.recurring).reduce((s,i)=>s+i.amount,0);
+  const clients = new Set(state.income.map(i=>i.client)).size;
+  document.getElementById("income-stats").innerHTML = `
+    <div class="card"><div class="card-title">This month</div><div class="stat-value">${fmt(thisMonth)}</div></div>
+    <div class="card"><div class="card-title">From recurring retainers</div><div class="stat-value">${fmt(recurringTotal)}</div><div class="stat-sub">${state.income.length?Math.round(recurringTotal/state.income.reduce((s,i)=>s+i.amount,0)*100):0}% of all logged income</div></div>
+    <div class="card"><div class="card-title">Active clients</div><div class="stat-value">${clients}</div></div>
+  `;
+  document.getElementById("income-table").innerHTML = sorted.map(i=>`
+    <tr>
+      <td class="mono">${fmtDate(i.date)}</td>
+      <td>${i.client}</td>
+      <td><span class="tag">${i.type}</span></td>
+      <td>${i.recurring? '<span class="tag paid">recurring</span>' : '<span class="tag">one‑off</span>'}</td>
+      <td class="num text-pos">${fmt(i.amount)}</td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="__deleteItem('income','${i.id}')">✕</button></div></td>
+    </tr>
+  `).join("");
+  document.getElementById("income-empty").innerHTML = sorted.length ? "" : `<div class="empty"><b>No income logged</b>Add your first retainer or project payment.</div>`;
+}
+
+/* ============================================================
+   RENDER: EXPENSES
+   ============================================================ */
+function renderExpenses(){
+  const sorted = [...state.expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById("expense-table").innerHTML = sorted.map(e=>`
+    <tr>
+      <td class="mono">${fmtDate(e.date)}</td>
+      <td>${e.category}</td>
+      <td class="text-dim">${e.notes||""}</td>
+      <td class="num text-neg">${fmt(e.amount)}</td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="__deleteItem('expenses','${e.id}')">✕</button></div></td>
+    </tr>
+  `).join("");
+  document.getElementById("expense-empty").innerHTML = sorted.length ? "" : `<div class="empty"><b>No expenses logged</b>Add your first expense to see category breakdowns.</div>`;
+
+  // pie by category (this month, fallback all-time)
+  const cutoffMonth = thisMonthKey();
+  let byCat = {};
+  let pool = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth);
+  if(!pool.length) pool = state.expenses;
+  pool.forEach(e=> byCat[e.category] = (byCat[e.category]||0)+e.amount);
+  const cats = Object.keys(byCat);
+  const slices = cats.map((c,i)=>({label:c, value:byCat[c], color:PALETTE[i%PALETTE.length]}));
+  if(slices.length) pieChart(document.getElementById("expense-pie"), slices);
+  else document.getElementById("expense-pie").innerHTML = "";
+  document.getElementById("expense-legend").innerHTML = slices.map(s=>`
+    <div class="flex between" style="font-size:12.5px; padding:4px 0;">
+      <span class="flex center gap-8"><span style="width:9px;height:9px;border-radius:3px;background:${s.color};display:inline-block;"></span>${s.label}</span>
+      <span class="mono text-dim">${fmt(s.value)}</span>
+    </div>`).join("") || `<div class="empty">No expenses yet</div>`;
+
+  // bar chart last 6 months
+  const months = [];
+  for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); months.push(d.toISOString().slice(0,7)); }
+  const bars = months.map(m=>{
+    const total = state.expenses.filter(e=>monthKey(e.date)===m).reduce((s,e)=>s+e.amount,0);
+    const d = new Date(m+"-01");
+    return {label:d.toLocaleDateString("en-US",{month:"short"}), y:total, color:"var(--brass-500)"};
+  });
+  barChart(document.getElementById("expense-bar"), bars);
+}
+
+/* ============================================================
+   RENDER: CASH FLOW FORECAST
+   ============================================================ */
+function buildForecast(days){
+  days = days||90;
+  const entries = computeLedgerEntries();
+  let balance = entries.length ? entries[entries.length-1].balance : state.startBalance;
+  const events = [];
+  const start = new Date();
+  // recurring income (retainers) — assume same day-of-month as their last entry, repeats monthly
+  const recurringIncomes = state.income.filter(i=>i.recurring);
+  const seenClients = {};
+  recurringIncomes.forEach(i=>{ seenClients[i.client] = i; }); // latest wins due to array order (assume sorted asc already roughly)
+  Object.values(seenClients).forEach(i=>{
+    const dom = new Date(i.date).getDate();
+    for(let m=0;m<=3;m++){
+      const d = new Date(start.getFullYear(), start.getMonth()+m, dom);
+      if(d>=start && daysBetween(todayISO(), d.toISOString().slice(0,10))<=days){
+        events.push({date:d.toISOString().slice(0,10), label:i.client+" retainer", amt:i.amount, type:"income"});
+      }
+    }
+  });
+  // open invoices due
+  state.invoices.filter(inv=>inv.status==="pending"||inv.status==="overdue").forEach(inv=>{
+    let d = inv.dueDate;
+    if(new Date(d) < start){ d = todayISO(); } // treat as due ASAP if already overdue
+    if(daysBetween(todayISO(), d) <= days){
+      events.push({date:d, label:inv.client+" invoice", amt:inv.amount, type:"income"});
+    }
+  });
+  // subscriptions
+  state.subscriptions.forEach(s=>{
+    const amt = s.cycle==="monthly" ? s.amount : s.amount; // charge on cycle date
+    let d = new Date(s.nextDate);
+    while(d < start) d.setMonth(d.getMonth() + (s.cycle==="monthly"?1:12));
+    while(daysBetween(todayISO(), d.toISOString().slice(0,10)) <= days){
+      events.push({date:d.toISOString().slice(0,10), label:s.name, amt:-amt, type:"expense"});
+      d = new Date(d); d.setMonth(d.getMonth() + (s.cycle==="monthly"?1:12));
+    }
+  });
+  // baseline daily living expense spread (using baseline/30 per day, excluding subs already counted)
+  const baseline = monthlyExpenseBaseline();
+  const subsMonthly = state.subscriptions.reduce((s,x)=> s + (x.cycle==="monthly"?x.amount:x.amount/12),0);
+  const dailyLiving = Math.max(0, baseline - subsMonthly) / 30;
+
+  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const points = [];
+  let running = balance;
+  for(let d=0; d<=days; d++){
+    const dt = new Date(start); dt.setDate(dt.getDate()+d);
+    const iso = dt.toISOString().slice(0,10);
+    const todays = events.filter(e=>e.date===iso);
+    todays.forEach(e=> running += e.amt);
+    running -= dailyLiving;
+    if(d%3===0 || d===days) points.push({x:0, y:running, label: dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})});
+  }
+  return {points, events, startBalance:balance};
+}
+
+function renderForecast(){
+  const f = buildForecast(90);
+  lineChart(document.getElementById("forecast-chart"), f.points, {w:760,h:240, color:"var(--positive)"});
+  const lowest = Math.min(...f.points.map(p=>p.y));
+  const end = f.points[f.points.length-1].y;
+  const dipBelowZero = f.points.find(p=>p.y<0);
+  document.getElementById("forecast-stats").innerHTML = `
+    <div class="card"><div class="card-title">Projected in 90 days</div><div class="stat-value" style="color:${end>=f.startBalance?'var(--positive-bright)':'var(--negative-bright)'}">${fmt(end)}</div></div>
+    <div class="card"><div class="card-title">Lowest projected point</div><div class="stat-value" style="color:${lowest<f.startBalance*0.3?'var(--negative-bright)':'var(--text)'}">${fmt(lowest)}</div></div>
+    <div class="card"><div class="card-title">Runway status</div><div class="stat-value small">${dipBelowZero? 'Risk of shortfall' : 'Stable'}</div><div class="stat-sub">${dipBelowZero? 'Balance dips below $0 in projection — see What‑If Simulator':'No projected shortfall in 90 days'}</div></div>
+  `;
+  const upcoming = [...f.events].sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,14);
+  document.getElementById("forecast-table").innerHTML = upcoming.length ? upcoming.map(e=>`
+    <tr>
+      <td class="mono">${fmtDate(e.date)}</td>
+      <td>${e.label}</td>
+      <td><span class="tag ${e.type==='income'?'paid':''}">${e.type}</span></td>
+      <td class="num ${e.amt>0?'text-pos':'text-neg'}">${fmt(e.amt)}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="4" class="empty">No upcoming recurring events detected</td></tr>`;
+}
+
+/* ============================================================
+   RENDER: INVOICES
+   ============================================================ */
+let invoiceFilter = "all";
+function renderInvoices(){
+  const statuses = ["all","draft","pending","overdue","paid"];
+  document.getElementById("invoice-filters").innerHTML = statuses.map(s=>`
+    <button class="pill ${invoiceFilter===s?'active':''}" data-filter="${s}">${s[0].toUpperCase()+s.slice(1)}</button>
+  `).join("");
+  document.querySelectorAll("[data-filter]").forEach(b=> b.addEventListener("click", ()=>{ invoiceFilter=b.dataset.filter; renderInvoices(); }));
+
+  const outstanding = state.invoices.filter(i=>i.status==="pending"||i.status==="overdue").reduce((s,i)=>s+i.amount,0);
+  const overdue = state.invoices.filter(i=>i.status==="overdue");
+  const paidThisMonth = state.invoices.filter(i=>i.status==="paid" && monthKey(i.dueDate)===thisMonthKey()).reduce((s,i)=>s+i.amount,0);
+  const avgDays = (()=>{
+    const paid = state.invoices.filter(i=>i.status==="paid");
+    if(!paid.length) return 0;
+    return Math.round(paid.reduce((s,i)=>s+Math.abs(daysBetween(i.issueDate,i.dueDate)),0)/paid.length);
+  })();
+  document.getElementById("invoice-stats").innerHTML = `
+    <div class="card"><div class="card-title">Outstanding</div><div class="stat-value">${fmt(outstanding)}</div></div>
+    <div class="card"><div class="card-title">Overdue</div><div class="stat-value" style="color:${overdue.length?'var(--negative-bright)':'inherit'}">${overdue.length}</div><div class="stat-sub">${fmt(overdue.reduce((s,i)=>s+i.amount,0))}</div></div>
+    <div class="card"><div class="card-title">Paid this month</div><div class="stat-value">${fmt(paidThisMonth)}</div></div>
+    <div class="card"><div class="card-title">Avg. terms</div><div class="stat-value small">${avgDays} days</div></div>
+  `;
+
+  let list = state.invoices;
+  if(invoiceFilter!=="all") list = list.filter(i=>i.status===invoiceFilter);
+  list = [...list].sort((a,b)=>new Date(b.issueDate)-new Date(a.issueDate));
+  document.getElementById("invoice-cards").innerHTML = list.map(i=>`
+    <div class="invoice-card">
+      <div class="flex between center"><b style="font-family:var(--font-display); font-size:16px;">${i.client}</b><span class="tag ${i.status}">${i.status}</span></div>
+      <div class="stat-value small mono">${fmt(i.amount)}</div>
+      <div class="stat-sub">Issued ${fmtDate(i.issueDate)} · Due ${fmtDate(i.dueDate)}</div>
+      <div class="invoice-perf"></div>
+      <div class="flex between center mt-8">
+        <select data-status-for="${i.id}" style="width:auto; font-size:12px; padding:5px 8px;">
+          ${["draft","pending","overdue","paid"].map(s=>`<option value="${s}" ${s===i.status?'selected':''}>${s}</option>`).join("")}
+        </select>
+        <button class="icon-btn" onclick="__deleteItem('invoices','${i.id}')">✕</button>
+      </div>
+    </div>
+  `).join("");
+  document.getElementById("invoice-empty").innerHTML = list.length? "" : `<div class="empty"><b>No invoices here</b>Try a different filter or add a new invoice.</div>`;
+  document.querySelectorAll("[data-status-for]").forEach(sel=>{
+    sel.addEventListener("change", ()=>{
+      const inv = state.invoices.find(x=>x.id===sel.dataset.statusFor);
+      inv.status = sel.value; save(); renderAll(); toast("Invoice updated");
+    });
+  });
+}
+
+/* ============================================================
+   RENDER: SUBSCRIPTIONS
+   ============================================================ */
+function renderSubs(){
+  const monthly = state.subscriptions.reduce((s,x)=> s + (x.cycle==="monthly"?x.amount:x.amount/12),0);
+  const yearly = monthly*12;
+  document.getElementById("sub-stats").innerHTML = `
+    <div class="card"><div class="card-title">Monthly total</div><div class="stat-value">${fmt(monthly)}</div></div>
+    <div class="card"><div class="card-title">Annualized</div><div class="stat-value">${fmt(yearly)}</div></div>
+    <div class="card"><div class="card-title">Active subscriptions</div><div class="stat-value">${state.subscriptions.length}</div></div>
+  `;
+  const sorted = [...state.subscriptions].sort((a,b)=>a.name.localeCompare(b.name));
+  document.getElementById("sub-table").innerHTML = sorted.map(s=>`
+    <tr>
+      <td>${s.name}</td>
+      <td class="text-dim">${s.category}</td>
+      <td><span class="tag">${s.cycle}</span></td>
+      <td class="mono">${fmtDate(s.nextDate)}</td>
+      <td class="num">${fmt2(s.amount)}</td>
+      <td><div class="row-actions"><button class="icon-btn" onclick="__deleteItem('subscriptions','${s.id}')">✕</button></div></td>
+    </tr>
+  `).join("");
+  document.getElementById("sub-empty").innerHTML = sorted.length ? "" : `<div class="empty"><b>No subscriptions tracked</b>Add tools and memberships to see their true monthly cost.</div>`;
+}
+
+/* ============================================================
+   RENDER: BUDGET
+   ============================================================ */
+function renderBudget(){
+  const cats = [
+    {k:"needs", label:"Needs (housing, bills)", color:"var(--brass-500)"},
+    {k:"taxes", label:"Tax set‑aside", color:"var(--rust-500)"},
+    {k:"savings", label:"Savings & goals", color:"var(--positive)"},
+    {k:"wants", label:"Wants / discretionary", color:"#7C6FB0"},
+  ];
+  const wrap = document.getElementById("budget-sliders");
+  wrap.innerHTML = cats.map(c=>`
+    <div class="slider-row">
+      <div class="top"><span>${c.label}</span><b id="bud-${c.k}-val">${state.budgetSplit[c.k]}%</b></div>
+      <input type="range" min="0" max="100" step="5" value="${state.budgetSplit[c.k]}" data-budget="${c.k}">
+    </div>
+  `).join("");
+  wrap.querySelectorAll("[data-budget]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      state.budgetSplit[inp.dataset.budget] = parseInt(inp.value);
+      document.getElementById(`bud-${inp.dataset.budget}-val`).textContent = inp.value+"%";
+      save(); renderBudgetCompare();
+    });
+  });
+  renderBudgetCompare();
+}
+function renderBudgetCompare(){
+  const cutoffMonth = thisMonthKey();
+  const incomeThisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0) || 1;
+  const cats = [
+    {k:"needs", label:"Needs", color:"var(--brass-500)"},
+    {k:"taxes", label:"Tax set‑aside", color:"var(--rust-500)"},
+    {k:"savings", label:"Savings & goals", color:"var(--positive)"},
+    {k:"wants", label:"Wants", color:"#7C6FB0"},
+  ];
+  // "actual" approximations from real data
+  const actualExpense = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth).reduce((s,e)=>s+e.amount,0);
+  const actual = {
+    needs: actualExpense * 0.75, // approximation
+    taxes: incomeThisMonth * (state.taxRate/100),
+    savings: state.goals.reduce((s,g)=>s+0,0) + actualExpense*0, // placeholder, refined below
+    wants: actualExpense * 0.25
+  };
+  const totalHTML = cats.map(c=>{
+    const targetAmt = incomeThisMonth * (state.budgetSplit[c.k]/100);
+    const actualAmt = actual[c.k];
+    const pct = targetAmt>0 ? Math.min(100, actualAmt/targetAmt*100) : 0;
+    return `<div class="card">
+      <div class="card-title">${c.label}</div>
+      <div class="flex between" style="font-size:12.5px;">
+        <span class="text-dim">Target: <b class="mono">${fmt(targetAmt)}</b></span>
+        <span class="text-dim">Actual: <b class="mono">${fmt(actualAmt)}</b></span>
+      </div>
+      <div class="progress ${actualAmt>targetAmt?'rust':''}"><div style="width:${pct}%; background:${c.color};"></div></div>
+    </div>`;
+  }).join("");
+  document.getElementById("budget-compare").innerHTML = totalHTML;
+}
+
+/* ============================================================
+   RENDER: TAX
+   ============================================================ */
+function renderTax(){
+  const rateEl = document.getElementById("tax-rate");
+  rateEl.value = state.taxRate;
+  document.getElementById("tax-rate-val").textContent = state.taxRate+"%";
+  document.getElementById("tax-jar-balance").textContent = fmt(state.taxReserved);
+  const cutoff90 = new Date(); cutoff90.setDate(cutoff90.getDate()-90);
+  const income90 = state.income.filter(i=>new Date(i.date)>=cutoff90).reduce((s,i)=>s+i.amount,0);
+  const quarterlyNeed = income90 * (state.taxRate/100);
+  document.getElementById("tax-quarterly").textContent = fmt(quarterlyNeed);
+  const jarPct = quarterlyNeed>0 ? Math.min(100, state.taxReserved/quarterlyNeed*100) : 100;
+  document.getElementById("tax-jar-bar").style.width = jarPct+"%";
+
+  const rows = [...state.income].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById("tax-table").innerHTML = rows.map(i=>`
+    <tr>
+      <td class="mono">${fmtDate(i.date)}</td>
+      <td>${i.client}</td>
+      <td class="num">${fmt(i.amount)}</td>
+      <td class="num text-dim">${fmt(i.amount*(state.taxRate/100))}</td>
+    </tr>
+  `).join("");
+  document.getElementById("tax-empty").innerHTML = rows.length ? "" : `<div class="empty">No income logged yet</div>`;
+}
+document.getElementById("tax-rate").addEventListener("input", (e)=>{
+  state.taxRate = parseInt(e.target.value);
+  document.getElementById("tax-rate-val").textContent = state.taxRate+"%";
+  save(); renderTax(); renderOverview();
+});
+
+/* ============================================================
+   RENDER: EMERGENCY FUND
+   ============================================================ */
+function renderEmergency(){
+  const baseline = monthlyExpenseBaseline();
+  document.getElementById("ef-months").value = state.efMonths;
+  document.getElementById("ef-months-val").textContent = state.efMonths;
+  document.getElementById("ef-monthly-baseline").textContent = fmt(baseline);
+  const target = baseline*state.efMonths;
+  document.getElementById("ef-target").textContent = fmt(target);
+  document.getElementById("ef-saved").value = state.efSaved;
+  const pct = target>0 ? Math.min(100, state.efSaved/target*100) : 0;
+  document.getElementById("ef-progress-pct").textContent = Math.round(pct)+"%";
+  document.getElementById("ef-progress-bar").style.width = pct+"%";
+  document.getElementById("ef-remaining").textContent = state.efSaved>=target ? "Target reached 🎉" : `${fmt(Math.max(0,target-state.efSaved))} remaining to reach your target`;
+}
+document.getElementById("ef-months").addEventListener("input", (e)=>{ state.efMonths=parseInt(e.target.value); save(); renderEmergency(); renderOverview(); });
+document.getElementById("ef-saved").addEventListener("input", (e)=>{ state.efSaved=parseFloat(e.target.value)||0; save(); renderEmergency(); renderOverview(); });
+
+/* ============================================================
+   RENDER: GOALS
+   ============================================================ */
+function renderGoals(){
+  document.getElementById("goal-cards").innerHTML = state.goals.map(g=>{
+    const pct = Math.min(100, g.saved/g.target*100);
+    const daysLeft = daysBetween(todayISO(), g.targetDate);
+    return `<div class="card">
+      <div class="card-title">${g.name}<button class="icon-btn" onclick="__deleteItem('goals','${g.id}')">✕</button></div>
+      <div class="stat-value small">${fmt(g.saved)} <span class="text-dimmer" style="font-size:14px;font-weight:400;">/ ${fmt(g.target)}</span></div>
+      <div class="progress"><div style="width:${pct}%"></div></div>
+      <div class="stat-sub mt-8">${Math.round(pct)}% funded · ${daysLeft>=0? daysLeft+" days to target" : "target date passed"}</div>
+      <div class="mt-16"><input type="number" placeholder="Add amount" data-goal-add="${g.id}" style="width:100%;"></div>
+    </div>`;
+  }).join("");
+  document.getElementById("goal-empty").innerHTML = state.goals.length ? "" : `<div class="empty"><b>No goals yet</b>Create one to start tracking progress.</div>`;
+  document.querySelectorAll("[data-goal-add]").forEach(inp=>{
+    inp.addEventListener("keydown", (e)=>{
+      if(e.key==="Enter"){
+        const g = state.goals.find(x=>x.id===inp.dataset.goalAdd);
+        g.saved += parseFloat(inp.value)||0;
+        save(); renderAll(); toast("Goal updated");
+      }
+    });
+  });
+}
+
+/* ============================================================
+   RENDER: WHAT-IF
+   ============================================================ */
+function renderWhatIf(){
+  const els = {
+    lose: document.getElementById("wi-lose"),
+    raise: document.getElementById("wi-raise"),
+    cut: document.getElementById("wi-cut"),
+    shock: document.getElementById("wi-shock"),
+  };
+  function compute(){
+    const cutoffMonth = thisMonthKey();
+    const incomeThisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0) || state.income.reduce((s,i)=>s+i.amount,0)/Math.max(1,new Set(state.income.map(i=>monthKey(i.date))).size);
+    const expenseThisMonth = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth).reduce((s,e)=>s+e.amount,0) || monthlyExpenseBaseline();
+    const baseNet = incomeThisMonth - expenseThisMonth;
+
+    let scenarioIncome = incomeThisMonth;
+    if(els.lose.value==="1"){
+      const clientTotals = {};
+      state.income.forEach(i=> clientTotals[i.client] = (clientTotals[i.client]||0)+i.amount);
+      const biggest = Object.entries(clientTotals).sort((a,b)=>b[1]-a[1])[0];
+      if(biggest){
+        const share = biggest[1]/state.income.reduce((s,i)=>s+i.amount,1);
+        scenarioIncome = scenarioIncome*(1-share);
+      }
+    }
+    scenarioIncome = scenarioIncome * (1 + parseInt(els.raise.value)/100);
+    let scenarioExpense = expenseThisMonth * (1 - parseInt(els.cut.value)/100*0.5); // cut applies to ~50% discretionary portion
+    const shock = parseInt(els.shock.value);
+    const scenarioNet = scenarioIncome - scenarioExpense - shock;
+
+    document.getElementById("wi-lose-val").textContent = els.lose.value==="1"?"Yes":"No";
+    document.getElementById("wi-raise-val").textContent = els.raise.value+"%";
+    document.getElementById("wi-cut-val").textContent = els.cut.value+"%";
+    document.getElementById("wi-shock-val").textContent = fmt(shock);
+    document.getElementById("wi-base-net").textContent = fmt(baseNet);
+    document.getElementById("wi-scenario-net").textContent = fmt(scenarioNet);
+    document.getElementById("wi-scenario-net").style.color = scenarioNet>=0 ? "var(--positive-bright)":"var(--negative-bright)";
+
+    // 6-month projection chart comparing base vs scenario
+    const entries = computeLedgerEntries();
+    const startBal = entries.length ? entries[entries.length-1].balance : state.startBalance;
+    const pointsBase=[], pointsScenario=[];
+    let b1=startBal, b2=startBal;
+    for(let m=0;m<=6;m++){
+      pointsBase.push({x:0,y:b1,label:"M"+m});
+      pointsScenario.push({x:0,y:b2,label:"M"+m});
+      b1+=baseNet; b2+=scenarioNet;
+    }
+    const w=400,h=200,pad={t:10,r:10,b:20,l:40};
+    const allY = pointsBase.concat(pointsScenario).map(p=>p.y);
+    const minY=Math.min(...allY,0), maxY=Math.max(...allY,1);
+    const x=(i)=>pad.l+(i/6)*(w-pad.l-pad.r);
+    const y=(v)=>h-pad.b-((v-minY)/((maxY-minY)||1))*(h-pad.t-pad.b);
+    const path=(pts)=>pts.map((p,i)=>(i===0?"M":"L")+x(i).toFixed(1)+","+y(p.y).toFixed(1)).join(" ");
+    const svg = document.getElementById("wi-chart");
+    svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
+    svg.innerHTML = `
+      <line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke-dasharray="3,3"></line>
+      <path d="${path(pointsBase)}" fill="none" stroke="var(--text-dimmer)" stroke-width="2" stroke-dasharray="4,3"></path>
+      <path d="${path(pointsScenario)}" fill="none" stroke="${scenarioNet>=0?'var(--positive)':'var(--negative)'}" stroke-width="2.4"></path>
+      <text class="axis-label" x="${pad.l}" y="12">6‑month balance projection</text>
+    `;
+    const shortfallMonth = pointsScenario.findIndex(p=>p.y<0);
+    document.getElementById("wi-runway-note").textContent = shortfallMonth>=0
+      ? `In this scenario, balance goes negative around month ${shortfallMonth}. Dashed line = current baseline for comparison.`
+      : `In this scenario, balance stays positive through the 6‑month window. Dashed line = current baseline for comparison.`;
+  }
+  Object.values(els).forEach(el=> el.addEventListener("input", compute));
+  compute();
+}
+
+/* ============================================================
+   RENDER: REPORTS
+   ============================================================ */
+function renderReport(){
+  const score = computeHealthScore();
+  const cutoffMonth = thisMonthKey();
+  const incomeThisMonth = state.income.filter(i=>monthKey(i.date)===cutoffMonth).reduce((s,i)=>s+i.amount,0);
+  const expenseThisMonth = state.expenses.filter(e=>monthKey(e.date)===cutoffMonth).reduce((s,e)=>s+e.amount,0);
+  const overdue = state.invoices.filter(i=>i.status==="overdue");
+  const baseline = monthlyExpenseBaseline();
+  const efTarget = baseline*state.efMonths;
+  document.getElementById("report-body").innerHTML = `
+    <h2 class="section-title" style="margin-top:0;">Snapshot — ${new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</h2>
+    <div class="grid grid-3">
+      <div><div class="stat-sub">Financial health score</div><div class="stat-value">${score.total} / 100</div></div>
+      <div><div class="stat-sub">Income this month</div><div class="stat-value">${fmt(incomeThisMonth)}</div></div>
+      <div><div class="stat-sub">Expenses this month</div><div class="stat-value">${fmt(expenseThisMonth)}</div></div>
+    </div>
+    <h2 class="section-title">Reserves &amp; goals</h2>
+    <div class="grid grid-3">
+      <div><div class="stat-sub">Tax jar</div><div class="stat-value small">${fmt(state.taxReserved)}</div></div>
+      <div><div class="stat-sub">Emergency fund</div><div class="stat-value small">${fmt(state.efSaved)} / ${fmt(efTarget)}</div></div>
+      <div><div class="stat-sub">Overdue invoices</div><div class="stat-value small">${overdue.length} (${fmt(overdue.reduce((s,i)=>s+i.amount,0))})</div></div>
+    </div>
+    <h2 class="section-title">Savings goals</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Goal</th><th>Target</th><th>Saved</th><th>Progress</th></tr></thead>
+      <tbody>${state.goals.map(g=>`<tr><td>${g.name}</td><td class="num">${fmt(g.target)}</td><td class="num">${fmt(g.saved)}</td><td class="num">${Math.round(g.saved/g.target*100)}%</td></tr>`).join("")}</tbody>
+    </table></div>
+    <h2 class="section-title">Score breakdown</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Factor</th><th>Points</th></tr></thead>
+      <tbody>${score.factors.map(f=>`<tr><td>${f.name}</td><td class="num">${f.pts} / ${f.max}</td></tr>`).join("")}</tbody>
+    </table></div>
+  `;
+}
+
+/* ============================================================
+   RENDER: LEARN
+   ============================================================ */
+const CHECKLIST_ITEMS = [
+  {k:"sep-account", label:"Open a separate business checking account"},
+  {k:"quarterly-taxes", label:"Set a calendar reminder for quarterly estimated tax payments"},
+  {k:"rate-review", label:"Review your rates against market and time-to-value once a year"},
+  {k:"contract-review", label:"Use a contract with clear payment terms on every project"},
+  {k:"invoice-terms", label:"Add a late-payment clause to your invoice terms"},
+  {k:"retirement", label:"Open a self-employed retirement account (e.g. SEP‑IRA / Solo 401k)"},
+];
+function renderLearn(){
+  document.getElementById("checklist").innerHTML = CHECKLIST_ITEMS.map(c=>`
+    <label class="check-item ${state.checklist[c.k]?'done':''}">
+      <input type="checkbox" data-check="${c.k}" ${state.checklist[c.k]?'checked':''}>
+      <span>${c.label}</span>
+    </label>
+  `).join("");
+  document.querySelectorAll("[data-check]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      state.checklist[cb.dataset.check] = cb.checked; save(); renderLearn();
+    });
+  });
+
+  const tips = [
+    "Pay yourself a consistent 'salary' from a business account, even when client income is lumpy — smooth the spikes yourself.",
+    "Reserve tax money the moment you're paid, not at quarter-end, so the jar never looks bigger than it is.",
+    "Price projects by value delivered, not just hours — retainers make this easier to negotiate over time.",
+    "Keep 1–2 months of essential expenses liquid before investing surplus cash.",
+    "Review overdue invoices weekly — a five-minute follow-up habit prevents most collection headaches.",
+  ];
+  document.getElementById("tips-list").innerHTML = tips.map(t=>`<div class="insight"><div class="mark">✺</div><div class="body"><p>${t}</p></div></div>`).join("");
+
+  const prompts = [
+    "Given my last 3 months of income and expenses, what's a realistic monthly 'baseline salary' I could pay myself?",
+    "How much should I be setting aside quarterly for self-employment tax given my income trend?",
+    "Which of my clients represents the most concentration risk, and how could I diversify?",
+    "What would a 3-month income drop to zero for my biggest client do to my runway, and how do I prepare?",
+    "Is a SEP‑IRA or Solo 401(k) better for my situation this year?",
+  ];
+  document.getElementById("prompt-list").innerHTML = prompts.map(p=>`<div class="insight"><div class="mark">?</div><div class="body"><p>${p}</p></div></div>`).join("");
+
+  const resources = [
+    {t:"IRS Self-Employed Tax Center", d:"Official guidance on estimated taxes and deductions."},
+    {t:"A local fee-only financial planner", d:"For a tailored plan beyond general guidance."},
+    {t:"Your accounting software's quarterly report", d:"Cross-check the numbers in this dashboard."},
+  ];
+  document.getElementById("resource-list").innerHTML = resources.map(r=>`<div class="card"><div class="card-title">Resource</div><b style="font-family:var(--font-display); font-size:15px;">${r.t}</b><p class="stat-sub mt-8">${r.d}</p></div>`).join("");
+}
+
+/* ============================================================
+   BUDGET PRESETS
+   ============================================================ */
+document.querySelectorAll("[data-preset]").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    if(b.dataset.preset==="503020") state.budgetSplit = {needs:50, wants:30, savings:20, taxes:0};
+    else state.budgetSplit = {needs:40, taxes:25, savings:20, wants:15};
+    save(); renderBudget();
+  });
+});
+
+/* ============================================================
+   MASTER RENDER
+   ============================================================ */
+function renderAll(){
+  renderOverview();
+  renderIncome();
+  renderExpenses();
+  renderForecast();
+  renderInvoices();
+  renderSubs();
+  renderBudget();
+  renderTax();
+  renderEmergency();
+  renderGoals();
+  renderLearn();
+}
+
+applyTheme();
+renderAll();
+renderWhatIf();
+
+})();
+</script>
+</body>
+</html>
