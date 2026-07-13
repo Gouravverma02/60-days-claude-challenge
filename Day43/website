@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workflow Architect — Podcast → Reels → Instagram Pipeline</title>
+<style>
+/* ============================================================
+   AI WORKFLOW ARCHITECT — design tokens
+   Grounded in a non-linear editor's timeline: tracks are color-coded
+   by type (video / audio / text&data), the way a real NLE looks.
+   ============================================================ */
+:root{
+  --ink-950:#101019;
+  --ink-900:#15151F;
+  --ink-850:#1A1B27;
+  --ink-800:#20212F;
+  --ink-700:#2B2D3E;
+  --line: rgba(235,232,255,0.09);
+  --text:#EFEDF7;
+  --text-dim:#A6A4C2;
+  --text-dimmer:#6E6C8C;
+
+  /* track colors — literal editor-track vocabulary */
+  --track-video:#FF3D78;      /* video track: pink/magenta */
+  --track-video-b:#FF80A8;
+  --track-audio:#E8A33D;      /* audio track: amber/gold */
+  --track-audio-b:#F3C574;
+  --track-data:#38C7E8;       /* text/caption/data track: cyan */
+  --track-data-b:#7FDCEF;
+  --track-fx:#9FE84A;         /* positive / complete: lime */
+  --track-fx-b:#C3F583;
+  --warn:#FF6B5E;
+  --warn-b:#FF9C92;
+
+  --bg:var(--ink-950);
+  --surface:var(--ink-900);
+  --surface-raised:var(--ink-850);
+  --surface-hover:var(--ink-800);
+  --border:var(--line);
+  --shadow: 0 10px 32px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.28);
+  --radius-sm:7px;
+  --radius:11px;
+  --radius-lg:18px;
+  --transition:180ms cubic-bezier(.4,0,.2,1);
+
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+[data-theme="light"]{
+  --bg:#F1EFF6;
+  --surface:#FAF9FC;
+  --surface-raised:#FFFFFF;
+  --surface-hover:#EBE8F3;
+  --border: rgba(20,15,40,0.10);
+  --text:#181425;
+  --text-dim:#585470;
+  --text-dimmer:#8B87A3;
+  --track-video:#E01F62; --track-video-b:#B0184D;
+  --track-audio:#B8791E; --track-audio-b:#8C5C14;
+  --track-data:#0E96B8; --track-data-b:#0B7591;
+  --track-fx:#5FA323; --track-fx-b:#487D1A;
+  --warn:#D6483B; --warn-b:#AC3327;
+  --shadow: 0 10px 28px rgba(30,20,60,0.10);
+  --shadow-sm: 0 2px 10px rgba(30,20,60,0.06);
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-body);
+  min-height:100vh; line-height:1.55; transition:background var(--transition), color var(--transition);
+}
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+::selection{ background:var(--track-video); color:#fff; }
+button{ font-family:inherit; cursor:pointer; }
+input, select, textarea{
+  font-family:var(--font-body); background:var(--surface-hover); border:1px solid var(--border);
+  color:var(--text); border-radius:var(--radius-sm); padding:9px 11px; font-size:13.5px; width:100%;
+  transition:border-color var(--transition), box-shadow var(--transition);
+}
+input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--track-data); box-shadow:0 0 0 3px rgba(56,199,232,0.16); }
+:focus-visible{ outline:2px solid var(--track-data); outline-offset:2px; }
+label{ font-size:11.5px; color:var(--text-dim); display:block; margin-bottom:5px; letter-spacing:.02em; }
+
+/* ============================= LAYOUT ============================= */
+.app{ display:grid; grid-template-columns:264px 1fr; min-height:100vh; }
+@media (max-width:920px){ .app{ grid-template-columns:1fr; } }
+
+/* ---- Sidebar: the timeline rail (signature nav) ---- */
+.rail{
+  background:var(--surface); border-right:1px solid var(--border);
+  padding:20px 14px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  display:flex; flex-direction:column;
+}
+@media (max-width:920px){ .rail{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--border);} }
+.brand{ display:flex; align-items:center; gap:10px; padding:2px 6px 18px; }
+.brand-mark{
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  background:linear-gradient(135deg, var(--track-video), var(--track-audio) 55%, var(--track-data));
+  display:flex; align-items:center; justify-content:center; color:#0B0A12; font-weight:800; font-size:15px;
+}
+.brand-word{ font-size:16.5px; font-weight:800; letter-spacing:-.01em; }
+.brand-sub{ font-size:10px; color:var(--text-dimmer); text-transform:uppercase; letter-spacing:.13em; margin-top:1px;}
+
+.rail-group-label{ font-size:10px; text-transform:uppercase; letter-spacing:.13em; color:var(--text-dimmer); padding:15px 8px 6px; }
+
+/* timeline track nav */
+.tl{ position:relative; padding-left:22px; }
+.tl::before{ content:""; position:absolute; left:9px; top:4px; bottom:4px; width:2px; background:var(--border); }
+.tl-item{ position:relative; margin-bottom:2px; }
+.tl-item::before{
+  content:""; position:absolute; left:-22px; top:50%; transform:translateY(-50%);
+  width:9px; height:9px; border-radius:50%; background:var(--ink-700); border:2px solid var(--border);
+  transition:background var(--transition), border-color var(--transition);
+}
+.tl-item.active::before{ background:var(--track-video); border-color:var(--track-video); }
+.tl-item.done::before{ background:var(--track-fx); border-color:var(--track-fx); }
+.tl-btn{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:none;
+  color:var(--text-dim); padding:7px 9px; border-radius:var(--radius-sm); font-size:13px;
+  transition:background var(--transition), color var(--transition);
+}
+.tl-btn:hover{ background:var(--surface-hover); color:var(--text); }
+.tl-btn.active{ background:var(--surface-hover); color:var(--text); font-weight:700; }
+.tl-tc{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-dimmer); flex-shrink:0; width:42px;}
+.tl-btn.active .tl-tc{ color:var(--track-video); }
+
+.nav{ list-style:none; display:flex; flex-direction:column; gap:1px; }
+.nav-btn{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:transparent; border:none;
+  color:var(--text-dim); padding:8px 10px; border-radius:var(--radius-sm); font-size:13px;
+  transition:background var(--transition), color var(--transition);
+}
+.nav-btn:hover{ background:var(--surface-hover); color:var(--text); }
+.nav-btn.active{ background:var(--surface-hover); color:var(--track-data-b); font-weight:700; }
+.nav-btn .ico{ width:15px; text-align:center; font-family:var(--font-mono); font-size:11.5px; opacity:.85; }
+
+.rail-foot{ margin-top:auto; padding-top:14px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+.theme-toggle{ display:flex; justify-content:space-between; background:var(--surface-hover); border:1px solid var(--border); border-radius:999px; padding:4px; }
+.theme-toggle button{ flex:1; border:none; background:transparent; padding:6px 8px; border-radius:999px; color:var(--text-dim); font-size:11.5px; }
+.theme-toggle button.active{ background:var(--track-video); color:#fff; font-weight:700;}
+.rail-note{ font-size:10px; color:var(--text-dimmer); padding:2px 6px; line-height:1.5; }
+.mini-progress{ padding:8px 8px 2px; }
+.mini-progress .lbl{ display:flex; justify-content:space-between; font-size:10.5px; color:var(--text-dimmer); margin-bottom:5px;}
+.bar{ height:6px; border-radius:99px; background:var(--surface-hover); border:1px solid var(--border); overflow:hidden;}
+.bar > div{ height:100%; background:linear-gradient(90deg, var(--track-video), var(--track-data)); border-radius:99px; transition:width 600ms cubic-bezier(.16,1,.3,1); }
+
+/* ---- Main ---- */
+.main{ padding:28px 34px 64px; max-width:1180px; margin:0 auto; width:100%; }
+@media (max-width:700px){ .main{ padding:18px 16px 50px; } }
+.page{ display:none; animation:fadeUp 420ms cubic-bezier(.16,1,.3,1); }
+.page.active{ display:block; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+.slate{ display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+.eyebrow{ font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--track-data-b); font-weight:800; margin-bottom:7px; }
+.h1{ font-size:29px; font-weight:800; letter-spacing:-.015em; }
+.desc{ color:var(--text-dim); font-size:13.5px; margin-top:6px; max-width:60ch; }
+.actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--surface-raised); color:var(--text); padding:9px 14px; font-size:13px; font-weight:600;
+  transition:transform var(--transition), background var(--transition);
+}
+.btn:hover{ background:var(--surface-hover); }
+.btn:active{ transform:scale(.97); }
+.btn-primary{ background:var(--track-video); border-color:var(--track-video); color:#fff; }
+.btn-primary:hover{ background:var(--track-video-b); }
+.btn-sm{ padding:6px 10px; font-size:12px; }
+
+.grid{ display:grid; gap:16px; }
+.g4{ grid-template-columns:repeat(4,1fr); } .g3{ grid-template-columns:repeat(3,1fr); }
+.g2{ grid-template-columns:repeat(2,1fr); }
+@media (max-width:900px){ .g4{grid-template-columns:repeat(2,1fr);} .g3{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:560px){ .g4,.g3,.g2{grid-template-columns:1fr;} }
+
+.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; box-shadow:var(--shadow-sm); }
+.card-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--text-dimmer); margin-bottom:10px; font-weight:700;}
+.section-title{ font-size:19px; font-weight:800; margin:32px 0 14px; padding-top:6px; border-top:1px solid var(--border); letter-spacing:-.01em;}
+.section-title:first-of-type{ margin-top:0; border-top:none; padding-top:0; }
+.stat-value{ font-family:var(--font-mono); font-size:25px; font-weight:700; }
+.stat-value.sm{ font-size:19px; }
+.stat-sub{ font-size:11.5px; color:var(--text-dimmer); margin-top:5px; }
+
+/* ---- Clip-slate stage header ---- */
+.clipslate{
+  display:flex; align-items:center; gap:16px; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:22px; flex-wrap:wrap; box-shadow:var(--shadow-sm);
+  position:relative; overflow:hidden;
+}
+.clipslate::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--stage-color, var(--track-video)); }
+.clipslate .tc-num{ font-family:var(--font-mono); font-size:34px; font-weight:800; color:var(--stage-color, var(--track-video)); line-height:1; padding-left:8px;}
+.clipslate .meta{ flex:1; min-width:220px; }
+.phase-tag{
+  display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.1em; font-weight:800;
+  padding:3px 9px; border-radius:99px; background:var(--surface-hover); color:var(--stage-color, var(--track-video)); border:1px solid var(--border); margin-bottom:6px;
+}
+.clipslate h2{ font-size:22px; font-weight:800; letter-spacing:-.01em; }
+.clipslate .time{ font-family:var(--font-mono); font-size:12px; color:var(--text-dim); margin-top:4px;}
+.bookmark-btn{ background:transparent; border:1px solid var(--border); border-radius:var(--radius-sm); width:36px; height:36px; font-size:16px; color:var(--text-dimmer); flex-shrink:0;}
+.bookmark-btn.on{ color:var(--track-audio); border-color:var(--track-audio); }
+
+/* ---- lists ---- */
+ul.plain{ list-style:none; display:flex; flex-direction:column; gap:9px; }
+ul.plain li{ font-size:13.5px; padding-left:18px; position:relative; color:var(--text-dim); }
+ul.plain li::before{ content:"—"; position:absolute; left:0; color:var(--text-dimmer); }
+ul.plain.mistakes li::before{ content:"✕"; color:var(--warn); font-size:11px; top:2px;}
+ul.plain.good li::before{ content:"✓"; color:var(--track-fx); font-size:11px; top:2px;}
+
+.check-item{ display:flex; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-raised); font-size:13px; cursor:pointer; margin-bottom:7px;}
+.check-item input{ width:auto; accent-color:var(--track-video); }
+.check-item.done span{ text-decoration:line-through; color:var(--text-dimmer); }
+
+/* ---- tool cards ---- */
+.tool-card{ background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius); padding:14px 15px; position:relative; }
+.tool-card .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.tool-card b{ font-size:14px; }
+.tool-card .rank{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; font-weight:800; padding:2px 7px; border-radius:99px; }
+.rank.best{ background:rgba(159,232,74,0.14); color:var(--track-fx); border:1px solid var(--track-fx);}
+.rank.alt{ background:transparent; color:var(--text-dimmer); border:1px solid var(--border);}
+.tool-card p{ font-size:12px; color:var(--text-dim); margin-top:7px; }
+.tool-card .star{ background:transparent; border:none; color:var(--text-dimmer); font-size:14px; flex-shrink:0;}
+.tool-card .star.on{ color:var(--track-audio); }
+
+/* ---- prompt cards (terminal style) ---- */
+.prompt-card{
+  background:var(--ink-950); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px;
+  margin-bottom:10px; position:relative;
+}
+[data-theme="light"] .prompt-card{ background:#15121F; }
+.prompt-card .lbl{ display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;}
+.prompt-card .lbl b{ font-size:11px; color:var(--track-data-b); text-transform:uppercase; letter-spacing:.08em; }
+.prompt-card .btns{ display:flex; gap:6px; }
+.prompt-card pre{ font-family:var(--font-mono); font-size:12.3px; color:#E4E1F5; white-space:pre-wrap; word-break:break-word; line-height:1.6; }
+.icon-btn{ background:transparent; border:1px solid var(--border); border-radius:6px; width:25px; height:25px; display:inline-flex; align-items:center; justify-content:center; color:var(--text-dimmer); font-size:12px; }
+.icon-btn:hover{ color:var(--text); }
+.icon-btn.on{ color:var(--track-audio); border-color:var(--track-audio);}
+
+/* ---- two-col compare block ---- */
+.split{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:700px){ .split{ grid-template-columns:1fr; } }
+
+/* ---- diagram (overview pipeline) ---- */
+.pipeline{ display:flex; gap:0; overflow-x:auto; padding:6px 2px 14px; }
+.pipe-node{ flex:0 0 auto; width:150px; text-align:left; position:relative; padding-right:26px; }
+.pipe-node .dot{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:800; font-size:13px; color:#0B0A12; margin-bottom:9px;}
+.pipe-node .arrow{ position:absolute; right:2px; top:15px; color:var(--text-dimmer); font-size:14px;}
+.pipe-node:last-child .arrow{ display:none; }
+.pipe-node b{ display:block; font-size:12.5px; margin-bottom:2px;}
+.pipe-node span{ font-size:10.5px; color:var(--text-dimmer); }
+.pipe-node button{ background:transparent; border:none; text-align:left; padding:0; width:100%; }
+
+/* ---- decision tree ---- */
+.dtree{ display:flex; flex-direction:column; gap:10px; }
+.dtree-q{ font-size:13.5px; font-weight:700; margin-bottom:8px; }
+.dtree-opts{ display:flex; gap:10px; flex-wrap:wrap; }
+.dtree-opt{ background:var(--surface-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 14px; font-size:13px; }
+.dtree-opt:hover{ border-color:var(--track-data); }
+.dtree-path{ font-size:11.5px; color:var(--text-dimmer); margin-bottom:10px; }
+.dtree-result{ background:var(--surface-raised); border:1px solid var(--track-fx); border-radius:var(--radius); padding:14px 16px; }
+.dtree-result b{ color:var(--track-fx); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+
+/* ---- comparison table ---- */
+.table-wrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-size:13px; min-width:600px; }
+th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-dimmer); padding:9px 10px; border-bottom:1px solid var(--border); }
+td{ padding:10px; border-bottom:1px solid var(--border); vertical-align:top; }
+tr:last-child td{ border-bottom:none; }
+.dot-tag{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+
+/* ---- notes ---- */
+textarea.notes{ min-height:90px; resize:vertical; }
+
+/* ---- empty ---- */
+.empty{ text-align:center; padding:34px 16px; color:var(--text-dimmer); font-size:13px; }
+.empty b{ display:block; color:var(--text-dim); font-size:15px; margin-bottom:4px; }
+
+/* ---- pill tabs ---- */
+.pill-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.pill{ padding:7px 13px; border-radius:99px; border:1px solid var(--border); font-size:12.5px; color:var(--text-dim); background:var(--surface-raised); }
+.pill.active{ background:var(--track-video); color:#fff; border-color:var(--track-video); font-weight:700; }
+
+/* ---- toast ---- */
+.toast{
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--ink-950); color:#fff; border:1px solid var(--track-video);
+  padding:11px 20px; border-radius:99px; font-size:13px; box-shadow:var(--shadow);
+  opacity:0; pointer-events:none; transition:all 320ms cubic-bezier(.16,1,.3,1); z-index:999;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---- score ring reuse ---- */
+.ring-wrap{ display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+.ring{ position:relative; width:120px; height:120px; flex-shrink:0; }
+.ring svg{ transform:rotate(-90deg); }
+.ring .track{ fill:none; stroke:var(--surface-hover); stroke-width:10; }
+.ring .fill{ fill:none; stroke:var(--track-video); stroke-width:10; stroke-linecap:round; transition:stroke-dashoffset 800ms cubic-bezier(.16,1,.3,1); }
+.ring-num{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring-num b{ font-size:28px; }
+.ring-num span{ font-size:9.5px; color:var(--text-dimmer); text-transform:uppercase; letter-spacing:.08em; }
+
+/* ---- print ---- */
+@media print{
+  .rail, .actions, .no-print, .toast{ display:none !important; }
+  .app{ display:block; }
+  .main{ max-width:100%; padding:0; }
+  body{ background:#fff; color:#111; }
+  .card, .clipslate, .tool-card, .prompt-card{ box-shadow:none; border:1px solid #ccc; break-inside:avoid; background:#fff !important; color:#111 !important;}
+  .prompt-card pre{ color:#111 !important; }
+  .page{ display:none !important; }
+  .page.print-active{ display:block !important; }
+}
+
+.flex{ display:flex; } .between{ justify-content:space-between; } .center{ align-items:center; }
+.gap-8{gap:8px;} .gap-12{gap:12px;} .wrap{flex-wrap:wrap;}
+.mt-8{margin-top:8px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;}
+.mono{ font-family:var(--font-mono); }
+.text-dim{ color:var(--text-dim); } .text-dimmer{ color:var(--text-dimmer); }
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+
+  <!-- ============================= RAIL / SIDEBAR ============================= -->
+  <nav class="rail no-print" aria-label="Workflow navigation">
+    <div class="brand">
+      <div class="brand-mark">▶</div>
+      <div><div class="brand-word">Workflow Architect</div><div class="brand-sub">Podcast → Reels → IG</div></div>
+    </div>
+
+    <div class="mini-progress">
+      <div class="lbl"><span>Pipeline progress</span><span id="mini-progress-pct">0%</span></div>
+      <div class="bar"><div id="mini-progress-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="rail-group-label">Start here</div>
+    <ul class="nav"><li><button class="nav-btn active" data-page="overview"><span class="ico">◆</span>Overview</button></li></ul>
+
+    <div class="rail-group-label">The pipeline</div>
+    <div class="tl" id="stage-rail"></div>
+
+    <div class="rail-group-label">Toolkit</div>
+    <ul class="nav">
+      <li><button class="nav-btn" data-page="compare"><span class="ico">▦</span>Tool comparison</button></li>
+      <li><button class="nav-btn" data-page="decisions"><span class="ico">⑂</span>Decision trees</button></li>
+      <li><button class="nav-btn" data-page="bookmarks"><span class="ico">★</span>Bookmarks</button></li>
+    </ul>
+
+    <div class="rail-group-label">Wrap-up</div>
+    <ul class="nav">
+      <li><button class="nav-btn" data-page="summary"><span class="ico">▤</span>Summary &amp; AI stack</button></li>
+      <li><button class="nav-btn" data-page="resources"><span class="ico">✺</span>Resources &amp; prompts</button></li>
+    </ul>
+
+    <div class="rail-foot">
+      <div class="theme-toggle">
+        <button data-theme-btn="dark" class="active">Dark</button>
+        <button data-theme-btn="light">Light</button>
+      </div>
+      <div class="rail-note">Saved only in this browser (localStorage). Nothing is uploaded anywhere.</div>
+    </div>
+  </nav>
+
+  <!-- ============================= MAIN ============================= -->
+  <main class="main">
+
+    <!-- ===================== OVERVIEW ===================== -->
+    <section class="page active" id="page-overview">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Overview</div>
+          <h1 class="h1">Your podcast‑to‑Instagram pipeline</h1>
+          <p class="desc">One episode, start to finish: from client brief to a published, engaged‑with, reported‑on batch of Reels. Built for a solo editor + social media manager running 1–3 clients.</p>
+        </div>
+        <div class="actions"><button class="btn btn-primary" id="btn-print-all">🖨 Print full guide</button></div>
+      </div>
+
+      <div class="grid g4" id="overview-stats"></div>
+
+      <h2 class="section-title">The pipeline</h2>
+      <div class="card">
+        <div class="pipeline" id="pipeline-diagram"></div>
+      </div>
+
+      <h2 class="section-title">Where you left off</h2>
+      <div class="ring-wrap card">
+        <div class="ring">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle class="track" cx="60" cy="60" r="52"></circle>
+            <circle class="fill" id="ring-fill" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+          </svg>
+          <div class="ring-num"><b id="ring-num">0%</b><span>complete</span></div>
+        </div>
+        <div style="flex:1; min-width:220px;">
+          <p class="text-dim" style="font-size:13px;">Check off tasks inside each stage to track progress here. Growing into long‑form YouTube or other formats later? This same 8‑stage shape (brief → produce → caption → schedule → post → analyze → revise) extends directly — see <b>Future Automation Opportunities</b> in Resources.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== STAGE PAGES (rendered) ===================== -->
+    <div id="stage-pages"></div>
+
+    <!-- ===================== TOOL COMPARISON ===================== -->
+    <section class="page" id="page-compare">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Toolkit</div>
+          <h1 class="h1">Tool comparison</h1>
+          <p class="desc">Every tool recommended across the pipeline, in one table — what stage it belongs to, what it's best for, and its rough cost tier.</p>
+        </div>
+      </div>
+      <div class="pill-tabs" id="compare-filters"></div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Tool</th><th>Track</th><th>Stage</th><th>Best for</th><th>Tier</th></tr></thead>
+        <tbody id="compare-table"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ===================== DECISION TREES ===================== -->
+    <section class="page" id="page-decisions">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Toolkit</div>
+          <h1 class="h1">Decision trees</h1>
+          <p class="desc">Quick click‑through answers to the two questions that come up most: which editing tool, and when to post.</p>
+        </div>
+      </div>
+      <div class="grid g2" id="decision-trees"></div>
+    </section>
+
+    <!-- ===================== BOOKMARKS ===================== -->
+    <section class="page" id="page-bookmarks">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Toolkit</div>
+          <h1 class="h1">Bookmarks</h1>
+          <p class="desc">Prompts and tools you've starred across the pipeline, collected here for quick reuse.</p>
+        </div>
+      </div>
+      <h2 class="section-title" style="margin-top:0;">Bookmarked prompts</h2>
+      <div id="bookmark-prompts"></div>
+      <h2 class="section-title">Bookmarked tools</h2>
+      <div class="grid g3" id="bookmark-tools"></div>
+    </section>
+
+    <!-- ===================== SUMMARY & AI STACK ===================== -->
+    <section class="page" id="page-summary">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Wrap-up</div>
+          <h1 class="h1">Workflow summary &amp; recommended AI stack</h1>
+          <p class="desc">The whole pipeline distilled, plus the core toolset worth paying for first.</p>
+        </div>
+      </div>
+      <div class="card" id="summary-body"></div>
+      <h2 class="section-title">Recommended AI stack</h2>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Tool</th><th>Role in pipeline</th><th>Tier</th><th>Why it's worth it</th></tr></thead>
+        <tbody id="stack-table"></tbody>
+      </table></div></div>
+    </section>
+
+    <!-- ===================== RESOURCES ===================== -->
+    <section class="page" id="page-resources">
+      <div class="slate">
+        <div>
+          <div class="eyebrow">Wrap-up</div>
+          <h1 class="h1">Resources, prompts &amp; what's next</h1>
+          <p class="desc">Where to keep learning, who to learn alongside, and how this pipeline can grow with you into long‑form and YouTube.</p>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-title">Learning resources</div>
+          <ul class="plain" id="learning-list"></ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Communities</div>
+          <ul class="plain" id="community-list"></ul>
+        </div>
+      </div>
+      <h2 class="section-title">Search keywords worth exploring</h2>
+      <div class="card" id="keyword-cloud"></div>
+      <h2 class="section-title">Additional AI prompts</h2>
+      <div id="extra-prompts"></div>
+      <h2 class="section-title">Future automation opportunities</h2>
+      <div id="future-list"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast no-print" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   CONTENT DATA
+   ============================================================ */
+const STAGES = [
+  {
+    id:"intake", num:"00", phase:"Plan", track:"data", time:"30–60 min per new client · 10–15 min per episode brief",
+    title:"Client Intake & Content Briefing",
+    objectives:[
+      "Understand the client's brand voice, audience, and goals for the podcast and Instagram presence",
+      "Define deliverables per episode: clip count, formats, and turnaround time",
+      "Set up shared systems for file transfer, approvals, and communication"
+    ],
+    tasks:[
+      "Run a discovery call or questionnaire covering tone, off-limits topics, competitors, and past top-performing content",
+      "Agree on a content brief template: episode topic, key quotes/timestamps, CTA, hashtags to include",
+      "Set up a shared drive plus a project board (Notion, Airtable, or Trello)",
+      "Define the approval workflow and how many revision rounds are included in scope"
+    ],
+    tools:[
+      {name:"Notion", best:true, why:"Doubles as brief template, client-facing portal, and task tracker in one place, with a generous free tier.", tier:"Free / paid tiers"},
+      {name:"Airtable", best:false, why:"Better than Notion if you want a structured, filterable database of clients and deliverables.", tier:"Free / paid tiers"},
+      {name:"Google Forms or Tally", best:true, why:"Fastest way to run a structured intake questionnaire instead of a scattered email thread.", tier:"Free"},
+      {name:"Claude / ChatGPT", best:true, why:"Turns messy client notes or a call transcript into a clean, structured brief in seconds.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Structure a brief", text:"Turn these raw client notes into a structured content brief with sections for brand voice, target audience, content pillars, and posting goals: [paste notes]"},
+      {label:"Build an intake list", text:"Write 10 intake questions I should ask a new podcast client before I start editing and managing their Instagram."}
+    ],
+    bestPractices:[
+      "Get 3 brand-voice examples the client loves and 3 they don't, instead of relying on adjectives alone",
+      "Lock deliverable counts and turnaround time in writing before work starts",
+      "Build one master brief template and lightly customize it per client rather than starting from scratch"
+    ],
+    mistakes:[
+      "Starting to edit before confirming which moments the client actually wants highlighted",
+      "No agreed revision limit, which quietly turns into unpaid scope creep",
+      "Skipping a file-naming convention, which becomes chaos once you have 2–3 clients"
+    ],
+    outputs:["Signed-off content brief document", "Shared folder structure with access set up", "A reusable episode intake template"],
+    tips:["Build the Notion template once so onboarding client #2 and #3 takes minutes, not hours", "Use one recurring intake form link per episode instead of back-and-forth messages"]
+  },
+  {
+    id:"roughcut", num:"01", phase:"Produce", track:"audio", time:"45–90 min per hour of raw podcast audio/video",
+    title:"Podcast Raw File Review & Rough Cut",
+    objectives:[
+      "Identify the strongest, most clip-worthy moments in the raw episode",
+      "Build a timestamp log before jumping into detailed editing",
+      "Strip dead air, filler words, and technical issues from the base file"
+    ],
+    tasks:[
+      "Skim at 1.5–2x speed, logging timestamps of strong quotes, stories, disagreements, and jokes",
+      "Run AI transcription to get a searchable, timestamped script of the whole episode",
+      "Auto-remove long pauses and filler words from the base cut",
+      "Shortlist 8–15 clip candidates to carry into editing"
+    ],
+    tools:[
+      {name:"Descript", best:true, why:"Transcript-based editing means cutting filler words and silences is as easy as deleting text, and it hands you a scannable, timestamped transcript.", tier:"Free / paid tiers"},
+      {name:"Riverside.fm", best:false, why:"Strong if you're also involved in the recording side — captures high-quality separate tracks plus transcription together.", tier:"Paid, mid-tier"},
+      {name:"Otter.ai", best:false, why:"Solid transcription-only alternative if you don't need Descript's full editing suite.", tier:"Free / paid tiers"},
+      {name:"Opus Clip or Vizard", best:true, why:"Scans a full episode and auto-ranks the most clip-worthy moments by predicted performance, cutting your logging time down dramatically.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Find the gold", text:"Here is a podcast transcript with timestamps. Identify the 12 most quotable, emotional, or surprising moments that would work as standalone short-form clips, and explain why each one works: [paste transcript]"},
+      {label:"Summarize talking points", text:"Summarize this episode transcript into 5 key talking points a listener would want to share with a friend."}
+    ],
+    bestPractices:[
+      "Always work from a transcript, not just memory of a single listen-through",
+      "Log rough timestamps first, then edit — don't scrub back and forth aimlessly",
+      "Prioritize moments with a clear hook landing in the first 3 seconds"
+    ],
+    mistakes:[
+      "Picking clips based on what's interesting to you instead of what matches the client's content pillars",
+      "Not checking for audio issues (crosstalk, clipping) before committing to a clip",
+      "Trusting AI ranking blindly without a human gut-check pass"
+    ],
+    outputs:["Clean, timestamped transcript", "Silence-removed base file", "Shortlist of 8–15 timestamped clip candidates"],
+    tips:["Batch-review a full month of episodes in one sitting to spot recurring high-performing topics", "Keep a running swipe file of past top-performing timestamps and phrasing per client"]
+  },
+  {
+    id:"edit", num:"02", phase:"Produce", track:"video", time:"20–40 min per finished clip, faster with templates",
+    title:"Short-Form Clip Editing (Reels / TikTok / Shorts)",
+    objectives:[
+      "Turn shortlisted moments into polished, platform-native vertical clips",
+      "Apply consistent branding across a client's clips: fonts, colors, intro/outro",
+      "Optimize each clip's first 3 seconds specifically for retention"
+    ],
+    tasks:[
+      "Reframe horizontal footage to 9:16 with dynamic speaker tracking",
+      "Add burned-in captions, b-roll or zoom-ins, sound effects, and a branded lower-third",
+      "Trim to the platform's ideal length and add a strong hook line as a text overlay",
+      "Export in the correct resolution and format for each destination platform"
+    ],
+    tools:[
+      {name:"CapCut", best:true, why:"Free, fast auto speaker-tracking reframe, a huge template library, and mobile/desktop parity for editing on the go.", tier:"Free / paid tier"},
+      {name:"Adobe Premiere Pro", best:false, why:"Maximum control for multicam or precision edits, at the cost of a steeper learning curve and slower turnaround.", tier:"Paid"},
+      {name:"Descript", best:false, why:"Good option if you're already using it for the rough cut and want to stay in one tool end to end.", tier:"Free / paid tiers"},
+      {name:"Submagic or VEED.io", best:true, why:"Fastest way to lay animated, viral-style captions on top of a clip you've already cut.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Write hook text", text:"Write 5 punchy on-screen hook text options (under 8 words) for a clip where the guest says: [paste quote]"},
+      {label:"Plan the edit structure", text:"Suggest a 3-beat visual structure (hook / build / payoff) for editing this 45-second clip transcript: [paste transcript segment]"}
+    ],
+    bestPractices:[
+      "Build one reusable branded template per client so each edit starts about 70% done",
+      "Keep hook text on screen within the first 1–2 seconds, before any spoken hook lands",
+      "Match clip length to platform norms rather than uploading one length everywhere"
+    ],
+    mistakes:[
+      "Uploading the exact same edit to every platform instead of adjusting captions and framing per destination",
+      "Skipping proofreading on auto-captions, leaving typos or mistimed sync live",
+      "Overloading a clip with effects that distract from the actual moment"
+    ],
+    outputs:["3–8 finished, platform-ready vertical clips per episode", "A branded template file for future episodes", "Per-platform export set (captions on/off, correct resolutions)"],
+    tips:["Save a CapCut project template so new episodes are close to drag-and-drop", "Batch export every clip for one episode in a single render session"],
+    decision:{
+      question:"Which editing tool fits this clip?",
+      root:{
+        q:"Do you need it finished in under 15 minutes, on your phone?",
+        options:[
+          {label:"Yes", result:"Use CapCut mobile — templates plus auto-reframe get you a finished vertical clip fastest, from anywhere."},
+          {label:"No — I have desktop time", next:{
+            q:"Does it need frame-perfect precision or complex multicam sync?",
+            options:[
+              {label:"Yes", result:"Use Adobe Premiere Pro — worth the slower workflow when precision matters more than speed."},
+              {label:"No", result:"Use CapCut desktop or Descript — both are faster than Premiere for standard talking-head clips."}
+            ]
+          }}
+        ]
+      }
+    }
+  },
+  {
+    id:"captions", num:"03", phase:"Produce", track:"data", time:"15–25 min per post: caption, hashtags, and description",
+    title:"Captions, Subtitles & Hashtags",
+    objectives:[
+      "Write scroll-stopping captions that match brand voice and add context to the clip",
+      "Choose hashtags and tags that extend reach without reading as spam",
+      "Write searchable, keyword-rich descriptions for Instagram's search and discovery"
+    ],
+    tasks:[
+      "Draft a caption with a hook line, short context or value-add, and a clear CTA",
+      "Mix hashtag tiers: broad (500k+ posts), medium (50k–500k), and niche (under 50k)",
+      "Tag relevant accounts — the guest, the brand, a location — to widen the discovery surface",
+      "Write an SEO-aware description using the keywords the audience actually searches for",
+      "Add accurate closed captions on top of any burned-in captions, for accessibility"
+    ],
+    tools:[
+      {name:"Claude / ChatGPT", best:true, why:"Fastest way to draft on-brand captions in a specific client's voice, and to generate a tiered hashtag set.", tier:"Free / paid tiers"},
+      {name:"Flick or Later's hashtag tool", best:true, why:"Shows real hashtag reach and competition data instead of guessing at tiers.", tier:"Paid, low-mid tier"},
+      {name:"Descript / CapCut captions", best:false, why:"Accurate auto-subtitles pulled straight from the transcript you already generated in stage 01.", tier:"Free / paid tiers"},
+      {name:"Kapwing", best:false, why:"Alternative auto-caption and subtitle tool if you're not already inside Descript or CapCut.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Draft captions", text:"Write 3 Instagram caption options for this clip in a [energetic / calm / witty] brand voice. Include a hook line, one sentence of context, and a CTA to [comment / save / share]: [paste clip summary]"},
+      {label:"Build a hashtag set", text:"Give me 20 hashtags for a podcast clip about [topic], split into 5 broad, 10 medium, and 5 niche or community tags."},
+      {label:"Write a description", text:"Write an SEO-optimized Instagram description under 150 characters for a clip about [topic], including natural keywords a listener might search for."}
+    ],
+    bestPractices:[
+      "Front-load the caption's first line — it's the only part visible before \"more\"",
+      "Rotate hashtag sets instead of reusing the exact same list every post",
+      "Use the description field for searchable keywords, not just a repeat of your hashtags"
+    ],
+    mistakes:[
+      "Hashtag-stuffing 30 identical tags with no tiering strategy",
+      "Captions that just restate the video with no added context or CTA",
+      "Forgetting alt text, which hurts both accessibility and discoverability"
+    ],
+    outputs:["Finalized caption per post", "A tiered hashtag set saved per content pillar for reuse", "SEO description and alt text"],
+    tips:["Keep a swipe file of hashtag sets per content pillar so you're never rebuilding from zero", "Batch-write a week of captions in one sitting using the same brand-voice prompt"]
+  },
+  {
+    id:"calendar", num:"04", phase:"Publish", track:"data", time:"30–45 min weekly planning session",
+    title:"Instagram Content Calendar & Scheduling",
+    objectives:[
+      "Build a realistic weekly or monthly posting cadence per client",
+      "Schedule posts at times backed by that specific account's own audience data",
+      "Balance content pillars — clips, carousels, Stories — across the week"
+    ],
+    tasks:[
+      "Pull each client's audience activity data from native Instagram Insights",
+      "Slot approved clips and posts into a content calendar tagged by pillar",
+      "Schedule posts with a third-party scheduler that supports Reels auto-publish",
+      "Plan supporting Stories or carousels around each major clip drop"
+    ],
+    tools:[
+      {name:"Later or Metricool", best:true, why:"Visual drag-and-drop calendar, Reels auto-publishing, and built-in best-time-to-post suggestions per account.", tier:"Free / paid tiers"},
+      {name:"Buffer or Hootsuite", best:false, why:"Solid alternatives with similar scheduling features and slightly different pricing/interface tradeoffs.", tier:"Free / paid tiers"},
+      {name:"Meta Business Suite", best:false, why:"Free native option — fewer analytics than third-party tools, but zero extra cost.", tier:"Free"},
+      {name:"Notion or Airtable calendar", best:true, why:"A shared, client-visible content calendar that doubles as the approval record.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Plan the week", text:"I have these 6 clips this week: [list]. Build a 7-day Instagram posting schedule mixing Reels, one carousel, and daily Stories, balancing content pillars [list pillars]."},
+      {label:"Pick posting windows", text:"Based on this audience active-hours data [paste from Insights], recommend the 3 best posting windows for this account this week."}
+    ],
+    bestPractices:[
+      "Treat generic \"best time to post\" charts as a starting point, then correct using the account's own Insights data after 4–6 weeks",
+      "Space similar content pillars out rather than posting three similar clips back to back",
+      "Pre-schedule a buffer of 2–3 extra approved posts for slow client-approval weeks"
+    ],
+    mistakes:[
+      "Copying generic best-time-to-post advice without checking the specific account's own audience activity",
+      "Posting the moment something is edited instead of following a planned cadence",
+      "Leaving no backup content queued, so approval delays create visible posting gaps"
+    ],
+    outputs:["A populated weekly or monthly content calendar", "Posts queued and scheduled", "A documented best-posting-windows note per client, refreshed monthly"],
+    tips:["Schedule a full week in one sitting rather than daily one-off scheduling", "Revisit each client's best-time data monthly — it drifts as the audience grows"],
+    decision:{
+      question:"When should this account post?",
+      root:{
+        q:"Do you have 4+ weeks of this account's own Insights data?",
+        options:[
+          {label:"Yes", result:"Use that account's own peak-activity hours from Instagram Insights — first-party data beats generic advice every time."},
+          {label:"No, it's new or you haven't checked yet", result:"Start with general platform windows (typically weekday mid-morning and evening) as a placeholder, then correct with real data after 4–6 weeks."}
+        ]
+      }
+    }
+  },
+  {
+    id:"post", num:"05", phase:"Publish", track:"video", time:"15–20 min in the first hour after posting, 10 min daily engagement",
+    title:"Posting & Community Engagement",
+    objectives:[
+      "Maximize the critical first-hour engagement window after a post goes live",
+      "Respond to comments and DMs in a way that reflects the client's voice",
+      "Build ongoing community engagement, not just one-way posting"
+    ],
+    tasks:[
+      "Monitor the first 60 minutes after posting for early comments and shares",
+      "Reply to comments and DMs within the agreed response-time window",
+      "Engage with related or community accounts to extend reach",
+      "Repost strong Stories or user-generated content mentioning the client"
+    ],
+    tools:[
+      {name:"Native Instagram app", best:true, why:"Fastest, most reliable way to reply and engage — nothing replaces the native app for authentic-feeling responses.", tier:"Free"},
+      {name:"Claude / ChatGPT", best:true, why:"Drafts on-brand reply templates for the recurring comment and DM types you'll see across every client.", tier:"Free / paid tiers"},
+      {name:"Later or Metricool inbox", best:false, why:"Manages comments and DMs across multiple client accounts from one shared dashboard.", tier:"Paid, mid-tier"},
+      {name:"Meta Business Suite inbox", best:false, why:"Free alternative for managing comments and messages across accounts.", tier:"Free"}
+    ],
+    prompts:[
+      {label:"Reply templates", text:"Write 5 on-brand reply templates for common comment types on a podcast clip post: a compliment, a disagreement, a question, a spam or promo comment, and a request for the full episode link."},
+      {label:"Draft a DM reply", text:"Draft a DM response to a follower asking where to listen to the full episode, in a warm, casual brand voice."}
+    ],
+    bestPractices:[
+      "Reply to comments within the first hour whenever possible — early engagement signals the algorithm",
+      "Keep a bank of reusable-but-personalized reply templates instead of writing from scratch each time",
+      "Pin the most valuable comment or a link-in-bio reminder on high-performing posts"
+    ],
+    mistakes:[
+      "Posting and walking away, missing the highest-leverage engagement window",
+      "Copy-pasting identical replies that read as obviously robotic",
+      "Ignoring negative or critical comments instead of addressing them professionally"
+    ],
+    outputs:["Logged first-hour engagement actions", "Comments and DMs answered within SLA", "A short list of \"hot\" comments or mentions worth amplifying"],
+    tips:["Block a recurring 15-minute calendar slot right after each scheduled post time", "Build a client-specific reply-template doc so engagement doesn't require re-deriving tone rules each time"]
+  },
+  {
+    id:"analytics", num:"06", phase:"Analyze", track:"data", time:"45–60 min weekly, 1–2 hr for the monthly report",
+    title:"Analytics & Client Reporting",
+    objectives:[
+      "Find exactly where viewers drop off or scroll away within a clip",
+      "Track growth, reach, and engagement trends against goals",
+      "Deliver a clear, client-friendly report that justifies the work and informs the next cycle"
+    ],
+    tasks:[
+      "Pull the retention graph for each Reel to find the exact second viewers start dropping off — the clip's weak point",
+      "Compare average watch time and completion rate across clips to find winning patterns in hook style, length, and topic",
+      "Track follower growth, reach, saves, shares, and profile visits week over week",
+      "Compile findings into a client-facing report with recommendations for the next batch"
+    ],
+    tools:[
+      {name:"Instagram Insights (native)", best:true, why:"The only source of true first-party retention, drop-off, and audience-activity data for that account.", tier:"Free"},
+      {name:"Metricool or Later analytics", best:true, why:"Aggregates trends across weeks or months and across multiple clients into charts native Insights doesn't show well.", tier:"Paid, mid-tier"},
+      {name:"Iconosquare or Sprout Social", best:false, why:"Alternative analytics platforms with similar cross-account reporting, at a higher price point.", tier:"Paid"},
+      {name:"Claude / ChatGPT", best:true, why:"Turns raw exported metrics into a written client report with plain-language insights and next-step recommendations.", tier:"Free / paid tiers"}
+    ],
+    prompts:[
+      {label:"Find the pattern", text:"Here are this week's Reel metrics (views, average watch time, completion rate, saves, shares) for 6 posts: [paste data]. Identify which clip structures performed best and what likely caused any early drop-off."},
+      {label:"Write the client report", text:"Turn this raw analytics data into a client-friendly monthly report with a summary, 3 key wins, 2 areas to improve, and next month's content recommendations: [paste data]"}
+    ],
+    bestPractices:[
+      "Look at the exact second retention drops sharply — that specific timestamp is the real weak point, not just the overall completion rate",
+      "Compare like-for-like: similar length and topic clips against each other, not every clip on one scale",
+      "Always pair a metric with a recommendation — clients want \"so what,\" not just numbers"
+    ],
+    mistakes:[
+      "Reporting only vanity metrics like likes while ignoring retention, saves, and shares, which matter more for algorithmic reach",
+      "Not isolating which specific edit choice — hook, pacing, caption timing — caused a drop-off",
+      "Sending a wall of raw numbers instead of a narrative summary"
+    ],
+    outputs:["Weekly retention and performance snapshot", "Monthly client report with wins, weak points, and next-cycle recommendations", "An internal \"what worked\" swipe file for future edits"],
+    tips:["Build one reusable report template per client and just refresh the numbers each cycle", "Keep a lightweight weekly metrics log so the monthly report takes minutes, not hours, to assemble"]
+  },
+  {
+    id:"feedback", num:"07", phase:"Analyze", track:"fx", time:"20–30 min per revision cycle",
+    title:"Feedback & Revision Loop",
+    objectives:[
+      "Close the loop between client feedback, analytics, and the next content batch",
+      "Handle revisions efficiently without endless back-and-forth",
+      "Continuously refine the brief and template based on what's actually working"
+    ],
+    tasks:[
+      "Present the monthly report alongside 2–3 concrete recommendations for the next cycle",
+      "Collect structured client feedback instead of vague notes like \"looks good\"",
+      "Apply revisions within the agreed scope and round limit",
+      "Update the content brief or template with new learnings before the next episode"
+    ],
+    tools:[
+      {name:"Notion or Airtable", best:true, why:"The same system as intake — keeps feedback and template updates traceable in one place.", tier:"Free / paid tiers"},
+      {name:"Loom", best:true, why:"A quick screen-recorded walkthrough of proposed edits is faster to explain than a long text thread.", tier:"Free / paid tiers"},
+      {name:"Claude / ChatGPT", best:true, why:"Turns vague client feedback into a specific, actionable revision checklist.", tier:"Free / paid tiers"},
+      {name:"Shared Google Doc", best:false, why:"A lighter-weight alternative if a full project-management tool feels like overkill for one client.", tier:"Free"}
+    ],
+    prompts:[
+      {label:"Clarify vague feedback", text:"Turn this vague client feedback into a specific, actionable revision checklist: \"[paste feedback]\""},
+      {label:"Plan next cycle", text:"Based on this month's performance data and this feedback from the client, suggest 3 concrete changes to make to next month's content brief."}
+    ],
+    bestPractices:[
+      "Ask \"what specifically\" whenever feedback is vague — which part, compared to what?",
+      "Set and hold a defined number of revision rounds per deliverable",
+      "Feed real performance data back into the brief so the workflow improves every cycle instead of repeating"
+    ],
+    mistakes:[
+      "Treating every round of feedback as unlimited and free, which leads to scope creep",
+      "Not documenting recurring feedback themes, so the same notes repeat every month",
+      "Skipping the loop back to the brief, so lessons learned never compound"
+    ],
+    outputs:["Documented client feedback and its resolution", "An updated content brief or template for the next cycle", "A short \"lessons learned\" log"],
+    tips:["Batch all revision requests into one round instead of reacting to each note as it arrives", "Keep a running \"recurring feedback\" list — if the same note appears 3 times, fix it at the template level"]
+  }
+];
+
+const TRACK_COLOR = { video:"var(--track-video)", audio:"var(--track-audio)", data:"var(--track-data)", fx:"var(--track-fx)" };
+const TRACK_COLOR_B = { video:"var(--track-video-b)", audio:"var(--track-audio-b)", data:"var(--track-data-b)", fx:"var(--track-fx-b)" };
+
+const LEARNING = [
+  "CapCut's official in-app tutorial library — fastest way to learn reframing, templates, and captions hands-on",
+  "Descript Academy — guided lessons on transcript-based editing and filler-word removal",
+  "Later's and Metricool's blogs — regularly cover Instagram algorithm changes and posting-time research",
+  "YouTube channels focused on short-form editing breakdowns (search terms below) — great for studying hook structures",
+  "Meta's own Creator resources — official guidance on Reels formatting and reach mechanics"
+];
+const COMMUNITIES = [
+  "r/VideoEditing and r/CapCut on Reddit — tool-specific troubleshooting and technique threads",
+  "r/socialmedia and r/SocialMediaMarketing — SMM-specific discussion, trends, and client-management war stories",
+  "r/podcasting — for understanding the source-content side of your pipeline",
+  "r/freelance — pricing, contracts, and client-management discussion relevant to solo operators",
+  "Discord servers built around CapCut, Descript, and short-form editing communities",
+  "Local or niche Facebook Groups for social media managers and podcast editors"
+];
+const KEYWORDS = [
+  "Instagram Reels editing workflow", "podcast to short-form repurposing", "CapCut templates for podcast clips",
+  "Instagram algorithm best time to post", "Reels retention rate benchmarks", "freelance social media manager pricing",
+  "podcast clip hook writing", "Instagram hashtag strategy tiers", "content calendar template freelancer",
+  "YouTube Shorts vs Reels vs TikTok differences", "video editor client onboarding template", "social media analytics reporting template"
+];
+const EXTRA_PROMPTS = [
+  {label:"Pricing & proposals", text:"Help me draft a pricing structure for podcast editing plus Instagram management services, for a client posting 3 times a week, including a base retainer and an add-on rate for extra revisions."},
+  {label:"Client onboarding email", text:"Write a warm, professional onboarding email for a new podcast-editing-and-Instagram-management client, outlining what happens in week one and what I need from them."},
+  {label:"Monthly recap email", text:"Write a short, friendly email to send alongside this month's report, summarizing performance in 3 sentences and previewing next month's plan: [paste summary]"},
+  {label:"Pitch expanding services", text:"Help me write a short pitch to an existing podcast-clip client proposing I also take on long-form YouTube editing for their show."}
+];
+const FUTURE = [
+  {title:"Long-form → YouTube repurposing pipeline", body:"Extend stage 01–02 to also produce a chaptered, SEO-titled long-form YouTube upload alongside the short clips, so one recording session feeds three platforms instead of one."},
+  {title:"Automated file intake", body:"Use Zapier or Make to auto-move new raw files from a client's shared drive into your project folder and Notion board the moment they're uploaded."},
+  {title:"AI-assisted clip shortlisting at scale", body:"As client count grows, lean more on Opus Clip/Vizard's auto-ranking to pre-filter candidates, keeping your time focused on final selection and editing."},
+  {title:"Cross-platform auto-scheduling", body:"Once a posting cadence is proven for one platform, mirror it across TikTok and YouTube Shorts from the same scheduler instead of managing each separately."},
+  {title:"Standing analytics dashboard", body:"Build one shared dashboard (Metricool, Airtable, or a simple sheet) that auto-refreshes key metrics per client, so monthly reports become a 15-minute polish instead of a rebuild."},
+  {title:"Template-driven onboarding", body:"As you take on more content types beyond podcasts, turn the stage 00 brief into a branching template (podcast / interview / vlog / tutorial) so intake stays fast at any scale."}
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STORE_KEY = "wf_architect_v1";
+function defaultState(){
+  return { theme:"dark", tasks:{}, bookmarksPrompt:{}, bookmarksTool:{}, notes:{} };
+}
+let state = load();
+function load(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw) return Object.assign(defaultState(), JSON.parse(raw)); }catch(e){}
+  return defaultState();
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), 2000);
+}
+
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+function stageTaskCount(stage){ return stage.tasks.length; }
+function stageDoneCount(stage){
+  const t = state.tasks[stage.id] || {};
+  return stage.tasks.reduce((s,_,i)=> s + (t[i] ? 1 : 0), 0);
+}
+function stagePct(stage){ const total = stageTaskCount(stage); return total ? Math.round(stageDoneCount(stage)/total*100) : 0; }
+function overallPct(){
+  const totalTasks = STAGES.reduce((s,st)=>s+stageTaskCount(st),0);
+  const doneTasks = STAGES.reduce((s,st)=>s+stageDoneCount(st),0);
+  return totalTasks ? Math.round(doneTasks/totalTasks*100) : 0;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function goTo(pageId){
+  document.querySelectorAll(".page").forEach(p=>{ p.classList.remove("active","print-active"); });
+  document.querySelectorAll(".nav-btn, .tl-btn").forEach(b=>b.classList.remove("active"));
+  const el = document.getElementById("page-"+pageId);
+  if(el){ el.classList.add("active","print-active"); }
+  document.querySelectorAll(`[data-page="${pageId}"]`).forEach(b=>b.classList.add("active"));
+  window.scrollTo({top:0, behavior:"smooth"});
+  if(pageId==="summary") renderSummary();
+  if(pageId==="bookmarks") renderBookmarks();
+}
+document.querySelectorAll(".nav-btn[data-page]").forEach(b=> b.addEventListener("click", ()=>goTo(b.dataset.page)));
+
+/* theme */
+function applyTheme(){
+  document.body.setAttribute("data-theme", state.theme);
+  document.querySelectorAll("[data-theme-btn]").forEach(b=> b.classList.toggle("active", b.dataset.themeBtn===state.theme));
+}
+document.querySelectorAll("[data-theme-btn]").forEach(b=>{
+  b.addEventListener("click", ()=>{ state.theme=b.dataset.themeBtn; save(); applyTheme(); });
+});
+
+/* ============================================================
+   BUILD: STAGE RAIL NAV
+   ============================================================ */
+function renderStageRail(){
+  const rail = document.getElementById("stage-rail");
+  rail.innerHTML = STAGES.map(s=>{
+    const pct = stagePct(s);
+    const cls = pct===100 ? "done" : "";
+    return `<div class="tl-item ${cls}" data-stage-item="${s.id}">
+      <button class="tl-btn" data-page="stage-${s.id}"><span class="tl-tc">${s.num}</span>${s.title.split(" & ")[0].split("(")[0].trim()}</button>
+    </div>`;
+  }).join("");
+  rail.querySelectorAll(".tl-btn").forEach(b=> b.addEventListener("click", ()=>goTo(b.dataset.page)));
+}
+
+/* ============================================================
+   BUILD: STAGE PAGES
+   ============================================================ */
+function toolCard(stage, tool, idx){
+  const key = stage.id+"|"+idx;
+  const on = !!state.bookmarksTool[key];
+  return `<div class="tool-card">
+    <div class="top">
+      <div><b>${tool.name}</b><div><span class="rank ${tool.best?'best':'alt'}">${tool.best?'Best pick':'Alternative'}</span></div></div>
+      <button class="star ${on?'on':''}" data-bookmark-tool="${key}" title="Bookmark this tool">★</button>
+    </div>
+    <p>${tool.why}</p>
+    <p class="mono" style="color:var(--text-dimmer); font-size:11px; margin-top:6px;">${tool.tier}</p>
+  </div>`;
+}
+function promptCard(stage, p, idx){
+  const key = stage.id+"|"+idx;
+  const on = !!state.bookmarksPrompt[key];
+  return `<div class="prompt-card">
+    <div class="lbl"><b>${p.label}</b>
+      <div class="btns">
+        <button class="icon-btn" data-copy="${key}" title="Copy prompt">⧉</button>
+        <button class="icon-btn ${on?'on':''}" data-bookmark-prompt="${key}" title="Bookmark prompt">★</button>
+      </div>
+    </div>
+    <pre>${p.text.replace(/</g,"&lt;")}</pre>
+  </div>`;
+}
+function decisionTreeHTML(stage){
+  if(!stage.decision) return "";
+  return `<h2 class="section-title">Quick decision: ${stage.decision.question}</h2>
+    <div class="card"><div class="dtree" data-dtree-root='${btoa(unescape(encodeURIComponent(JSON.stringify(stage.decision.root))))}' id="dtree-${stage.id}"></div></div>`;
+}
+function renderDecisionTreeWidget(container, rootNode){
+  const path = [];
+  function render(node){
+    let html = "";
+    if(path.length){ html += `<div class="dtree-path">${path.join(" → ")}</div>`; }
+    if(node.result){
+      html += `<div class="dtree-result"><b>Answer</b><p style="margin-top:6px; font-size:13.5px;">${node.result}</p></div>
+        <button class="btn btn-sm mt-16" data-restart>↺ Start over</button>`;
+    }else{
+      html += `<div class="dtree-q">${node.q}</div><div class="dtree-opts">${node.options.map((o,i)=>`<button class="dtree-opt" data-opt="${i}">${o.label}</button>`).join("")}</div>`;
+    }
+    container.innerHTML = html;
+    container.querySelectorAll("[data-opt]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const opt = node.options[parseInt(btn.dataset.opt)];
+        path.push(opt.label);
+        render(opt.next || {result:opt.result});
+      });
+    });
+    const restart = container.querySelector("[data-restart]");
+    if(restart) restart.addEventListener("click", ()=>{ path.length=0; render(rootNode); });
+  }
+  render(rootNode);
+}
+
+function renderStagePages(){
+  const wrap = document.getElementById("stage-pages");
+  wrap.innerHTML = STAGES.map(s=>{
+    const color = TRACK_COLOR[s.track];
+    return `<section class="page" id="page-stage-${s.id}" style="--stage-color:${color};">
+      <div class="clipslate" style="--stage-color:${color};">
+        <div class="tc-num">${s.num}</div>
+        <div class="meta">
+          <div class="phase-tag">${s.phase}</div>
+          <h2>${s.title}</h2>
+          <div class="time">⏱ ${s.time}</div>
+        </div>
+        <button class="bookmark-btn" data-stage-bookmark="${s.id}" title="Bookmark this stage">★</button>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <div class="card-title">Objectives</div>
+          <ul class="plain">${s.objectives.map(o=>`<li>${o}</li>`).join("")}</ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Tasks <span class="text-dimmer" style="font-weight:400;" id="stage-progress-${s.id}"></span></div>
+          <div id="stage-tasks-${s.id}"></div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Best AI tools for this stage</h2>
+      <div class="grid g2" id="stage-tools-${s.id}"></div>
+
+      <h2 class="section-title">Prompt examples</h2>
+      <div id="stage-prompts-${s.id}"></div>
+
+      ${decisionTreeHTML(s)}
+
+      <h2 class="section-title">Best practices &amp; common mistakes</h2>
+      <div class="split">
+        <div class="card"><div class="card-title">Best practices</div><ul class="plain good">${s.bestPractices.map(b=>`<li>${b}</li>`).join("")}</ul></div>
+        <div class="card"><div class="card-title">Common mistakes</div><ul class="plain mistakes">${s.mistakes.map(m=>`<li>${m}</li>`).join("")}</ul></div>
+      </div>
+
+      <h2 class="section-title">Expected outputs &amp; efficiency tips</h2>
+      <div class="split">
+        <div class="card"><div class="card-title">Expected outputs</div><ul class="plain">${s.outputs.map(o=>`<li>${o}</li>`).join("")}</ul></div>
+        <div class="card"><div class="card-title">Tips for efficiency</div><ul class="plain">${s.tips.map(t=>`<li>${t}</li>`).join("")}</ul></div>
+      </div>
+
+      <h2 class="section-title">Notes</h2>
+      <div class="card"><textarea class="notes" placeholder="Jot down client-specific tweaks, swipe-file links, or reminders for this stage…" data-notes="${s.id}">${state.notes[s.id]||""}</textarea></div>
+    </section>`;
+  }).join("");
+
+  STAGES.forEach(s=>{
+    document.getElementById(`stage-tools-${s.id}`).innerHTML = s.tools.map((t,i)=>toolCard(s,t,i)).join("");
+    document.getElementById(`stage-prompts-${s.id}`).innerHTML = s.prompts.map((p,i)=>promptCard(s,p,i)).join("");
+    renderStageTasks(s);
+    if(s.decision){
+      const el = document.getElementById(`dtree-${s.id}`);
+      renderDecisionTreeWidget(el, s.decision.root);
+    }
+  });
+
+  // wire events (delegated once)
+  wrap.addEventListener("click", (e)=>{
+    const copyKey = e.target.closest("[data-copy]");
+    if(copyKey){
+      const [stageId, idx] = copyKey.dataset.copy.split("|");
+      const stage = STAGES.find(s=>s.id===stageId);
+      const text = stage.prompts[parseInt(idx)].text;
+      navigator.clipboard && navigator.clipboard.writeText(text).then(()=>toast("Prompt copied")).catch(()=>toast("Copy failed — select and copy manually"));
+      return;
+    }
+    const bmPrompt = e.target.closest("[data-bookmark-prompt]");
+    if(bmPrompt){
+      const key = bmPrompt.dataset.bookmarkPrompt;
+      state.bookmarksPrompt[key] = !state.bookmarksPrompt[key];
+      save(); bmPrompt.classList.toggle("on", state.bookmarksPrompt[key]);
+      toast(state.bookmarksPrompt[key] ? "Bookmarked" : "Bookmark removed");
+      return;
+    }
+    const bmTool = e.target.closest("[data-bookmark-tool]");
+    if(bmTool){
+      const key = bmTool.dataset.bookmarkTool;
+      state.bookmarksTool[key] = !state.bookmarksTool[key];
+      save(); bmTool.classList.toggle("on", state.bookmarksTool[key]);
+      toast(state.bookmarksTool[key] ? "Bookmarked" : "Bookmark removed");
+      return;
+    }
+    const bmStage = e.target.closest("[data-stage-bookmark]");
+    if(bmStage){
+      const key = "stage|"+bmStage.dataset.stageBookmark;
+      state.bookmarksTool[key] = !state.bookmarksTool[key];
+      save(); bmStage.classList.toggle("on", state.bookmarksTool[key]);
+      toast(state.bookmarksTool[key] ? "Stage bookmarked" : "Bookmark removed");
+    }
+  });
+  wrap.addEventListener("input", (e)=>{
+    const notes = e.target.closest("[data-notes]");
+    if(notes){ state.notes[notes.dataset.notes] = notes.value; save(); }
+  });
+}
+
+function renderStageTasks(stage){
+  const el = document.getElementById(`stage-tasks-${stage.id}`);
+  const t = state.tasks[stage.id] || {};
+  el.innerHTML = stage.tasks.map((task,i)=>`
+    <label class="check-item ${t[i]?'done':''}">
+      <input type="checkbox" data-task="${stage.id}|${i}" ${t[i]?'checked':''}>
+      <span>${task}</span>
+    </label>
+  `).join("");
+  el.querySelectorAll("[data-task]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const [sid, idx] = cb.dataset.task.split("|");
+      if(!state.tasks[sid]) state.tasks[sid] = {};
+      state.tasks[sid][idx] = cb.checked;
+      save();
+      renderStageTasks(STAGES.find(s=>s.id===sid));
+      updateProgressUI();
+    });
+  });
+  document.getElementById(`stage-progress-${stage.id}`).textContent = `${stageDoneCount(stage)}/${stageTaskCount(stage)}`;
+}
+
+function updateProgressUI(){
+  const pct = overallPct();
+  document.getElementById("mini-progress-pct").textContent = pct+"%";
+  document.getElementById("mini-progress-bar").style.width = pct+"%";
+  const ring = document.getElementById("ring-fill");
+  if(ring){
+    const c = 2*Math.PI*52;
+    ring.setAttribute("stroke-dasharray", c.toFixed(1));
+    ring.setAttribute("stroke-dashoffset", (c*(1-pct/100)).toFixed(1));
+  }
+  const ringNum = document.getElementById("ring-num");
+  if(ringNum) ringNum.textContent = pct+"%";
+  STAGES.forEach(s=>{
+    const item = document.querySelector(`[data-stage-item="${s.id}"]`);
+    if(item) item.classList.toggle("done", stagePct(s)===100);
+  });
+  renderOverviewStats();
+}
+
+/* ============================================================
+   OVERVIEW
+   ============================================================ */
+function renderOverviewStats(){
+  const totalTasks = STAGES.reduce((s,st)=>s+stageTaskCount(st),0);
+  const doneTasks = STAGES.reduce((s,st)=>s+stageDoneCount(st),0);
+  const totalTools = STAGES.reduce((s,st)=>s+st.tools.length,0);
+  const totalPrompts = STAGES.reduce((s,st)=>s+st.prompts.length,0);
+  document.getElementById("overview-stats").innerHTML = `
+    <div class="card"><div class="card-title">Pipeline stages</div><div class="stat-value">${STAGES.length}</div><div class="stat-sub">Brief → produce → publish → analyze</div></div>
+    <div class="card"><div class="card-title">Tasks tracked</div><div class="stat-value">${doneTasks}/${totalTasks}</div><div class="stat-sub">Across all stages</div></div>
+    <div class="card"><div class="card-title">AI tools recommended</div><div class="stat-value">${totalTools}</div><div class="stat-sub">Best pick + alternative per stage</div></div>
+    <div class="card"><div class="card-title">Ready-to-use prompts</div><div class="stat-value">${totalPrompts}</div><div class="stat-sub">Copy, tweak, bookmark</div></div>
+  `;
+}
+function renderPipelineDiagram(){
+  document.getElementById("pipeline-diagram").innerHTML = STAGES.map(s=>{
+    const color = TRACK_COLOR[s.track];
+    return `<div class="pipe-node">
+      <button data-page="stage-${s.id}">
+        <div class="dot" style="background:${color};">${s.num}</div>
+        <b>${s.title.split(" & ")[0].split("(")[0].trim()}</b>
+        <span>${s.phase}</span>
+      </button>
+      <span class="arrow">›</span>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("#pipeline-diagram [data-page]").forEach(b=> b.addEventListener("click", ()=>goTo(b.dataset.page)));
+}
+
+/* ============================================================
+   TOOL COMPARISON PAGE
+   ============================================================ */
+let compareFilter = "all";
+function renderCompare(){
+  const tracks = ["all","video","audio","data","fx"];
+  const labels = {all:"All tracks", video:"Video", audio:"Audio", data:"Text & data", fx:"Wrap-up"};
+  document.getElementById("compare-filters").innerHTML = tracks.map(t=>`<button class="pill ${compareFilter===t?'active':''}" data-cf="${t}">${labels[t]}</button>`).join("");
+  document.querySelectorAll("[data-cf]").forEach(b=> b.addEventListener("click", ()=>{ compareFilter=b.dataset.cf; renderCompare(); }));
+
+  let rows = [];
+  STAGES.forEach(s=>{
+    if(compareFilter!=="all" && s.track!==compareFilter) return;
+    s.tools.forEach(t=> rows.push({...t, stage:s.title, track:s.track}));
+  });
+  document.getElementById("compare-table").innerHTML = rows.map(r=>`
+    <tr>
+      <td><b>${r.name}</b></td>
+      <td><span class="dot-tag" style="background:${TRACK_COLOR[r.track]}"></span>${r.track}</td>
+      <td class="text-dim">${r.stage}</td>
+      <td class="text-dim" style="max-width:260px;">${r.why}</td>
+      <td class="mono" style="font-size:11.5px;">${r.tier}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="5" class="empty">No tools in this track</td></tr>`;
+}
+
+/* ============================================================
+   DECISION TREES PAGE
+   ============================================================ */
+function renderDecisionsPage(){
+  const withTrees = STAGES.filter(s=>s.decision);
+  document.getElementById("decision-trees").innerHTML = withTrees.map(s=>`
+    <div class="card">
+      <div class="card-title">${s.decision.question}</div>
+      <div class="dtree" id="dtree-page-${s.id}"></div>
+    </div>
+  `).join("");
+  withTrees.forEach(s=>{
+    renderDecisionTreeWidget(document.getElementById(`dtree-page-${s.id}`), s.decision.root);
+  });
+}
+
+/* ============================================================
+   BOOKMARKS PAGE
+   ============================================================ */
+function renderBookmarks(){
+  let promptRows = [];
+  Object.keys(state.bookmarksPrompt).forEach(key=>{
+    if(!state.bookmarksPrompt[key]) return;
+    const [sid, idx] = key.split("|");
+    const stage = STAGES.find(s=>s.id===sid);
+    if(stage) promptRows.push({stage, p: stage.prompts[parseInt(idx)]});
+  });
+  document.getElementById("bookmark-prompts").innerHTML = promptRows.length ? promptRows.map(r=>`
+    <div class="prompt-card">
+      <div class="lbl"><b>${r.stage.title} — ${r.p.label}</b></div>
+      <pre>${r.p.text.replace(/</g,"&lt;")}</pre>
+    </div>
+  `).join("") : `<div class="empty"><b>No prompts bookmarked yet</b>Star any prompt inside a stage to save it here.</div>`;
+
+  let toolRows = [];
+  Object.keys(state.bookmarksTool).forEach(key=>{
+    if(!state.bookmarksTool[key]) return;
+    if(key.startsWith("stage|")) return;
+    const [sid, idx] = key.split("|");
+    const stage = STAGES.find(s=>s.id===sid);
+    if(stage) toolRows.push({stage, t: stage.tools[parseInt(idx)]});
+  });
+  document.getElementById("bookmark-tools").innerHTML = toolRows.length ? toolRows.map(r=>`
+    <div class="tool-card"><b>${r.t.name}</b><p class="text-dimmer" style="font-size:11px; margin-top:4px;">${r.stage.title}</p><p>${r.t.why}</p></div>
+  `).join("") : `<div class="empty"><b>No tools bookmarked yet</b>Star any tool card inside a stage to save it here.</div>`;
+}
+
+/* ============================================================
+   SUMMARY & STACK PAGE
+   ============================================================ */
+function renderSummary(){
+  const totalTime = "Roughly 4–6 focused hours per episode across the full cycle, spread over the week rather than done in one sitting.";
+  document.getElementById("summary-body").innerHTML = `
+    <p style="font-size:14px; line-height:1.7;">This pipeline takes one podcast recording from raw file to a fully reported-on batch of Instagram content, in eight stages: <b>brief</b> the client, build the <b>rough cut</b>, cut it into <b>short-form clips</b>, write <b>captions and hashtags</b>, slot everything into a <b>content calendar</b>, handle <b>posting and engagement</b>, run <b>analytics and reporting</b>, then close the loop with <b>feedback and revisions</b> that feed the next brief.</p>
+    <p style="font-size:14px; margin-top:12px; line-height:1.7;">${totalTime} As you take on more clients or expand into long-form YouTube and other formats, this same shape holds — only stage 01–02 grows a second, longer-form output alongside the clips.</p>
+  `;
+  document.getElementById("stack-table").innerHTML = [
+    {name:"Notion", role:"Client briefs, content calendar, feedback log", tier:"Free / paid", why:"One system spans intake through revision — the connective tissue of the whole pipeline."},
+    {name:"Descript", role:"Transcription, rough cut, filler-word removal", tier:"Free / paid", why:"Transcript-based editing is the fastest way to find and cut the raw file."},
+    {name:"Opus Clip or Vizard", role:"AI clip candidate ranking", tier:"Free / paid", why:"Cuts the time spent hunting for clip-worthy moments across a full episode."},
+    {name:"CapCut", role:"Short-form clip editing", tier:"Free / paid", why:"Fast, free, template-driven, and works on both mobile and desktop."},
+    {name:"Claude or ChatGPT", role:"Captions, hashtags, reports, replies", tier:"Free / paid", why:"The single most reused tool across nearly every stage of the pipeline."},
+    {name:"Later or Metricool", role:"Scheduling and cross-account analytics", tier:"Paid, mid-tier", why:"Best-time-to-post data and multi-client reporting in one dashboard."},
+  ].map(r=>`<tr><td><b>${r.name}</b></td><td class="text-dim">${r.role}</td><td class="mono" style="font-size:11.5px;">${r.tier}</td><td class="text-dim">${r.why}</td></tr>`).join("");
+}
+
+/* ============================================================
+   RESOURCES PAGE
+   ============================================================ */
+function renderResources(){
+  document.getElementById("learning-list").innerHTML = LEARNING.map(l=>`<li>${l}</li>`).join("");
+  document.getElementById("community-list").innerHTML = COMMUNITIES.map(c=>`<li>${c}</li>`).join("");
+  document.getElementById("keyword-cloud").innerHTML = `<div class="flex wrap gap-8">${KEYWORDS.map(k=>`<span class="pill" style="cursor:default;">${k}</span>`).join("")}</div>`;
+  document.getElementById("extra-prompts").innerHTML = EXTRA_PROMPTS.map((p,i)=>`
+    <div class="prompt-card">
+      <div class="lbl"><b>${p.label}</b><div class="btns"><button class="icon-btn" data-copy-extra="${i}">⧉</button></div></div>
+      <pre>${p.text}</pre>
+    </div>
+  `).join("");
+  document.querySelectorAll("[data-copy-extra]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const text = EXTRA_PROMPTS[parseInt(btn.dataset.copyExtra)].text;
+      navigator.clipboard && navigator.clipboard.writeText(text).then(()=>toast("Prompt copied")).catch(()=>toast("Copy failed"));
+    });
+  });
+  document.getElementById("future-list").innerHTML = `<div class="grid g2">${FUTURE.map(f=>`
+    <div class="card"><div class="card-title">${f.title}</div><p style="font-size:13px; color:var(--text-dim);">${f.body}</p></div>
+  `).join("")}</div>`;
+}
+
+/* ============================================================
+   PRINT FULL GUIDE
+   ============================================================ */
+document.getElementById("btn-print-all").addEventListener("click", ()=>{
+  document.querySelectorAll(".page").forEach(p=> p.classList.add("print-active"));
+  window.print();
+  setTimeout(()=>{
+    document.querySelectorAll(".page").forEach(p=> p.classList.remove("print-active"));
+    document.querySelectorAll(".page.active").forEach(p=> p.classList.add("print-active"));
+  }, 500);
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+applyTheme();
+renderStageRail();
+renderStagePages();
+renderPipelineDiagram();
+renderCompare();
+renderDecisionsPage();
+renderResources();
+updateProgressUI();
+
+})();
+</script>
+</body>
+</html>
